@@ -1,5 +1,7 @@
 import {createGamePlayerProfile} from "./playerProfiles.js";
 import * as THREE from "three";
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
+import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 
 const root=document.querySelector("#game"),scoreEl=document.querySelector("#score"),clockEl=document.querySelector("#clock"),msg=document.querySelector("#message");
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0};
@@ -27,6 +29,25 @@ function jerseyNumberTexture(number,color){
  ctx.fillStyle=color;ctx.fillText(String(number),64,66);
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 }
+const RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
+const ANIMATION_LIBRARY_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/universal-animation-library.glb";
+const rigLoader=new GLTFLoader();
+let riggedSource=null,animationSource=null,rigLoadPromise=null,animationLoadPromise=null;
+function loadRiggedSource(){if(rigLoadPromise)return rigLoadPromise;rigLoadPromise=new Promise((resolve,reject)=>rigLoader.load(RIGGED_PLAYER_URL,g=>{riggedSource=g;resolve(g)},undefined,reject));return rigLoadPromise}
+function loadAnimationSource(){if(animationLoadPromise)return animationLoadPromise;animationLoadPromise=new Promise((resolve,reject)=>rigLoader.load(ANIMATION_LIBRARY_URL,g=>{animationSource=g;resolve(g)},undefined,reject));return animationLoadPromise}
+function recolorRiggedModel(model,team){
+ const shirt=team===blue?0x2f78d0:team===red?0xd93445:0xf0f0f0,shorts=team===blue?0x174f9d:team===red?0x8f1728:0x333333;
+ model.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=(m?.name||o.name||"").toLowerCase(),mm=m.clone();if(/shirt|jersey|top|upper|torso|clothes/.test(n))mm.color?.setHex(shirt);else if(/short|pants|trouser/.test(n))mm.color?.setHex(shorts);return mm});if(o.material.length===1)o.material=o.material[0]});
+}
+function fitRiggedModel(model){const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());if(size.y>0)model.scale.multiplyScalar(3.45/size.y);const fitted=new THREE.Box3().setFromObject(model);model.position.y-=fitted.min.y}
+async function attachRiggedVisual(g,team){
+ try{
+  const source=await loadRiggedSource(),model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
+  try{const anim=await loadAnimationSource();if(anim?.animations?.length){const mixer=new THREE.AnimationMixer(model),clips=anim.animations,preferred=clips.find(x=>/idle|jog|walk/i.test(x.name))||clips[0],action=mixer.clipAction(preferred);action.play();g.userData.rigMixer=mixer;g.userData.rigAction=action}}catch{}
+  for(const ch of [...g.children])if(ch!==model&&ch.userData?.legacyVisual)g.remove(ch);
+ }catch{}
+}
+
 function makePlayer(team,number,controlled=false,role="MID",profileOverrides={}){
  const g=new THREE.Group();
  const palette=team===blue
@@ -68,7 +89,8 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(v.scale);
  g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0};
- scene.add(g);return g;
+ g.children.forEach(ch=>{if(ch!==ring)ch.userData.legacyVisual=true});
+ scene.add(g);attachRiggedVisual(g,team);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
@@ -134,6 +156,7 @@ function animatePlayers(dt){
    const speed=Math.hypot(dx,dz)/Math.max(dt,.001);
    a.userData.walkPhase+=Math.min(speed*.018,1.2);
    const swing=Math.min(speed/10,1)*.55;
+   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);
    if(a.userData.legL&&a.userData.legR){
      a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
      a.userData.legR.rotation.x=-Math.sin(a.userData.walkPhase)*swing;
