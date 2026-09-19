@@ -23,6 +23,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - name: Generate 2,000-player historical pool
+        run: node scripts/build-player-pool.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./web
