@@ -599,16 +599,13 @@ function update(dt){
  // Stable mobile broadcast camera. Keep the camera clearly above the pitch and
  // point at the playing surface; do not let the adaptive camera drift toward the stands.
  if(mobileView){
-   // Deterministic mobile match camera: explicitly above the playing surface.
-   // Avoid interpolation/drift so a bad previous camera state can never survive.
-   const mobileHeight=38+Math.min(2.5,ballSpeed*.035);
-   const mobileDistance=31+Math.min(4,ballSpeed*.045);
-   const camX=blendX-dir*mobileDistance;
-   const camZ=THREE.MathUtils.clamp(blendZ*.22,-10,10);
-   camera.position.set(camX,mobileHeight,camZ);
+   // Safe reference camera for touch devices: side-on elevated broadcast view.
+   // It is intentionally independent of player/ball coordinates so camera state
+   // cannot drift below/away from the pitch.
+   camera.position.set(0,42,62);
    camera.fov=58;
    camera.updateProjectionMatrix();
-   camera.lookAt(blendX+dir*8,0,blendZ);
+   camera.lookAt(0,0,0);
  }else{
    const height=10.2+Math.min(2.1,ballSpeed*.045)+danger*.55;
    const distance=14.4+Math.min(3.4,ballSpeed*.075);
