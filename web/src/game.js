@@ -84,11 +84,19 @@ const rimA=new THREE.DirectionalLight(0x6fa8ff,0.75);rimA.position.set(42,28,-34
 const rimB=new THREE.DirectionalLight(0xff8b72,0.42);rimB.position.set(-38,20,-42);scene.add(rimB);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
 function addStadiumAtmosphere(){
- const standMat=M(0x18242d),roofMat=M(0x0a1116),seatMat=M(0x27353d),lampMat=M(0xfff1c4);
+ const standMat=M(0x18242d),roofMat=M(0x0a1116),seatMat=M(0x27353d);
  for(const side of[-1,1]){
   const z=side*43;
   scene.add(box(122,5,9,standMat,0,2.4,z),box(122,1,9,roofMat,0,7.8,z));
   for(let x=-50;x<=50;x+=8)scene.add(box(5,.12,1.6,seatMat,x,5.2,z-side*1.8));
+  // Low-cost crowd blocks: enough depth to read as a stadium without hundreds of meshes.
+  const crowdMat=M(side<0?0x5b6670:0x49545e,.92);
+  for(let x=-49;x<=49;x+=2.6){
+    for(let row=0;row<3;row++){
+      const h=.48+(Math.abs(Math.sin(x*1.7+row*2.1))*.24);
+      scene.add(box(.72,h,.42,crowdMat,x,5.55+row*.62,z-side*2.25));
+    }
+  }
  }
  for(const x of[-58,58]){
   const pole=cyl(.16,18,M(0x313b43),x,9,0);scene.add(pole);
@@ -308,7 +316,16 @@ player.position.set(-40,0,0);player.userData.homeX=-40;player.userData.homeZ=0;
 const gks=[makePlayer(white,1,false,"GK"),makePlayer(white,1,false,"GK")];gks[0].scale.setScalar(.94);gks[1].scale.setScalar(.94);
 // Keep the opening kickoff under direct player control. AI cannot own or shoot the ball until a real touch occurs.
 state.matchReady=true;
-const ball=new THREE.Mesh(new THREE.SphereGeometry(.48,16,12),ballMat);ball.castShadow=true;ball.position.set(0,.48,0);ball.userData={vx:0,vz:0,vy:0,owner:null,lastTouchTeam:blue};scene.add(ball);
+const ball=new THREE.Mesh(new THREE.SphereGeometry(.48,20,14),ballMat);
+ball.castShadow=true;
+ball.position.set(0,.48,0);
+ball.userData={vx:0,vz:0,vy:0,owner:null,lastTouchTeam:blue};
+const ballSeamMat=new THREE.MeshBasicMaterial({color:0x1a1a1a,transparent:true,opacity:.48});
+const ballSeamA=new THREE.Mesh(new THREE.TorusGeometry(.485,.018,5,32),ballSeamMat);
+ballSeamA.rotation.x=Math.PI/2;ballSeamA.rotation.z=.28;ball.add(ballSeamA);
+const ballSeamB=new THREE.Mesh(new THREE.TorusGeometry(.485,.014,5,32),ballSeamMat);
+ballSeamB.rotation.y=Math.PI/2;ballSeamB.rotation.z=-.22;ball.add(ballSeamB);
+scene.add(ball);
 
 function allHome(){return [player,...mates]}
 function controlled(){return allHome()[state.selected]}
@@ -552,13 +569,20 @@ function update(dt){
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
  const dir=p.userData.team===blue?1:-1;
- const blendX=p.position.x*.58+ball.position.x*.42,blendZ=p.position.z*.58+ball.position.z*.42;
- const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.22,-7,7);
+ const ballSpeed=Math.hypot(ball.userData.vx||0,ball.userData.vz||0);
+ const blendX=p.position.x*.54+ball.position.x*.46,blendZ=p.position.z*.54+ball.position.z*.46;
+ const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.24,-8,8);
+ const danger=Math.max(0,Math.abs(ball.position.x)-35)/18;
+ const height=10.2+Math.min(2.1,ballSpeed*.045)+danger*.55;
+ const distance=14.4+Math.min(3.4,ballSpeed*.075);
  const t=new THREE.Vector3(blendX,0,blendZ);
- const want=new THREE.Vector3(t.x-dir*14+sideOffset*.16,10.8,t.z+sideOffset+dir*2.5);
- camera.position.lerp(want,1-Math.pow(.0008,dt));
- const lookX=blendX+dir*5,lookZ=blendZ+sideOffset*.18;
- camera.lookAt(lookX,1.15,lookZ);
+ const want=new THREE.Vector3(t.x-dir*distance+sideOffset*.16,height,t.z+sideOffset+dir*2.8);
+ camera.position.lerp(want,1-Math.pow(.00055,dt));
+ const targetFov=47.5+Math.min(5.5,ballSpeed*.16)+danger*1.8;
+ camera.fov=THREE.MathUtils.lerp(camera.fov,targetFov,1-Math.pow(.0007,dt));
+ camera.updateProjectionMatrix();
+ const lookX=blendX+dir*(4.8+Math.min(3,ballSpeed*.06)),lookZ=blendZ+sideOffset*.18;
+ camera.lookAt(lookX,1.2,lookZ);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
