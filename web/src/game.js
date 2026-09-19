@@ -595,17 +595,19 @@ function update(dt){
  const blendX=p.position.x*.54+ball.position.x*.46,blendZ=p.position.z*.54+ball.position.z*.46;
  const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.24,-8,8);
  const danger=Math.max(0,Math.abs(ball.position.x)-35)/18;
- const mobileView=matchMedia("(pointer:coarse)").matches&&innerWidth<=760;
- const height=(mobileView?14.2:10.2)+Math.min(mobileView?2.8:2.1,ballSpeed*.045)+danger*.55;
- const distance=(mobileView?20.5:14.4)+Math.min(mobileView?4.2:3.4,ballSpeed*.075);
+ const mobileView=matchMedia("(pointer:coarse)").matches||navigator.maxTouchPoints>0;
+ // Touch devices need a higher, wider broadcast shot, especially in landscape.
+ // This keeps the pitch in frame instead of pointing almost horizontally at the stands.
+ const height=(mobileView?18.5:10.2)+Math.min(mobileView?3.5:2.1,ballSpeed*.045)+danger*.55;
+ const distance=(mobileView?25.5:14.4)+Math.min(mobileView?5:3.4,ballSpeed*.075);
  const t=new THREE.Vector3(blendX,0,blendZ);
- const want=new THREE.Vector3(t.x-dir*distance+sideOffset*(mobileView?.10:.16),height,t.z+sideOffset*(mobileView?.78:1)+dir*(mobileView?3.8:2.8));
- camera.position.lerp(want,1-Math.pow(mobileView?.0012:.00055,dt));
- const targetFov=(mobileView?54:47.5)+Math.min(mobileView?5:5.5,ballSpeed*.16)+danger*1.8;
+ const want=new THREE.Vector3(t.x-dir*distance+sideOffset*(mobileView?.08:.16),height,t.z+sideOffset*(mobileView?.62:1)+dir*(mobileView?5.2:2.8));
+ camera.position.lerp(want,1-Math.pow(mobileView?.0015:.00055,dt));
+ const targetFov=(mobileView?58:47.5)+Math.min(mobileView?4.5:5.5,ballSpeed*.16)+danger*1.8;
  camera.fov=THREE.MathUtils.lerp(camera.fov,targetFov,1-Math.pow(.0007,dt));
  camera.updateProjectionMatrix();
- const lookX=blendX+dir*(mobileView?6.5:4.8)+Math.min(3,ballSpeed*.06),lookZ=blendZ+sideOffset*(mobileView?.08:.18);
- camera.lookAt(lookX,mobileView?.65:1.2,lookZ);
+ const lookX=blendX+dir*(mobileView?7.5:4.8)+Math.min(3,ballSpeed*.06),lookZ=blendZ+sideOffset*(mobileView?.06:.18);
+ camera.lookAt(lookX,mobileView?.0:1.2,lookZ);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
