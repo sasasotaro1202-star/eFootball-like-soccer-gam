@@ -3,6 +3,16 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./supabase-config.js";
 const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=s=>document.querySelector(s), screens={home:$("#homeScreen"),panel:$("#panelScreen"),match:$("#matchScreen")};
+// Robust UI binding: event delegation keeps navigation working even after panel DOM is rebuilt.
+document.addEventListener("click",(e)=>{
+  const b=e.target.closest("button");
+  if(!b)return;
+  const nav=b.dataset?.nav;
+  if(nav){e.preventDefault();if(nav==="home")home();else panel(nav);return;}
+  if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();start();return;}
+  if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();home();return;}
+});
+
 const state={gp:+localStorage.getItem("football_gp")||10000,coins:+localStorage.getItem("football_coins")||100,owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
 let cloudUser=null;
 const localSave=()=>{localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned));localStorage.setItem("football_progress",JSON.stringify(state.progress))};
