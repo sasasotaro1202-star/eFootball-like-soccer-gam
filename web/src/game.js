@@ -319,7 +319,7 @@ state.matchReady=true;
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.48,20,14),ballMat);
 ball.castShadow=true;
 ball.position.set(0,.48,0);
-ball.userData={vx:0,vz:0,vy:0,owner:null,lastTouchTeam:blue};
+ball.userData={vx:0,vz:0,vy:0,spinX:0,spinZ:0,owner:null,lastTouchTeam:blue};
 const ballSeamMat=new THREE.MeshBasicMaterial({color:0x1a1a1a,transparent:true,opacity:.48});
 const ballSeamA=new THREE.Mesh(new THREE.TorusGeometry(.485,.018,5,32),ballSeamMat);
 ballSeamA.rotation.x=Math.PI/2;ballSeamA.rotation.z=.28;ball.add(ballSeamA);
@@ -413,7 +413,13 @@ function kickTo(tx,tz,power){
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
  p.userData.animState="kick";p.userData.animTimer=.34;
  ball.userData.owner=null;state.firstKickoff=false;state.aiEnabled=true;state.userTouched=true;state.matchPhase="play";advancedState.lastPass={team:p.userData.team,from:p.position.clone(),time:performance.now()};state.lastPossessionChange=performance.now();const passScale=p.userData.profile.passing/80;
- ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;ball.userData.vy=Math.max(0,power-22)*.12;state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
+ ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;
+ ball.userData.vy=Math.max(0,power-22)*.12;
+ // Kick-induced spin: direction-sensitive, clamped for stable mobile simulation.
+ const sideSpin=THREE.MathUtils.clamp((tz-p.position.z)*.018-(tx-p.position.x)*.018,-1.8,1.8);
+ ball.userData.spinX=THREE.MathUtils.clamp(-ball.userData.vz*.045,-1.8,1.8);
+ ball.userData.spinZ=THREE.MathUtils.clamp(ball.userData.vx*.045+sideSpin,-1.8,1.8);
+ state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
 }
 function stealBall(taker,carrier,force=false){
  if(!taker||!carrier||carrier===taker||ball.userData.owner!==carrier)return false;
@@ -539,7 +545,18 @@ function update(dt){
    const contact=opponents.reduce((b,x)=>dist(x,owner)<dist(b,owner)?x:b,opponents[0]);
    if(contact&&dist(contact,owner)<1.18)stealBall(contact,owner,false);
  }else{
-   ball.position.x+=ball.userData.vx*dt;ball.position.z+=ball.userData.vz*dt;ball.position.y+=((ball.userData.vy||0))*dt;ball.userData.vy=(ball.userData.vy||0)-17*dt;ball.userData.vx*=Math.pow(.985,dt*60);ball.userData.vz*=Math.pow(.985,dt*60);if(ball.position.y<.48){ball.position.y=.48;if((ball.userData.vy||0)<-1.1)ball.userData.vy=-(ball.userData.vy||0)*.42;else ball.userData.vy=0}
+   // Lightweight Magnus + aerodynamic drag model, tuned for the browser 120 Hz kernel.
+ const vx=ball.userData.vx||0,vz=ball.userData.vz||0,vy=ball.userData.vy||0;
+ const sx=ball.userData.spinX||0,sz=ball.userData.spinZ||0;
+ const speed=Math.hypot(vx,vz);
+ const magnus=THREE.MathUtils.clamp(.018*speed,0,.42);
+ const ax=sz*vz*magnus,az=-sx*vx*magnus;
+ ball.userData.vx+=ax*dt;ball.userData.vz+=az*dt;
+ ball.position.x+=ball.userData.vx*dt;ball.position.z+=ball.userData.vz*dt;ball.position.y+=vy*dt;
+ ball.userData.vy=vy-17*dt;
+ const air=Math.pow(.985,dt*60);ball.userData.vx*=air;ball.userData.vz*=air;
+ ball.userData.spinX*=Math.pow(.992,dt*60);ball.userData.spinZ*=Math.pow(.992,dt*60);
+ if(ball.position.y<.48){ball.position.y=.48;if((ball.userData.vy||0)<-1.1){ball.userData.vy=-(ball.userData.vy||0)*.42;ball.userData.vx*=.84;ball.userData.vz*=.84;ball.userData.spinX*=.72;ball.userData.spinZ*=.72}else ball.userData.vy=0}
    const candidates=allHome().concat(foes);
    const near=candidates.reduce((b,x)=>dist(x,ball)<dist(b,ball)?x:b,candidates[0]);
    if(dist(near,ball)<1.45&&Math.hypot(ball.userData.vx,ball.userData.vz)<10){ball.userData.owner=near;ball.userData.lastTouchTeam=near.userData.team;ball.userData.vy=0;applyFirstTouch(near,ball.userData.vx/(Math.hypot(ball.userData.vx,ball.userData.vz)||1),ball.userData.vz/(Math.hypot(ball.userData.vx,ball.userData.vz)||1),Math.hypot(ball.userData.vx,ball.userData.vz));enhancedState.passTarget=null;}
