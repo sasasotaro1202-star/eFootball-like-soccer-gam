@@ -599,13 +599,21 @@ function update(dt){
  // Stable mobile broadcast camera. Keep the camera clearly above the pitch and
  // point at the playing surface; do not let the adaptive camera drift toward the stands.
  if(mobileView){
-   // Safe reference camera for touch devices: side-on elevated broadcast view.
-   // It is intentionally independent of player/ball coordinates so camera state
-   // cannot drift below/away from the pitch.
-   camera.position.set(0,68,76);
+   // Portrait-safe broadcast camera. On a phone the horizontal FOV is much
+   // narrower than the vertical FOV, so a desktop-like camera distance only
+   // shows a thin slice of the pitch. Size the camera from the real aspect
+   // ratio so the 106m pitch width remains visible instead of becoming a
+   // white/green band at the edge of the frame.
+   const portraitAspect=THREE.MathUtils.clamp(camera.aspect,.42,1.25);
+   const verticalFov=THREE.MathUtils.degToRad(52);
+   const horizontalFov=2*Math.atan(Math.tan(verticalFov*.5)*portraitAspect);
+   const pitchFitDistance=(FIELD.w*.5)/Math.tan(horizontalFov*.5);
+   const cameraDistance=Math.max(108,pitchFitDistance*1.08);
+   const elevation=THREE.MathUtils.degToRad(portraitAspect<.78?34:38);
+   camera.position.set(0,Math.sin(elevation)*cameraDistance,Math.cos(elevation)*cameraDistance);
    camera.fov=52;
    camera.updateProjectionMatrix();
-   camera.lookAt(0,0,0);
+   camera.lookAt(0,0,1.5);
  }else{
    const height=10.2+Math.min(2.1,ballSpeed*.045)+danger*.55;
    const distance=14.4+Math.min(3.4,ballSpeed*.075);
