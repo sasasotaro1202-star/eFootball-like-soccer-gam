@@ -152,7 +152,9 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(v.scale);
  Object.assign(g.userData,{number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0,aiPossessionSince:0});
- g.children.forEach(ch=>{if(ch!==ring)ch.userData.legacyVisual=true});
+ g.children.forEach(ch=>{if(ch!==ring&&ch!==numberFront&&ch!==numberBack)ch.userData.legacyVisual=true});
+ // Persistent shirt numbers stay visible even when the rigged body replaces the procedural body.
+ numberFront.renderOrder=4;numberBack.renderOrder=4;
  scene.add(g);attachRiggedVisual(g,team);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
