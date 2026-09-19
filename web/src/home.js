@@ -77,14 +77,14 @@ function panel(kind){
  const target=CARD_POOL.find(p=>state.owned.includes(p.id))||CARD_POOL[0],tx=getProgress(target);$("#panelBody").innerHTML=`<div class="trainingHero"><span class="eyebrow">PLAYER DEVELOPMENT</span><h2>TRAINING<br>CENTER</h2><p>Level Training • Player Progression • Position Training • Limit Break</p><div class="trainingPlayer"><div class="trainingPortrait">${portraitSvg(target)}</div><div><b>${esc(target.name)}</b><small>${esc(playerArchetype(target))} • OVR ${target.overall}</small></div></div><div class="trainingStat"><span>LEVEL</span><b>${tx.level}/${tx.maxLevel}</b></div><div class="trainingStat"><span>PROGRESSION POINTS</span><b>${tx.points}</b></div><div class="trainingStat"><span>LIMIT BREAK</span><b>${tx.breakthrough}/5</b></div><div class="trainingPositions">${positionMap(target).map(q=>`<span>${q}</span>`).join("")}</div></div><div class="trainingActions"><button class="primary" id="levelTrain">LEVEL +1</button><button class="primary" id="limitBreak">BREAKTHROUGH</button></div><button class="primary wide" id="trainingReward">CLAIM DAILY +500 GP</button>`;$("#levelTrain").onclick=()=>{const x=getProgress(target);if(x.level<x.maxLevel){x.level++;x.points+=3;x.xp=0;state.progress[target.id]=x;save();panel("training")}};$("#limitBreak").onclick=()=>{const x=getProgress(target);if(x.breakthrough<5&&state.gp>=1000){state.gp-=1000;x.breakthrough++;x.maxLevel=Math.min(40,x.maxLevel+2);state.progress[target.id]=x;save();wallet();panel("training")}};$("#trainingReward").onclick=()=>{state.gp+=500;save();wallet();panel("training")}
 }
 const GACHA_BANNERS=[
- {id:"epic",title:"EPIC • SEASON ARCHIVE",sub:"特定シーズンを再現した特別カード",rarities:["EPIC","LEGEND"],cost:100},
- {id:"legend",title:"LEGEND • WORLD ICONS",sub:"歴代スターを集めた限定リスト",rarities:["LEGEND"],cost:120},
- {id:"highlight",title:"HIGHLIGHT • HOT FORM",sub:"好調期をテーマにしたピックアップ",rarities:["HIGHLIGHT","EPIC"],cost:80},
+ {id:"bigtime",title:"BIG TIME • MOMENT",sub:"記憶に残る一戦をモチーフにした最上位カード",rarities:["BIG_TIME"],cost:150},\n {id:"epic",title:"EPIC • SEASON ARCHIVE",sub:"特定シーズンを再現した特別カード",rarities:["EPIC","LEGEND","SHOWTIME"],cost:100},
+ {id:"legend",title:"LEGEND • WORLD ICONS",sub:"歴代スターを集めた限定リスト",rarities:["LEGEND","BIG_TIME"],cost:120},
+ {id:"showtime",title:"SHOWTIME • SPECIAL SKILL",sub:"特別なプレー特性をテーマにした限定カード",rarities:["SHOWTIME"],cost:100},\n {id:"highlight",title:"HIGHLIGHT • HOT FORM",sub:"好調期をテーマにしたピックアップ",rarities:["HIGHLIGHT","SHOWTIME"],cost:80},
  {id:"position",title:"POSITION SELECT",sub:"FW / MF / DF / GK から狙いを絞る",rarities:["STANDARD","HIGHLIGHT","EPIC"],cost:60}
 ];
 let activeBanner="epic";
 function bannerPool(id){
- const map={epic:["EPIC","LEGEND","BIG_TIME"],legend:["LEGEND","BIG_TIME"],highlight:["HIGHLIGHT","SHOWTIME"],position:["STANDARD","HIGHLIGHT"]};
+ const map={bigtime:["BIG_TIME"],epic:["EPIC","LEGEND","SHOWTIME","BIG_TIME"],legend:["LEGEND","BIG_TIME"],showtime:["SHOWTIME"],highlight:["HIGHLIGHT","SHOWTIME"],position:["STANDARD","HIGHLIGHT"]};
  const types=map[id]||["STANDARD"];const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));return pool.length?pool:CARD_POOL
 }
 function pickPlayer(){
@@ -93,7 +93,7 @@ function pickPlayer(){
  :activeBanner==="epic"?[["BIG_TIME",.008],["LEGEND",.032],["EPIC",.06],["SHOWTIME",.06],["HIGHLIGHT",.24],["STANDARD",.60]]
  :activeBanner==="highlight"?[["BIG_TIME",.003],["LEGEND",.012],["EPIC",.025],["SHOWTIME",.05],["HIGHLIGHT",.40],["STANDARD",.51]]
  :[["BIG_TIME",.002],["LEGEND",.008],["EPIC",.015],["SHOWTIME",.025],["HIGHLIGHT",.30],["STANDARD",.65]];
- let a=0,tier="STANDARD";for(const [k,w] of weights){a+=w;if(r<a){tier=k;break}}const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return(same.length?same:pool)[Math.floor(Math.random()*(same.length?same:pool).length)]||CARD_POOL[0]
+ const available=weights.filter(([k])=>pool.some(p=>String(p.cardType||p.rarity).toUpperCase()===k));const total=available.reduce((a,x)=>a+x[1],0)||1;let a=0,tier=available[available.length-1]?.[0]||"STANDARD";for(const [k,w] of available){a+=w/total;if(r<a){tier=k;break}}const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return same[Math.floor(Math.random()*same.length)]||pool[Math.floor(Math.random()*pool.length)]||CARD_POOL[0]
 }
 function renderGacha(kind="epic"){
  activeBanner=kind;const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind),featured=pool.slice(0,6);
