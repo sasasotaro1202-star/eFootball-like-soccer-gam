@@ -623,8 +623,35 @@ function updatePlayerCard(){
  playerLabel.textContent="PLAYER "+String(n).padStart(2,"0");playerRole.textContent=role;playerNo.textContent="#"+n;
  if(staminaFill)staminaFill.style.width=Math.round(p.userData.stamina||0)+"%";
 }
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const memory=Number(navigator.deviceMemory||4);const maxPixels=memory<=2?900000:memory<=4?1400000:1900000;const dpr=Math.min(devicePixelRatio||1,1.35,Math.sqrt(maxPixels/Math.max(1,innerWidth*innerHeight)));renderer.setPixelRatio(Math.max(1,dpr));if(sun.shadow.mapSize.x>(memory<=4?512:1024))sun.shadow.mapSize.set(memory<=4?512:1024,memory<=4?512:1024)}
-addEventListener("resize",resize);resize();
+function getViewportSize(){
+ const vv=window.visualViewport;
+ const app=document.querySelector("#app");
+ const rect=app?.getBoundingClientRect();
+ const w=Math.max(1,Math.round(vv?.width||rect?.width||document.documentElement.clientWidth||innerWidth||1));
+ const hRaw=vv?.height||rect?.height||document.documentElement.clientHeight||innerHeight||1;
+ // Some iOS embedded browsers expose a bogus multi-document innerHeight.
+ const h=Math.max(1,Math.min(Math.round(hRaw),Math.max(480,Math.round(screen?.height||900)*1.5)));
+ return {w,h};
+}
+function resize(){
+ const {w,h}=getViewportSize();
+ camera.aspect=w/h;
+ camera.updateProjectionMatrix();
+ const memory=Number(navigator.deviceMemory||4);
+ const maxPixels=memory<=2?900000:memory<=4?1400000:1900000;
+ const dpr=Math.min(devicePixelRatio||1,1.35,Math.sqrt(maxPixels/Math.max(1,w*h)));
+ renderer.setPixelRatio(Math.max(1,dpr));
+ renderer.setSize(w,h,false);
+ renderer.domElement.style.width="100%";
+ renderer.domElement.style.height="100%";
+ renderer.domElement.style.maxWidth="100%";
+ renderer.domElement.style.maxHeight="100%";
+ if(sun.shadow.mapSize.x>(memory<=4?512:1024))sun.shadow.mapSize.set(memory<=4?512:1024,memory<=4?512:1024);
+}
+addEventListener("resize",resize,{passive:true});
+window.visualViewport?.addEventListener("resize",resize,{passive:true});
+window.visualViewport?.addEventListener("scroll",resize,{passive:true});
+resize();
 const stick=document.querySelector("#stick"),knob=document.querySelector("#knob");
 let pid=null;
 function joyFromPoint(x,y){
