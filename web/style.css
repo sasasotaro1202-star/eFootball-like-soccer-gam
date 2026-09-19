@@ -85,3 +85,17 @@ body{overscroll-behavior:none}
 .playerCardTap{transition:transform .12s ease,filter .12s ease}.playerCardTap:hover{filter:brightness(1.08)}
 .detailBlock{background:linear-gradient(145deg,#142126,#0b1317)!important;box-shadow:0 8px 24px #0005}
 .detailPortrait{box-shadow:0 12px 30px #0008;border:1px solid #ffffff18}
+
+.facePortrait{width:100%;height:100%;display:block;filter:saturate(.96) contrast(1.03)}
+.cardPortrait .facePortrait{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:14px}
+.detailPortrait{overflow:hidden}.detailPortrait .facePortrait{position:absolute;inset:0;width:100%;height:100%;border-radius:16px}.detailPortrait span{z-index:2;text-shadow:0 1px 5px #000}
+.trainingPortrait{overflow:hidden;position:relative}.trainingPortrait .facePortrait{width:100%;height:100%;object-fit:cover;border-radius:12px}
+.gachaTabs{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:0 0 10px;padding:6px;border:1px solid #ffffff12;border-radius:14px;background:#071015}
+.gachaTab{min-height:40px;border:1px solid #ffffff10;border-radius:9px;background:#ffffff06;color:#91a39e;font-size:8px;font-weight:950;letter-spacing:.08em}
+.gachaTab.active{background:linear-gradient(180deg,#edf8f3,#a9cfc0);color:#07131b}
+.premiumGacha{min-height:190px!important}.premiumGacha h2{max-width:360px;font-size:clamp(25px,5vw,42px)!important;letter-spacing:-.04em}
+.gachaBadges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.gachaBadges span{padding:6px 8px;border-radius:999px;background:#ffffff0a;border:1px solid #ffffff12;color:#9cb0a9;font-size:7px}
+.gachaSubRow{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:9px 0 15px}.subGacha{min-height:42px;border:1px solid #ffffff12;border-radius:10px;background:#101d22;color:#b9cbc5;font-size:8px;font-weight:900}
+.subGacha:active{background:#dcefe8;color:#07131b}
+.cardPortrait{height:118px!important;position:relative!important;overflow:hidden!important;background:#101a20!important}.cardPortrait i{z-index:2;text-shadow:0 2px 8px #000}
+@media(max-width:520px){.gachaTabs{grid-template-columns:repeat(2,1fr)}.gachaSubRow{grid-template-columns:1fr 1fr 1fr}.premiumGacha h2{font-size:25px!important}}
