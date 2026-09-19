@@ -1,588 +1,728 @@
 import * as THREE from "three";
 
-const app = document.querySelector("#app");
-const mount = document.querySelector("#game");
-const boot = document.querySelector("#boot");
-const scoreEl = document.querySelector("#score");
-const clockEl = document.querySelector("#clock");
-const stateEl = document.querySelector("#matchState");
-const playerLabel = document.querySelector("#playerLabel");
-const playerNo = document.querySelector("#playerNo");
-const playerRole = document.querySelector("#playerRole");
-const staminaFill = document.querySelector("#staminaFill");
-const knob = document.querySelector("#knob");
-const radar = document.querySelector("#radar");
-const message = document.querySelector("#message");
+const $ = (s) => document.querySelector(s);
+const mount = $("#game");
+const boot = $("#boot");
+const scoreEl = $("#score");
+const clockEl = $("#clock");
+const stateEl = $("#matchState");
+const playerLabel = $("#playerLabel");
+const playerNo = $("#playerNo");
+const playerRole = $("#playerRole");
+const staminaFill = $("#staminaFill");
+const knob = $("#knob");
+const message = $("#message");
 
-const FIELD = { w: 105, d: 68, goalW: 14.64, goalD: 4.2 };
-const BLUE = 0x4d8dff;
-const RED = 0xff5369;
-const WHITE = 0xf6f8f7;
-const GREEN = 0x2d8b4d;
-const DARK_GREEN = 0x176238;
+const FIELD = { w: 105, d: 68, goalW: 14.64 };
+const HOME = 0;
+const AWAY = 1;
 
 const state = {
   time: 0,
-  homeScore: 0,
-  awayScore: 0,
-  selected: 0,
+  score: [0, 0],
+  selected: 9,
   joy: { x: 0, y: 0 },
-  pointer: { id: null, x: 0, y: 0, startX: 0, startY: 0 },
-  rightGesture: { id: null, x: 0, y: 0, startX: 0, startY: 0, downAt: 0 },
-  actions: { sprint: false },
-  lastGoal: 0,
-  kickoff: true,
-  paused: false
+  sprint: false,
+  paused: false,
+  lastGoalAt: 0,
+  cameraMode: "broadcast",
+  rightGesture: null,
+  leftPointerId: null,
+  lastTouchAt: 0
 };
 
-let renderer, scene, camera, clock;
+let renderer;
+let scene;
+let camera;
 let ball;
+let clock;
+let players = [];
 let home = [];
 let away = [];
-let players = [];
 let lastFrame = performance.now();
 
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function dist2(a,b){ const dx=a.position.x-b.position.x,dz=a.position.z-b.position.z; return dx*dx+dz*dz; }
-function showMessage(text,ms=900){
-  message.textContent=text;
-  window.clearTimeout(showMessage.timer);
-  showMessage.timer=window.setTimeout(()=>message.textContent="",ms);
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
+function dist(a, b) { return Math.hypot(a.position.x - b.position.x, a.position.z - b.position.z); }
+function mat(color, roughness = 0.8) {
+  return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
+}
+function showMessage(text, ms = 900) {
+  message.textContent = text;
+  clearTimeout(showMessage.t);
+  showMessage.t = setTimeout(() => { message.textContent = ""; }, ms);
 }
 
-function makeMat(color,rough=.75,metal=0){
-  return new THREE.MeshStandardMaterial({color,roughness:rough,metalness:metal});
-}
+function makePlayer(team, index, role) {
+  const g = new THREE.Group();
+  const shirtColor = team === HOME ? 0x2e72e5 : 0xd83c55;
+  const shortsColor = team === HOME ? 0x173c79 : 0x771827;
+  const skinColor = 0xd49a78;
 
-function makePlayer(team,index,role){
-  const group=new THREE.Group();
-  const shirt=makeMat(team===BLUE?0x3176dc:0xd62f4b,.62);
-  const skin=makeMat(0xd7a27d,.86);
-  const shorts=makeMat(team===BLUE?0x183d79:0x7b1728,.72);
-  const boot=makeMat(0x111518,.55,.15);
+  const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.58, 1.18, 4, 8), mat(shirtColor, 0.7));
+  torso.position.y = 1.28;
+  g.add(torso);
 
-  const body=new THREE.Mesh(new THREE.CapsuleGeometry(.62,1.25,4,8),shirt);
-  body.position.y=1.32;
-  body.castShadow=true;
-  group.add(body);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), mat(skinColor, 0.85));
+  head.position.y = 2.36;
+  g.add(head);
 
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.38,12,8),skin);
-  head.position.y=2.38;
-  head.castShadow=true;
-  group.add(head);
-
-  for(const sx of [-.23,.23]){
-    const leg=new THREE.Mesh(new THREE.CapsuleGeometry(.14,.62,3,6),shorts);
-    leg.position.set(sx,0.65,0);
-    leg.castShadow=true;
-    group.add(leg);
-    const foot=new THREE.Mesh(new THREE.BoxGeometry(.22,.13,.48),boot);
-    foot.position.set(sx,.25,.12);
-    foot.castShadow=true;
-    group.add(foot);
+  for (const x of [-0.21, 0.21]) {
+    const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.6, 3, 6), mat(shortsColor, 0.78));
+    leg.position.set(x, 0.62, 0);
+    g.add(leg);
+    const boot = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.13, 0.46), mat(0x11151a, 0.55));
+    boot.position.set(x, 0.22, 0.1);
+    g.add(boot);
   }
 
-  const ring=new THREE.Mesh(
-    new THREE.RingGeometry(.74,.84,28),
-    new THREE.MeshBasicMaterial({color:team===BLUE?0x67a9ff:0xff7787,transparent:true,opacity:.18,side:THREE.DoubleSide})
+  const selector = new THREE.Mesh(
+    new THREE.RingGeometry(0.72, 0.82, 32),
+    new THREE.MeshBasicMaterial({
+      color: team === HOME ? 0x71b7ff : 0xff7f91,
+      transparent: true,
+      opacity: 0.2,
+      side: THREE.DoubleSide
+    })
   );
-  ring.rotation.x=-Math.PI/2;
-  ring.position.y=.06;
-  group.add(ring);
+  selector.rotation.x = -Math.PI / 2;
+  selector.position.y = 0.04;
+  g.add(selector);
 
-  group.userData={
-    team,index,role,number:index+1,
-    speed: role==="GK"?4.1:5.0+Math.random()*1.2,
-    stamina:100,
-    homeX:0,homeZ:0,
-    velX:0,velZ:0,
-    aiPhase:Math.random()*Math.PI*2
+  g.userData = {
+    team, index, role, number: index + 1,
+    speed: role === "GK" ? 4.0 : 5.0 + Math.random() * 0.7,
+    stamina: 100,
+    homeX: 0, homeZ: 0,
+    aiSeed: Math.random() * 10,
+    selectedRing: selector
   };
-  return group;
+  return g;
 }
 
 const FORMATION = [
-  ["GK",-50,0],
-  ["DF",-38,-25],["DF",-38,-9],["DF",-38,9],["DF",-38,25],
-  ["MF",-18,-20],["MF",-13,0],["MF",-18,20],
-  ["FW",2,-23],["FW",5,0],["FW",2,23]
+  ["GK", -49, 0],
+  ["DF", -38, -24], ["DF", -39, -8], ["DF", -39, 8], ["DF", -38, 24],
+  ["MF", -20, -20], ["MF", -14, -6], ["MF", -14, 6], ["MF", -20, 20],
+  ["FW", 0, -12], ["FW", 3, 12]
 ];
 
-function placeTeams(){
-  home=[];away=[];players=[];
-  for(let i=0;i<11;i++){
-    const [role,x,z]=FORMATION[i];
-    const p=makePlayer(BLUE,i,role);
-    p.userData.homeX=x;p.userData.homeZ=z;
-    p.position.set(x,0,z);
-    scene.add(p);home.push(p);players.push(p);
+function placeTeams() {
+  home = [];
+  away = [];
+  players = [];
+
+  for (let i = 0; i < FORMATION.length; i++) {
+    const [role, x, z] = FORMATION[i];
+    const p = makePlayer(HOME, i, role);
+    p.userData.homeX = x;
+    p.userData.homeZ = z;
+    p.position.set(x, 0, z);
+    scene.add(p);
+    home.push(p);
+    players.push(p);
   }
-  for(let i=0;i<11;i++){
-    const [role,x,z]=FORMATION[i];
-    const p=makePlayer(RED,i,role);
-    p.userData.homeX=-x;p.userData.homeZ=-z;
-    p.position.set(-x,0,-z);
-    scene.add(p);away.push(p);players.push(p);
+
+  for (let i = 0; i < FORMATION.length; i++) {
+    const [role, x, z] = FORMATION[i];
+    const p = makePlayer(AWAY, i, role);
+    p.userData.homeX = -x;
+    p.userData.homeZ = -z;
+    p.position.set(-x, 0, -z);
+    scene.add(p);
+    away.push(p);
+    players.push(p);
   }
 }
 
-function buildPitch(){
-  scene.background=new THREE.Color(0x07131d);
-
-  const world=new THREE.Mesh(
-    new THREE.PlaneGeometry(320,250),
-    new THREE.MeshBasicMaterial({color:0x0b1720,side:THREE.DoubleSide})
+function addLine(x1, z1, x2, z2, y = 0.055) {
+  const len = Math.hypot(x2 - x1, z2 - z1);
+  const m = new THREE.Mesh(
+    new THREE.BoxGeometry(0.11, 0.035, len),
+    new THREE.MeshBasicMaterial({ color: 0xf5f7f5 })
   );
-  world.rotation.x=-Math.PI/2;
-  world.position.y=-.12;
-  scene.add(world);
+  m.position.set((x1 + x2) / 2, y, (z1 + z2) / 2);
+  m.rotation.y = Math.atan2(x2 - x1, z2 - z1);
+  scene.add(m);
+}
 
-  const pitch=new THREE.Mesh(
-    new THREE.PlaneGeometry(FIELD.w,FIELD.d),
-    new THREE.MeshStandardMaterial({color:GREEN,roughness:1,metalness:0,side:THREE.DoubleSide})
+function buildPitch() {
+  scene.background = new THREE.Color(0x08151f);
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(260, 220),
+    new THREE.MeshBasicMaterial({ color: 0x07100d, side: THREE.DoubleSide })
   );
-  pitch.rotation.x=-Math.PI/2;
-  pitch.position.y=0;
-  pitch.receiveShadow=true;
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.12;
+  scene.add(ground);
+
+  const pitch = new THREE.Mesh(
+    new THREE.PlaneGeometry(FIELD.w, FIELD.d),
+    new THREE.MeshBasicMaterial({ color: 0x16723b, side: THREE.DoubleSide })
+  );
+  pitch.rotation.x = -Math.PI / 2;
+  pitch.position.y = 0;
   scene.add(pitch);
 
-  const stripeMat=[0x2f914f,0x2b8549];
-  for(let i=0;i<12;i++){
-    const stripe=new THREE.Mesh(
-      new THREE.PlaneGeometry(FIELD.w/12+.05,FIELD.d),
-      new THREE.MeshBasicMaterial({color:stripeMat[i%2],side:THREE.DoubleSide,transparent:true,opacity:.22})
+  const stripeColors = [0x1a7b40, 0x156c38];
+  for (let i = 0; i < 10; i++) {
+    const stripe = new THREE.Mesh(
+      new THREE.PlaneGeometry(FIELD.w, FIELD.d / 10 + 0.03),
+      new THREE.MeshBasicMaterial({ color: stripeColors[i % 2], side: THREE.DoubleSide })
     );
-    stripe.rotation.x=-Math.PI/2;
-    stripe.position.set(-FIELD.w/2+(i+.5)*FIELD.w/12,.006,0);
+    stripe.rotation.x = -Math.PI / 2;
+    stripe.position.set(0, 0.008, -FIELD.d / 2 + (i + 0.5) * FIELD.d / 10);
     scene.add(stripe);
   }
 
-  const lineMat=new THREE.MeshBasicMaterial({color:WHITE,side:THREE.DoubleSide});
-  const line=(x1,z1,x2,z2,w=.11)=>{
-    const len=Math.hypot(x2-x1,z2-z1);
-    const m=new THREE.Mesh(new THREE.BoxGeometry(w,.035,len),lineMat);
-    m.position.set((x1+x2)/2,.035,(z1+z2)/2);
-    m.rotation.y=Math.atan2(x2-x1,z2-z1);
-    scene.add(m);
-  };
-  line(-52.5,-34,52.5,-34);line(-52.5,34,52.5,34);
-  line(-52.5,-34,-52.5,34);line(52.5,-34,52.5,34);
-  line(0,-34,0,34);
-  const circle=new THREE.Mesh(new THREE.RingGeometry(9.1,9.22,96),lineMat);
-  circle.rotation.x=-Math.PI/2;circle.position.y=.04;scene.add(circle);
-  const spot=new THREE.Mesh(new THREE.CircleGeometry(.22,24),lineMat);
-  spot.rotation.x=-Math.PI/2;spot.position.y=.041;scene.add(spot);
+  addLine(-52.5, -34, 52.5, -34);
+  addLine(-52.5, 34, 52.5, 34);
+  addLine(-52.5, -34, -52.5, 34);
+  addLine(52.5, -34, 52.5, 34);
+  addLine(0, -34, 0, 34);
 
-  for(const side of [-1,1]){
-    const x=side*52.5;
-    line(x,-20,x-side*16,-20);line(x,20,x-side*16,20);
-    line(x-side*16,-20,x-side*16,20);
-    line(x,-9,x-side*5.5,-9);line(x,9,x-side*5.5,9);
-    line(x-side*5.5,-9,x-side*5.5,9);
-    const arc=new THREE.Mesh(new THREE.RingGeometry(9.05,9.17,40,1,side<0?-.9:2.24,1.8),lineMat);
-    arc.rotation.x=-Math.PI/2;arc.position.set(x-side*11,0.041,0);scene.add(arc);
+  const circle = new THREE.Mesh(
+    new THREE.RingGeometry(9.08, 9.2, 96),
+    new THREE.MeshBasicMaterial({ color: 0xf5f7f5, side: THREE.DoubleSide })
+  );
+  circle.rotation.x = -Math.PI / 2;
+  circle.position.y = 0.06;
+  scene.add(circle);
+
+  const spot = new THREE.Mesh(
+    new THREE.CircleGeometry(0.22, 24),
+    new THREE.MeshBasicMaterial({ color: 0xf5f7f5 })
+  );
+  spot.rotation.x = -Math.PI / 2;
+  spot.position.y = 0.061;
+  scene.add(spot);
+
+  for (const side of [-1, 1]) {
+    const x = side * 52.5;
+    addLine(x, -20, x - side * 16, -20);
+    addLine(x, 20, x - side * 16, 20);
+    addLine(x - side * 16, -20, x - side * 16, 20);
+    addLine(x, -9, x - side * 5.5, -9);
+    addLine(x, 9, x - side * 5.5, 9);
+    addLine(x - side * 5.5, -9, x - side * 5.5, 9);
   }
 
-  const goalMat=makeMat(WHITE,.4,.05);
-  for(const side of [-1,1]){
-    const x=side*52.7;
-    for(const z of [-FIELD.goalW/2,FIELD.goalW/2]){
-      const post=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,3.6,12),goalMat);
-      post.position.set(x,1.8,z);post.castShadow=true;scene.add(post);
+  const goalMat = mat(0xf4f6f5, 0.5);
+  for (const side of [-1, 1]) {
+    const x = side * 52.65;
+    for (const z of [-FIELD.goalW / 2, FIELD.goalW / 2]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.6, 12), goalMat);
+      post.position.set(x, 1.8, z);
+      scene.add(post);
     }
-    const bar=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,FIELD.goalW),goalMat);
-    bar.position.set(x,3.6,0);bar.castShadow=true;scene.add(bar);
-    const back=new THREE.Mesh(new THREE.BoxGeometry(FIELD.goalD,.12,FIELD.goalW),goalMat);
-    back.position.set(x-side*FIELD.goalD/2,.06,0);scene.add(back);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.18, FIELD.goalW), goalMat);
+    bar.position.set(x, 3.6, 0);
+    scene.add(bar);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.12, FIELD.goalW), goalMat);
+    base.position.set(x - side * 2, 0.06, 0);
+    scene.add(base);
   }
 
-  const standMat=makeMat(0x202b34,.92);
-  const seatMat=makeMat(0x3b4750,.9);
-  const boardMat=new THREE.MeshBasicMaterial({color:0x214e88});
-  for(const z of [-42,42]){
-    for(let row=0;row<3;row++){
-      const stand=new THREE.Mesh(new THREE.BoxGeometry(145,2.4+row*1.2,5.5),standMat);
-      stand.position.set(0,1.1+row*1.3,z);
-      stand.castShadow=true;scene.add(stand);
-      for(let i=0;i<25;i++){
-        const seat=new THREE.Mesh(new THREE.BoxGeometry(3.7,.3,1.1),seatMat);
-        seat.position.set(-46+i*3.85,3.1+row*1.25,z+(z>0?-2.8:2.8));
-        scene.add(seat);
-      }
+  // Low, simple stands. Nothing crosses the camera volume.
+  for (const z of [-40, 40]) {
+    for (let row = 0; row < 3; row++) {
+      const stand = new THREE.Mesh(
+        new THREE.BoxGeometry(145, 2.4 + row * 1.2, 4.5),
+        mat(0x202a31, 0.95)
+      );
+      stand.position.set(0, 1.1 + row * 1.25, z);
+      scene.add(stand);
     }
-    const board=new THREE.Mesh(new THREE.BoxGeometry(108,.85,.16),boardMat);
-    board.position.set(0,.62,z>0?-35.2:35.2);scene.add(board);
   }
-  for(const x of [-61,61]){
-    const side=new THREE.Mesh(new THREE.BoxGeometry(5,6,86),standMat);
-    side.position.set(x,2.6,0);side.castShadow=true;scene.add(side);
+
+  for (const x of [-61, 61]) {
+    const stand = new THREE.Mesh(
+      new THREE.BoxGeometry(4.5, 5.5, 82),
+      mat(0x202a31, 0.95)
+    );
+    stand.position.set(x, 2.5, 0);
+    scene.add(stand);
   }
 }
 
-function buildBall(){
-  const ballMat=makeMat(WHITE,.48,.05);
-  ball=new THREE.Mesh(new THREE.SphereGeometry(.42,18,12),ballMat);
-  ball.castShadow=true;
-  ball.position.set(-.5,.55,0);
-  ball.userData={owner:null,vx:0,vy:0,vz:0};
+function buildBall() {
+  ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.42, 18, 12),
+    mat(0xf4f6f4, 0.5)
+  );
+  ball.position.set(0, 0.48, 0);
+  ball.userData = { owner: null, vx: 0, vy: 0, vz: 0, lastTeam: HOME };
   scene.add(ball);
 }
 
-function resetMatch(kickoffTeam=BLUE){
-  for(const p of players){
-    p.position.set(p.userData.homeX,0,p.userData.homeZ);
-    p.userData.stamina=100;
+function resetPositions(kickoffTeam = HOME) {
+  for (const p of players) {
+    p.position.set(p.userData.homeX, 0, p.userData.homeZ);
+    p.userData.stamina = 100;
   }
-  // Away formation mirrors the home formation in placeTeams().
-  for(const p of away){
-    p.position.set(p.userData.homeX,0,p.userData.homeZ);
-  }
-  ball.position.set(0,.55,0);
-  ball.userData.owner=kickoffTeam===BLUE?home[9]:away[9];
-  ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
-  state.kickoff=true;
+  ball.position.set(0, 0.48, 0);
+  ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
+  ball.userData.owner = kickoffTeam === HOME ? home[9] : away[9];
+  selectPlayer(kickoffTeam === HOME ? 9 : 9);
 }
 
-function controlled(){ return home[state.selected]||home[9]; }
-
-function selectPlayer(index){
-  state.selected=clamp(index,0,home.length-1);
-  const p=controlled();
-  playerLabel.textContent="PLAYER "+String(p.userData.number).padStart(2,"0");
-  playerNo.textContent="#"+p.userData.number;
-  playerRole.textContent=p.userData.role;
+function selectPlayer(index) {
+  state.selected = clamp(index, 0, home.length - 1);
+  for (const p of home) p.userData.selectedRing.visible = false;
+  const p = home[state.selected];
+  if (!p) return;
+  p.userData.selectedRing.visible = true;
+  playerLabel.textContent = "PLAYER " + String(p.userData.number).padStart(2, "0");
+  playerNo.textContent = "#" + p.userData.number;
+  playerRole.textContent = p.userData.role;
 }
 
-function nearestHomeToBall(){
-  let best=0,bestD=Infinity;
-  for(let i=0;i<home.length;i++){
-    const d=dist2(home[i],ball);
-    if(d<bestD){bestD=d;best=i;}
-  }
-  return best;
+function initBallPossession() {
+  ball.userData.owner = home[9];
+  ball.position.set(home[9].position.x, 0.48, home[9].position.z + 0.8);
 }
 
-function moveControlled(dt){
-  const p=controlled();
-  if(!p)return;
-  const j=state.joy;
-  const mag=Math.hypot(j.x,j.y);
-  if(mag<.05)return;
-  const len=Math.min(1,mag);
-  const speed=p.userData.speed*(state.actions.sprint?1.45:1);
-  const tx=j.x/Math.max(1,mag)*len*speed;
-  const tz=j.y/Math.max(1,mag)*len*speed;
-  p.position.x+=tx*dt;
-  p.position.z+=tz*dt;
-  p.position.x=clamp(p.position.x,-51,51);
-  p.position.z=clamp(p.position.z,-32.5,32.5);
-  p.rotation.y=Math.atan2(tx,tz);
-  p.userData.stamina=clamp(p.userData.stamina-(state.actions.sprint?5.2:1.15)*dt,0,100);
-  if(ball.userData.owner===p){
-    ball.position.x=p.position.x+Math.sin(p.rotation.y)*.8;
-    ball.position.z=p.position.z+Math.cos(p.rotation.y)*.8;
-    ball.position.y=.48;
+function moveControlled(dt) {
+  const p = home[state.selected];
+  if (!p) return;
+  const mag = Math.hypot(state.joy.x, state.joy.y);
+  if (mag < 0.04) return;
+
+  const nx = state.joy.x / mag;
+  const nz = state.joy.y / mag;
+  const intensity = clamp(mag, 0, 1);
+  const speed = p.userData.speed * intensity * (state.sprint ? 1.38 : 1);
+  p.position.x = clamp(p.position.x + nx * speed * dt, -51, 51);
+  p.position.z = clamp(p.position.z + nz * speed * dt, -32.5, 32.5);
+  p.rotation.y = Math.atan2(nx, nz);
+  p.userData.stamina = clamp(
+    p.userData.stamina - (state.sprint ? 5.5 : 1.0) * dt,
+    0,
+    100
+  );
+
+  if (ball.userData.owner === p) {
+    ball.position.set(
+      p.position.x + Math.sin(p.rotation.y) * 0.78,
+      0.48,
+      p.position.z + Math.cos(p.rotation.y) * 0.78
+    );
   }
 }
 
-function aiStep(dt){
-  const owner=ball.userData.owner;
-  for(const p of players){
-    if(p===controlled())continue;
-    const attackDir=p.userData.team===BLUE?1:-1;
-    let tx=p.userData.homeX,tz=p.userData.homeZ;
+function aiStep(dt) {
+  const owner = ball.userData.owner;
+  for (const p of players) {
+    if (p === home[state.selected]) continue;
 
-    if(owner){
-      const ownTeam=owner.userData.team;
-      const isAttacking=p.userData.team===ownTeam;
-      if(p.userData.role==="GK"){
-        tx=p.userData.homeX;
-        tz=clamp(ball.position.z,-8,8);
-      }else if(isAttacking){
-        tx += clamp((ball.position.x*attackDir)*.22,-12,14);
-        tz += clamp((ball.position.z-p.userData.homeZ)*.18,-8,8);
-      }else{
-        tx += clamp((ball.position.x*attackDir)*.12,-10,8);
-        tz += clamp((ball.position.z-p.userData.homeZ)*.16,-7,7);
+    let tx = p.userData.homeX;
+    let tz = p.userData.homeZ;
+    const d = dist(p, ball);
+
+    if (owner) {
+      const attacking = p.userData.team === owner.userData.team;
+      if (p.userData.role === "GK") {
+        tx = p.userData.homeX;
+        tz = clamp(ball.position.z, -8, 8);
+      } else if (attacking) {
+        tx += clamp((ball.position.x * (p.userData.team === HOME ? 1 : -1)) * 0.18, -10, 12);
+        tz += clamp((ball.position.z - p.userData.homeZ) * 0.16, -7, 7);
+      } else {
+        tx += clamp((ball.position.x * (p.userData.team === HOME ? 1 : -1)) * 0.1, -8, 8);
+        tz += clamp((ball.position.z - p.userData.homeZ) * 0.14, -6, 6);
       }
-    }else{
-      const d=Math.sqrt(dist2(p,ball));
-      if(d<11 && p.userData.team!==ball.userData.lastTouchTeam){
-        tx=ball.position.x;tz=ball.position.z;
-      }else if(d<14 && p.userData.team===ball.userData.lastTouchTeam){
-        tx=(p.userData.homeX+ball.position.x*.35);tz=(p.userData.homeZ+ball.position.z*.35);
-      }
+    } else if (d < 12) {
+      tx = ball.position.x;
+      tz = ball.position.z;
     }
 
-    const dx=tx-p.position.x,dz=tz-p.position.z,d=Math.hypot(dx,dz);
-    if(d>.25){
-      const s=p.userData.speed*dt*clamp(d/5,.25,1);
-      p.position.x+=dx/d*s;p.position.z+=dz/d*s;
-      p.rotation.y=Math.atan2(dx,dz);
+    const dx = tx - p.position.x;
+    const dz = tz - p.position.z;
+    const len = Math.hypot(dx, dz);
+    if (len > 0.3) {
+      const speed = p.userData.speed * dt * clamp(len / 5, 0.22, 1);
+      p.position.x += dx / len * speed;
+      p.position.z += dz / len * speed;
+      p.rotation.y = Math.atan2(dx, dz);
     }
-    p.position.x=clamp(p.position.x,-51,51);
-    p.position.z=clamp(p.position.z,-32.5,32.5);
+    p.position.x = clamp(p.position.x, -51, 51);
+    p.position.z = clamp(p.position.z, -32.5, 32.5);
   }
 
-  if(owner && owner.userData.team!==BLUE){
-    const d=Math.sqrt(dist2(owner,ball));
-    if(d<2.5 && owner.userData.role!=="GK"){
-      const dir=1;
-      const target=home.filter(x=>x.userData.role!=="GK").sort((a,b)=>dist2(owner,a)-dist2(owner,b))[0];
-      if(target && Math.random()<.008){
-        kick(owner,target.position.x+dir*5,target.position.z,10);
-      }
-    }
+  // Lightweight opponent passing/attacking behavior.
+  if (owner && owner.userData.team === AWAY && owner.userData.role !== "GK") {
+    const target = away
+      .filter((p) => p !== owner && p.userData.role !== "GK")
+      .sort((a, b) => dist(owner, a) - dist(owner, b))[0];
+    if (target && Math.random() < 0.006) kick(owner, target.position.x, target.position.z, 9.5);
   }
 }
 
-function kick(p,tx,tz,speed){
-  if(!p)return;
-  const dx=tx-ball.position.x,dz=tz-ball.position.z,l=Math.hypot(dx,dz)||1;
-  ball.userData.owner=null;
-  ball.userData.lastTouchTeam=p.userData.team;
-  ball.userData.vx=dx/l*speed;
-  ball.userData.vz=dz/l*speed;
-  ball.userData.vy=.5;
+function kick(player, tx, tz, speed) {
+  const dx = tx - ball.position.x;
+  const dz = tz - ball.position.z;
+  const len = Math.hypot(dx, dz) || 1;
+  ball.userData.owner = null;
+  ball.userData.lastTeam = player.userData.team;
+  ball.userData.vx = dx / len * speed;
+  ball.userData.vz = dz / len * speed;
+  ball.userData.vy = Math.min(4.0, 1.1 + speed * 0.12);
 }
 
-function touchBall(){
-  let owner=ball.userData.owner;
-  if(owner){
-    ball.position.x=owner.position.x+Math.sin(owner.rotation.y)*.8;
-    ball.position.z=owner.position.z+Math.cos(owner.rotation.y)*.8;
-    ball.position.y=.48;
-    return;
-  }
-  for(const p of players){
-    if(Math.sqrt(dist2(p,ball))<1.65 && ball.position.y<1.3){
-      ball.userData.owner=p;
-      ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
-      if(p.userData.team===BLUE)selectPlayer(p.userData.index);
+function passOrShoot(mode, power = 0.8) {
+  const p = home[state.selected];
+  if (!p) return;
+
+  if (ball.userData.owner !== p) {
+    if (dist(p, ball) < 2.1) {
+      ball.userData.owner = p;
       return;
-    }
-  }
-}
-
-function physics(dt){
-  if(ball.userData.owner)return;
-  ball.userData.vy-=18*dt;
-  ball.position.x+=ball.userData.vx*dt;
-  ball.position.z+=ball.userData.vz*dt;
-  ball.position.y+=ball.userData.vy*dt;
-  const drag=Math.pow(.985,dt*60);
-  ball.userData.vx*=drag;ball.userData.vz*=drag;
-  if(ball.position.y<.43){
-    ball.position.y=.43;
-    if(Math.abs(ball.userData.vy)>.8)ball.userData.vy*=-.38;
-    else ball.userData.vy=0;
-    ball.userData.vx*=.93;ball.userData.vz*=.93;
-  }
-  if(ball.position.z>34 || ball.position.z<-34){
-    ball.position.z=clamp(ball.position.z,-34,34);
-    ball.userData.vz*=-.7;
-  }
-  if(ball.position.x>54.2 || ball.position.x<-54.2){
-    const insideGoal=Math.abs(ball.position.z)<FIELD.goalW/2;
-    if(insideGoal){
-      const now=performance.now();
-      if(now-state.lastGoal>1200){
-        if(ball.position.x>0)state.homeScore++;else state.awayScore++;
-        state.lastGoal=now;
-        scoreEl.textContent=state.homeScore+" - "+state.awayScore;
-        showMessage("GOAL",1500);
-        resetMatch(ball.position.x>0?RED:BLUE);
-      }
-      return;
-    }
-    ball.position.x=clamp(ball.position.x,-54.2,54.2);
-    ball.userData.vx*=-.7;
-  }
-}
-
-function rightFlick(dx,dy){
-  const p=controlled();
-  if(!p)return;
-  const mag=Math.hypot(dx,dy);
-  if(mag<24){
-    if(ball.userData.owner===p){
-      const target=home.filter(x=>x!==p).sort((a,b)=>dist2(p,a)-dist2(p,b))[0];
-      if(target)kick(p,target.position.x+5,target.position.z,13);
     }
     return;
   }
-  const len=mag||1,ax=dx/len,az=dy/len,power=clamp(mag/150,.25,1);
-  if(ball.userData.owner!==p)return;
-  if(Math.abs(dy)>Math.abs(dx)*1.25){
-    kick(p,p.position.x+ax*(12+18*power),p.position.z+az*(12+18*power),10+10*power);
-    ball.userData.vy=dy<0?4+4*power:2;
-  }else{
-    const goalX=53;
-    const targetZ=clamp(p.position.z+az*(8+8*power),-6.5,6.5);
-    const speed=17+15*power;
-    kick(p,goalX,targetZ,speed);
-    ball.userData.vy=1.2+2.2*power;
+
+  const dir = new THREE.Vector3(
+    Math.sin(p.rotation.y),
+    0,
+    Math.cos(p.rotation.y)
+  );
+  let target;
+
+  if (mode === "shoot") {
+    target = new THREE.Vector3(53, 1.5, clamp(p.position.z, -8, 8));
+  } else {
+    const candidates = home
+      .filter((x) => x !== p && x.userData.role !== "GK")
+      .map((x) => ({ p: x, score: x.position.x - p.position.x + Math.abs(x.position.z - p.position.z) * 0.08 }))
+      .sort((a, b) => b.score - a.score);
+    target = candidates[0]?.p?.position?.clone() || p.position.clone().add(dir.multiplyScalar(10));
+  }
+
+  const dx = target.x - ball.position.x;
+  const dz = target.z - ball.position.z;
+  const len = Math.hypot(dx, dz) || 1;
+  const speed = (mode === "shoot" ? 18 : 10) * clamp(power, 0.35, 1.15);
+
+  ball.userData.owner = null;
+  ball.userData.lastTeam = HOME;
+  ball.userData.vx = dx / len * speed;
+  ball.userData.vz = dz / len * speed;
+  ball.userData.vy = mode === "shoot" ? 1.5 + power * 2.0 : 0.7 + power * 1.2;
+  showMessage(mode === "shoot" ? "SHOOT" : "PASS", 450);
+}
+
+function touchBall() {
+  if (ball.userData.owner) {
+    const p = ball.userData.owner;
+    ball.position.set(
+      p.position.x + Math.sin(p.rotation.y) * 0.78,
+      0.48,
+      p.position.z + Math.cos(p.rotation.y) * 0.78
+    );
+    return;
+  }
+
+  let closest = null;
+  let closestD = Infinity;
+  for (const p of players) {
+    const d = dist(p, ball);
+    if (d < 1.65 && d < closestD && ball.position.y < 1.35) {
+      closest = p;
+      closestD = d;
+    }
+  }
+  if (closest) {
+    ball.userData.owner = closest;
+    if (closest.userData.team === HOME) selectPlayer(closest.userData.index);
   }
 }
 
-function bindInput(){
-  const canvas=renderer.domElement;
-  const isGameplay=e=>!e.target.closest?.("#controls,#matchbar,#topTools,#radarWrap,#playerCard,#boot");
+function physics(dt) {
+  if (ball.userData.owner) return;
 
-  canvas.addEventListener("pointerdown",e=>{
-    if(!isGameplay(e))return;
-    e.preventDefault();
-    if(e.clientX<innerWidth*.48){
-      state.pointer.id=e.pointerId;
-      state.pointer.startX=state.pointer.x=e.clientX;
-      state.pointer.startY=state.pointer.y=e.clientY;
-      canvas.setPointerCapture?.(e.pointerId);
-      return;
-    }
-    state.rightGesture.id=e.pointerId;
-    state.rightGesture.startX=state.rightGesture.x=e.clientX;
-    state.rightGesture.startY=state.rightGesture.y=e.clientY;
-    state.rightGesture.downAt=performance.now();
-    canvas.setPointerCapture?.(e.pointerId);
-  },{passive:false});
+  ball.userData.vy -= 18 * dt;
+  ball.position.x += ball.userData.vx * dt;
+  ball.position.z += ball.userData.vz * dt;
+  ball.position.y += ball.userData.vy * dt;
 
-  canvas.addEventListener("pointermove",e=>{
-    if(e.pointerId===state.pointer.id){
-      e.preventDefault();
-      const dx=e.clientX-state.pointer.startX,dy=e.clientY-state.pointer.startY;
-      const r=76,m=Math.min(1,Math.hypot(dx,dy)/r);
-      const l=Math.hypot(dx,dy)||1;
-      state.joy.x=dx/l*m;state.joy.y=dy/l*m;
-      state.actions.sprint=Math.hypot(dx,dy)>82;
-      knob.style.transform="translate("+clamp(dx,-48,48)+"px,"+clamp(dy,-48,48)+"px)";
-    }
-  },{passive:false});
+  const drag = Math.pow(0.985, dt * 60);
+  ball.userData.vx *= drag;
+  ball.userData.vz *= drag;
 
-  const up=e=>{
-    if(e.pointerId===state.pointer.id){
-      e.preventDefault();
-      state.pointer.id=null;state.joy.x=state.joy.y=0;state.actions.sprint=false;
-      knob.style.transform="translate(0,0)";
+  if (ball.position.y < 0.43) {
+    ball.position.y = 0.43;
+    if (Math.abs(ball.userData.vy) > 0.8) ball.userData.vy *= -0.38;
+    else ball.userData.vy = 0;
+    ball.userData.vx *= 0.93;
+    ball.userData.vz *= 0.93;
+  }
+
+  if (Math.abs(ball.position.z) > 34) {
+    ball.position.z = clamp(ball.position.z, -34, 34);
+    ball.userData.vz *= -0.7;
+  }
+
+  if (ball.position.x > 54 || ball.position.x < -54) {
+    const goal = Math.abs(ball.position.z) <= FIELD.goalW / 2;
+    if (goal) {
+      const now = performance.now();
+      if (now - state.lastGoalAt > 1200) {
+        if (ball.position.x > 0) state.score[HOME]++;
+        else state.score[AWAY]++;
+        state.lastGoalAt = now;
+        updateScore();
+        showMessage("GOAL", 1300);
+        resetPositions(ball.position.x > 0 ? AWAY : HOME);
+      }
+    } else {
+      ball.position.x = clamp(ball.position.x, -54, 54);
+      ball.userData.vx *= -0.7;
     }
-    if(e.pointerId===state.rightGesture.id){
-      e.preventDefault();
-      const g=state.rightGesture;
-      rightFlick(e.clientX-g.startX,e.clientY-g.startY);
-      state.rightGesture.id=null;
-    }
+  }
+}
+
+function updateScore() {
+  scoreEl.textContent = state.score[HOME] + " - " + state.score[AWAY];
+}
+
+function updateHUD() {
+  const total = Math.floor(state.time);
+  const min = String(Math.floor(total / 60)).padStart(2, "0");
+  const sec = String(total % 60).padStart(2, "0");
+  clockEl.textContent = min + ":" + sec;
+
+  const p = home[state.selected];
+  if (p) staminaFill.style.width = p.userData.stamina.toFixed(1) + "%";
+  stateEl.textContent = state.paused ? "PAUSED" : "LIVE";
+}
+
+function updateBroadcastCamera(dt) {
+  const aspect = Math.max(0.8, camera.aspect);
+  const targetX = clamp(ball.position.x * 0.08, -4.5, 4.5);
+  const targetZ = clamp(ball.position.z * 0.12, -7, 7);
+  const desired = new THREE.Vector3(
+    targetX,
+    aspect > 1.15 ? 48 : 56,
+    aspect > 1.15 ? 69 : 78
+  );
+  const blend = 1 - Math.pow(0.0005, Math.min(0.04, dt));
+  camera.position.lerp(desired, blend);
+  camera.lookAt(targetX, 0, targetZ);
+}
+
+function updateJoystickVisual() {
+  const max = 46;
+  knob.style.transform =
+    "translate(" + (state.joy.x * max).toFixed(1) + "px," +
+    (state.joy.y * max).toFixed(1) + "px)";
+}
+
+function pointerIsGameplay(e) {
+  return !!e.target && !e.target.closest?.("#controls,#matchbar,#topTools,#playerCard");
+}
+
+function setJoyFromPointer(e, start) {
+  const dx = e.clientX - start.x;
+  const dy = e.clientY - start.y;
+  const len = Math.hypot(dx, dy);
+  const scale = Math.min(1, len / 55);
+  state.joy.x = len ? dx / len * scale : 0;
+  state.joy.y = len ? dy / len * scale : 0;
+  state.sprint = len > 75;
+  updateJoystickVisual();
+}
+
+function leftDown(e) {
+  e.preventDefault();
+  state.leftPointerId = e.pointerId;
+  state.leftStart = { x: e.clientX, y: e.clientY };
+  state.lastTouchAt = performance.now();
+  $("#stick").setPointerCapture?.(e.pointerId);
+}
+
+function leftMove(e) {
+  if (e.pointerId !== state.leftPointerId || !state.leftStart) return;
+  e.preventDefault();
+  setJoyFromPointer(e, state.leftStart);
+}
+
+function leftUp(e) {
+  if (e.pointerId !== state.leftPointerId) return;
+  e.preventDefault();
+  state.leftPointerId = null;
+  state.leftStart = null;
+  state.joy.x = 0;
+  state.joy.y = 0;
+  state.sprint = false;
+  updateJoystickVisual();
+}
+
+function rightDown(e) {
+  if (!pointerIsGameplay(e)) return;
+  e.preventDefault();
+  state.rightGesture = {
+    id: e.pointerId,
+    x: e.clientX,
+    y: e.clientY,
+    startX: e.clientX,
+    startY: e.clientY,
+    downAt: performance.now()
   };
-  canvas.addEventListener("pointerup",up,{passive:false});
-  canvas.addEventListener("pointercancel",up,{passive:false});
+}
 
-  window.addEventListener("resize",resize);
-  document.addEventListener("visibilitychange",()=>{
-    if(document.hidden)state.actions.sprint=false;
+function rightUp(e) {
+  const g = state.rightGesture;
+  if (!g || g.id !== e.pointerId) return;
+  const dx = e.clientX - g.startX;
+  const dy = e.clientY - g.startY;
+  const mag = Math.hypot(dx, dy);
+  state.rightGesture = null;
+
+  if (mag < 22) {
+    passOrShoot("pass", 0.72);
+    return;
+  }
+  if (dy < -20 && Math.abs(dy) > Math.abs(dx) * 1.05) {
+    passOrShoot("shoot", clamp(mag / 90, 0.45, 1.15));
+  } else {
+    passOrShoot("pass", clamp(mag / 90, 0.45, 1.1));
+  }
+}
+
+function keyboardDown(e) {
+  const key = e.key.toLowerCase();
+  if (key === "shift") state.sprint = true;
+  if (key === "j") passOrShoot("pass", 0.9);
+  if (key === "k") passOrShoot("shoot", 1);
+  if (key === " " && performance.now() - state.lastTouchAt > 500) {
+    state.paused = !state.paused;
+    showMessage(state.paused ? "PAUSED" : "RESUME");
+  }
+  if (/^[1-9]$/.test(key)) selectPlayer(Number(key) - 1);
+}
+
+function keyboardUp(e) {
+  if (e.key.toLowerCase() === "shift") state.sprint = false;
+}
+
+function keyboardMove() {
+  let x = 0, y = 0;
+  const keys = new Set(window.__keys || []);
+  if (keys.has("a") || keys.has("arrowleft")) x -= 1;
+  if (keys.has("d") || keys.has("arrowright")) x += 1;
+  if (keys.has("w") || keys.has("arrowup")) y -= 1;
+  if (keys.has("s") || keys.has("arrowdown")) y += 1;
+  if (x || y) {
+    const len = Math.hypot(x, y);
+    state.joy.x = x / len;
+    state.joy.y = y / len;
+  }
+}
+
+function initInput() {
+  window.__keys = [];
+  addEventListener("keydown", (e) => {
+    if (!window.__keys.includes(e.key.toLowerCase())) window.__keys.push(e.key.toLowerCase());
+    keyboardDown(e);
   });
+  addEventListener("keyup", (e) => {
+    window.__keys = window.__keys.filter((k) => k !== e.key.toLowerCase());
+    keyboardUp(e);
+  });
+
+  const stick = $("#stick");
+  stick.addEventListener("pointerdown", leftDown, { passive: false });
+  stick.addEventListener("pointermove", leftMove, { passive: false });
+  stick.addEventListener("pointerup", leftUp, { passive: false });
+  stick.addEventListener("pointercancel", leftUp, { passive: false });
+
+  mount.addEventListener("pointerdown", rightDown, { passive: false });
+  mount.addEventListener("pointerup", rightUp, { passive: false });
+  mount.addEventListener("pointercancel", rightUp, { passive: false });
 }
 
-function updateHUD(){
-  const p=controlled();
-  playerLabel.textContent="PLAYER "+String(p.userData.number).padStart(2,"0");
-  playerNo.textContent="#"+p.userData.number;
-  playerRole.textContent=p.userData.role;
-  staminaFill.style.width=p.userData.stamina+"%";
-  const sec=Math.min(90*60,state.time);
-  clockEl.textContent=String(Math.floor(sec/60)).padStart(2,"0")+":"+String(Math.floor(sec%60)).padStart(2,"0");
-  scoreEl.textContent=state.homeScore+" - "+state.awayScore;
-  stateEl.textContent=state.paused?"PAUSED":"LIVE";
+function initRenderer() {
+  renderer = new THREE.WebGLRenderer({
+    antialias: true,
+    alpha: false,
+    powerPreference: "high-performance",
+    precision: "highp",
+    depth: true,
+    stencil: false,
+    failIfMajorPerformanceCaveat: false
+  });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.6));
+  renderer.setSize(innerWidth, innerHeight, false);
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  mount.replaceChildren(renderer.domElement);
+
+  scene = new THREE.Scene();
+  camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 300);
+  camera.position.set(0, 48, 69);
+
+  const hemi = new THREE.HemisphereLight(0xd9f1ff, 0x10251a, 1.8);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffffff, 2.4);
+  sun.position.set(0, 90, 30);
+  scene.add(sun);
+  clock = new THREE.Clock();
+
+  addEventListener("resize", resize);
 }
 
-function updateRadar(){
-  const ctx=radar.getContext("2d");
-  const w=radar.width,h=radar.height;
-  ctx.clearRect(0,0,w,h);
-  ctx.fillStyle="#0b3d25";ctx.fillRect(0,0,w,h);
-  ctx.strokeStyle="#dceee4";ctx.lineWidth=1;ctx.strokeRect(2,2,w-4,h-4);
-  ctx.beginPath();ctx.moveTo(w/2,2);ctx.lineTo(w/2,h-2);ctx.stroke();
-  ctx.beginPath();ctx.arc(w/2,h/2,12,0,Math.PI*2);ctx.stroke();
-  const dot=(p,c)=>{
-    const x=2+(p.position.x+52.5)/105*(w-4),y=2+(p.position.z+34)/68*(h-4);
-    ctx.fillStyle=c;ctx.beginPath();ctx.arc(x,y,2.3,0,Math.PI*2);ctx.fill();
-  };
-  home.forEach(p=>dot(p,"#68a8ff"));away.forEach(p=>dot(p,"#ff6678"));
-  dot(ball,"#fff");
-}
-
-function updateCamera(dt){
-  const p=controlled();
-  const targetX=clamp((ball.position.x+p.position.x)*.08,-8,8);
-  const targetZ=clamp((ball.position.z+p.position.z)*.04,-2,4);
-  const desired=new THREE.Vector3(targetX,58,72);
-  camera.position.lerp(desired,1-Math.pow(.0001,Math.min(.05,dt)));
-  camera.lookAt(targetX,0,targetZ);
-}
-
-function resize(){
-  const w=mount.clientWidth||innerWidth,h=mount.clientHeight||innerHeight;
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));
-  renderer.setSize(w,h,false);
-  camera.aspect=w/h;
-  camera.fov=w/h<1.15?46:52;
+function resize() {
+  if (!renderer || !camera) return;
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
 }
 
-function init(){
-  renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"high-performance",precision:"mediump",stencil:false,depth:true});
-  renderer.outputColorSpace=THREE.SRGBColorSpace;
-  renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));
-  renderer.shadowMap.enabled=true;
-  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-  mount.appendChild(renderer.domElement);
+function gameLoop(now) {
+  const dt = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000));
+  lastFrame = now;
 
-  scene=new THREE.Scene();
-  camera=new THREE.PerspectiveCamera(52,1,.1,400);
-  camera.position.set(0,58,72);
-  clock=new THREE.Clock();
-
-  const hemi=new THREE.HemisphereLight(0xc9e8ff,0x123b20,2.0);
-  scene.add(hemi);
-  const sun=new THREE.DirectionalLight(0xffffff,3.0);
-  sun.position.set(-25,70,35);sun.castShadow=true;
-  sun.shadow.mapSize.set(1024,1024);
-  sun.shadow.camera.left=-75;sun.shadow.camera.right=75;sun.shadow.camera.top=70;sun.shadow.camera.bottom=-70;
-  scene.add(sun);
-
-  buildPitch();
-  placeTeams();
-  buildBall();
-  selectPlayer(9);
-  resetMatch(BLUE);
-  bindInput();
-  resize();
-
-  window.__gameReady=true;
-  boot?.classList.add("ready");
-}
-
-function frame(now){
-  const dt=Math.min(.033,(now-lastFrame)/1000);
-  lastFrame=now;
-  if(!state.paused){
-    state.time+=dt;
+  keyboardMove();
+  if (!state.paused) {
+    state.time += dt;
     moveControlled(dt);
     aiStep(dt);
     physics(dt);
     touchBall();
-    updateCamera(dt);
-    updateHUD();
-    updateRadar();
+    updateBroadcastCamera(dt);
   }
-  renderer.render(scene,camera);
-  requestAnimationFrame(frame);
+
+  updateHUD();
+  renderer.render(scene, camera);
+  requestAnimationFrame(gameLoop);
 }
 
-try{
-  init();
-  requestAnimationFrame(frame);
-}catch(err){
-  window.__lastGameError=String(err?.message||err);
-  window.__lastGameStack=String(err?.stack||"");
-  boot.classList.remove("ready");
-  boot.innerHTML="3D ENGINE ERROR<br><small>"+String(err?.message||err).slice(0,120)+"</small>";
-  throw err;
+function bootGame() {
+  try {
+    initRenderer();
+    buildPitch();
+    buildBall();
+    placeTeams();
+    selectPlayer(state.selected);
+    resetPositions(HOME);
+    initBallPossession();
+    initInput();
+    updateScore();
+    updateHUD();
+
+    window.__gameReady = true;
+    window.__rendererMode = renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1";
+    boot.classList.add("ready");
+    setTimeout(() => boot.remove(), 500);
+  } catch (error) {
+    window.__gameReady = false;
+    window.__lastGameError = error?.stack || String(error);
+    boot.innerHTML = "GAME ERROR<br><small>Reload the page</small>";
+    boot.classList.remove("ready");
+    throw error;
+  }
+
+  requestAnimationFrame(gameLoop);
 }
+
+bootGame();
