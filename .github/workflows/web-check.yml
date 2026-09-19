@@ -1,0 +1,26 @@
+name: Web Game Check
+on:
+  push:
+    branches: ["main"]
+    paths: ["web/**","scripts/**",".github/workflows/web-check.yml"]
+  pull_request:
+    paths: ["web/**","scripts/**",".github/workflows/web-check.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  web-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate 2,000-player pool
+        run: node scripts/build-player-pool.mjs
+      - name: Run deterministic web smoke checks
+        run: |
+          node scripts/web-smoke.mjs
+          node --check web/src/home.js
+          node --check web/src/game-hardreset.js
+          node -e "import('./web/src/player-pool.generated.js').then(m=>{if(m.PLAYER_POOL.length!==2000)throw new Error('expected 2000 players');console.log('validated',m.PLAYER_POOL.length)})"
