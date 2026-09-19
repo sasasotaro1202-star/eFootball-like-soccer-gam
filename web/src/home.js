@@ -1,4 +1,5 @@
 import { PLAYER_POOL } from "./player-pool.generated.js";
+import { GENERATED_CARD_REFERENCE } from "./generated-card-reference.js";
 const $=s=>document.querySelector(s), screens={home:$("#homeScreen"),panel:$("#panelScreen"),match:$("#matchScreen")};
 // Robust UI binding: event delegation keeps navigation working even after panel DOM is rebuilt.
 document.addEventListener("click",(e)=>{
@@ -283,6 +284,11 @@ function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});wallet();
+(function mountGeneratedCardReference(){
+  const host=document.querySelector(".eventPlayers");
+  if(!host||host.querySelector(".generatedCardReference"))return;
+  host.innerHTML=`<img class="generatedCardReference" src="${GENERATED_CARD_REFERENCE}" alt="Generated football player card showcase" loading="eager">`;
+})();
 document.addEventListener("click",e=>{
  const b=e.target.closest("button"); if(!b)return;
  if(b.dataset?.nav){e.preventDefault();e.stopPropagation();b.dataset.nav==="home"?home():panel(b.dataset.nav);return}
