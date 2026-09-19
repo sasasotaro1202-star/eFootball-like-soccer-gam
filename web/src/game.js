@@ -196,7 +196,7 @@ async function attachRiggedVisual(g,team,variantIndex=0,number=0){
  try{
   const [source]=await Promise.all([loadRiggedSource(),loadAnimationSource()]);
   buildRigClipCache();
-  const model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
+  const model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team,variantIndex);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
   const rig=setupRigBones(model);if(rig)g.userData.rigBones=rig;
   if(rigClipCache){
     const mixer=new THREE.AnimationMixer(model),actions={};
@@ -251,7 +251,7 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  g.children.forEach(ch=>{if(ch!==ring&&ch!==numberFront&&ch!==numberBack)ch.userData.legacyVisual=true});
  // Persistent shirt numbers stay visible even when the rigged body replaces the procedural body.
  numberFront.renderOrder=4;numberBack.renderOrder=4;
- scene.add(g);attachRiggedVisual(g,team,v.variantIndex,number);return g;
+ scene.add(g);attachRiggedVisual(g,team,variantIndex,number);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
