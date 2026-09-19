@@ -156,7 +156,6 @@ buildPresentationWorld();
 
 function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
-buildPresentationWorld();
 
 function jerseyNumberTexture(number,color){
  const canvas=document.createElement("canvas");canvas.width=128;canvas.height=128;
@@ -632,12 +631,12 @@ animatePlayers(dt);updateRadar();updatePlayerCard();
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
 }
 function updateBroadcastCamera(dt){
-  // Stable broadcast baseline: elevated three-quarter view, centered on pitch.
-  // It is intentionally independent of the stadium until the pitch framing is correct.
+  // Endline broadcast camera: the pitch length runs along X, so the camera
+  // sits beyond the goal line instead of looking across the touchline.
   const aspect=THREE.MathUtils.clamp(camera.aspect,.7,2.4);
   const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-6,6);
-  const targetZ=THREE.MathUtils.clamp(ball.position.z*.06,-3,3);
-  const desired=new THREE.Vector3(targetX,58,86);
+  const targetZ=THREE.MathUtils.clamp(ball.position.z*.10,-4,4);
+  const desired=new THREE.Vector3(96,52,targetZ);
   const alpha=1-Math.pow(.0002,Math.min(.05,dt));
   camera.position.lerp(desired,alpha);
   camera.fov=landscapeOrPortraitFov(aspect);
