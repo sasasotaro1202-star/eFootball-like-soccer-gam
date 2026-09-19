@@ -49,6 +49,12 @@ window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
 let renderer=null;
 let rendererBootError=null;
+const webglProbe=document.createElement("canvas");
+let webgl2Available=false;
+try{webgl2Available=!!webglProbe.getContext("webgl2",{antialias:false,preserveDrawingBuffer:false})}catch{}
+if(!webgl2Available){
+  window.__activateFallback?.("WebGL2 unavailable on this browser/device");
+}
 const rendererAttempts=[
   {antialias:false,powerPreference:"default",precision:"mediump",stencil:false,depth:true},
   {antialias:false,powerPreference:"low-power",precision:"mediump",stencil:false,depth:true},
@@ -67,7 +73,7 @@ if(!renderer){
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
-root.appendChild(renderer.domElement);
+root.appendChild(renderer.domElement);window.__threeRendererReady=true;
 let renderPaused=false;
 renderer.domElement.addEventListener("webglcontextlost",e=>{
   e.preventDefault();
