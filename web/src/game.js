@@ -624,13 +624,15 @@ function updatePlayerCard(){
  if(staminaFill)staminaFill.style.width=Math.round(p.userData.stamina||0)+"%";
 }
 function getViewportSize(){
- const vv=window.visualViewport;
  const app=document.querySelector("#app");
  const rect=app?.getBoundingClientRect();
- const w=Math.max(1,Math.round(vv?.width||rect?.width||document.documentElement.clientWidth||innerWidth||1));
- const hRaw=vv?.height||rect?.height||document.documentElement.clientHeight||innerHeight||1;
- // Some iOS embedded browsers expose a bogus multi-document innerHeight.
- const h=Math.max(1,Math.min(Math.round(hRaw),Math.max(480,Math.round(screen?.height||900)*1.5)));
+ const vv=window.visualViewport;
+ // Prefer the actual game container. Some iOS embedded browsers expose a bogus
+ // visualViewport/innerHeight (occasionally tens of thousands of CSS pixels).
+ const wRaw=app?.clientWidth||rect?.width||vv?.width||document.documentElement.clientWidth||innerWidth||1;
+ const hRaw=app?.clientHeight||rect?.height||document.documentElement.clientHeight||vv?.height||innerHeight||1;
+ const w=Math.max(1,Math.min(Math.round(wRaw),2400));
+ const h=Math.max(1,Math.min(Math.round(hRaw),2400));
  return {w,h};
 }
 function resize(){
