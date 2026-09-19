@@ -470,6 +470,29 @@ function updateScore() {
   scoreEl.textContent = state.score[HOME] + " - " + state.score[AWAY];
 }
 
+function updateRadar() {
+  const radar = document.querySelector("#radar");
+  if (!radar) return;
+  if (!radar.childElementCount) {
+    const h = document.createElement("div"); h.className="radarLine"; h.style.cssText="left:50%;top:0;width:1px;height:100%;transform:translateX(-50%)";
+    const v = document.createElement("div"); v.className="radarLine"; v.style.cssText="left:0;top:50%;width:100%;height:1px;transform:translateY(-50%)";
+    radar.append(h,v);
+    players.forEach((p,i)=>{const d=document.createElement("span");d.className="radarDot "+(p.userData.team===HOME?"home":"away");d.dataset.i=String(i);radar.append(d)});
+    const bd=document.createElement("span");bd.className="radarDot ball";bd.id="radarBall";radar.append(bd);
+  }
+  players.forEach((p,i)=>{
+    const d=radar.querySelector('[data-i="'+i+'"]'); if(!d) return;
+    d.style.left=((p.position.x+52.5)/105*100).toFixed(1)+"%";
+    d.style.top=((p.position.z+34)/68*100).toFixed(1)+"%";
+    d.style.opacity=p.visible?"1":"0";
+  });
+  const bd=document.querySelector("#radarBall");
+  if(bd){bd.style.left=((ball.position.x+52.5)/105*100).toFixed(1)+"%";bd.style.top=((ball.position.z+34)/68*100).toFixed(1)+"%"}
+  const enemy=away.slice().sort((a,b)=>dist(a,ball)-dist(b,ball))[0];
+  const on=document.querySelector("#opponentName"), oo=document.querySelector("#opponentNo");
+  if(enemy){if(on)on.textContent=enemy.userData.name;if(oo)oo.textContent="#"+enemy.userData.number}
+}
+
 function updateHUD() {
   const total = Math.floor(state.time);
   const min = String(Math.floor(total / 60)).padStart(2, "0");
@@ -479,6 +502,7 @@ function updateHUD() {
   const p = home[state.selected];
   if (p) staminaFill.style.width = p.userData.stamina.toFixed(1) + "%";
   stateEl.textContent = state.paused ? "PAUSED" : "LIVE";
+  updateRadar();
 }
 
 function updateBroadcastCamera(dt) {
