@@ -11,12 +11,3 @@ window/size/window_height_override=720
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-
-[input]
-move_left={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":65),Object(InputEventKey,"physical_keycode":4194311)]}
-move_right={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":68),Object(InputEventKey,"physical_keycode":4194313)]}
-move_up={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":87),Object(InputEventKey,"physical_keycode":4194320)]}
-move_down={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":83),Object(InputEventKey,"physical_keycode":4194322)]}
-pass={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":74)]}
-shoot={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":75)]}
-sprint={"deadzone":0.5,"events":[Object(InputEventKey,"physical_keycode":4194325)]}
