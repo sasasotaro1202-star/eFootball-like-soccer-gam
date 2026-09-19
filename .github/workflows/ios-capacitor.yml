@@ -1,4 +1,4 @@
-name: Capacitor iOS project check
+name: Capacitor iPhone Build Check
 
 on:
   workflow_dispatch:
@@ -6,13 +6,17 @@ on:
     paths:
       - "web/**"
       - "package.json"
+      - "package-lock.json"
       - "capacitor.config.ts"
+      - "scripts/**"
       - ".github/workflows/ios-capacitor.yml"
   pull_request:
     paths:
       - "web/**"
       - "package.json"
+      - "package-lock.json"
       - "capacitor.config.ts"
+      - "scripts/**"
       - ".github/workflows/ios-capacitor.yml"
 
 jobs:
@@ -20,20 +24,48 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
+
       - name: Install dependencies
         run: npm install
-      - name: Generate iOS project
-        run: npx cap add ios
-      - name: Sync web assets
-        run: npx cap sync ios
-      - name: Validate native project
-        run: test -f ios/App/App.xcodeproj/project.pbxproj
-      - name: Package Xcode project
+
+      - name: Validate the exact game bundle used by iPhone
+        run: |
+          node --check web/src/game-hardreset.js
+          grep -q 'game-hardreset.js' web/index.html
+          grep -q 'id="stick"' web/index.html
+          if grep -q 'id="actions"' web/index.html; then exit 1; fi
+          if grep -q 'data-action=' web/index.html; then exit 1; fi
+
+      - name: Generate and prepare iOS project
+        run: npm run ios:prepare
+
+      - name: Validate iOS project
+        run: |
+          test -f ios/App/App.xcodeproj/project.pbxproj
+          test -f ios/App/App/Info.plist
+          grep -q 'UIInterfaceOrientationLandscapeLeft' ios/App/App/Info.plist
+          grep -q 'UIInterfaceOrientationLandscapeRight' ios/App/App/Info.plist
+          xcodebuild -workspace ios/App/App.xcworkspace -scheme App -list
+
+      - name: Build unsigned iOS Simulator app
+        run: |
+          xcodebuild             -workspace ios/App/App.xcworkspace             -scheme App             -configuration Debug             -sdk iphonesimulator             -derivedDataPath build/ios             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+
+      - name: Package validated iPhone Xcode project
         uses: actions/upload-artifact@v4
         with:
           name: football-iphone-xcode-project
           path: ios/
+          if-no-files-found: error
+
+      - name: Package simulator build
+        uses: actions/upload-artifact@v4
+        with:
+          name: football-iphone-simulator-build
+          path: build/ios/Build/Products/Debug-iphonesimulator/*.app
           if-no-files-found: error
