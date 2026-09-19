@@ -58,7 +58,9 @@ function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
 function mark(x1,z1,x2,z2,w=.16){const l=Math.hypot(x2-x1,z2-z1),o=box(w,.035,l,lineMat);o.position.set((x1+x2)/2,.025,(z1+z2)/2);o.rotation.y=Math.atan2(x2-x1,z2-z1);scene.add(o)}
 const ground=new THREE.Mesh(new THREE.PlaneGeometry(122,84),M(0x0b301b));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-const pitch=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d),M(0x176b38));pitch.rotation.x=-Math.PI/2;pitch.position.y=.01;pitch.receiveShadow=true;scene.add(pitch);
+const pitch=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d,10,6),M(0x176b38));pitch.rotation.x=-Math.PI/2;pitch.position.y=.01;pitch.receiveShadow=true;scene.add(pitch);
+for(let i=0;i<10;i++){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),new THREE.MeshBasicMaterial({color:i%2?0x155f34:0x176b38}));stripe.rotation.x=-Math.PI/2;stripe.position.set(0,.016,-FIELD.d/2+(i+.5)*FIELD.d/10);scene.add(stripe)}
+for(const z of[-34,34])for(let x=-53;x<=53;x+=2)scene.add(cyl(.035,.18,M(0xe9f0ea),x,.06,z));
 mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);mark(-37,-20,-37,20);mark(37,-20,37,20);
 const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
 for(const x of[-54.2,54.2]){
@@ -408,9 +410,23 @@ function update(dt){
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
  const t=new THREE.Vector3(p.position.x,0,p.position.z),want=new THREE.Vector3(t.x-13,19,t.z+18);camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+6,0,t.z);
- animatePlayers(dt);
+ animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  state.actions={}
+}
+const radarCanvas=document.querySelector("#radar"),radarCtx=radarCanvas?.getContext("2d"),staminaFill=document.querySelector("#staminaFill"),playerLabel=document.querySelector("#playerLabel"),playerRole=document.querySelector("#playerRole"),playerNo=document.querySelector("#playerNo");
+function updateRadar(){
+ if(!radarCtx)return;
+ const w=radarCanvas.width,h=radarCanvas.height;radarCtx.clearRect(0,0,w,h);radarCtx.fillStyle="#0a5a32";radarCtx.fillRect(0,0,w,h);radarCtx.strokeStyle="#ffffff55";radarCtx.strokeRect(2,2,w-4,h-4);radarCtx.beginPath();radarCtx.moveTo(w/2,2);radarCtx.lineTo(w/2,h-2);radarCtx.stroke();radarCtx.beginPath();radarCtx.arc(w/2,h/2,12,0,Math.PI*2);radarCtx.stroke();
+ const dot=(x,z,c,r=3)=>{radarCtx.fillStyle=c;radarCtx.beginPath();radarCtx.arc((x+53)/106*w,(z+34)/68*h,r,0,Math.PI*2);radarCtx.fill()};
+ allHome().forEach((p,i)=>dot(p.position.x,p.position.z,i===state.selected?"#ffffff":"#4b9cff",i===state.selected?4:2.2));
+ foes.forEach(p=>dot(p.position.x,p.position.z,"#ff5364",2.2));dot(ball.position.x,ball.position.z,"#fff",2.8);
+}
+function updatePlayerCard(){
+ const p=controlled();if(!p)return;
+ const n=p.userData.number||1,role=p.userData.role||"MID";
+ playerLabel.textContent="PLAYER "+String(n).padStart(2,"0");playerRole.textContent=role;playerNo.textContent="#"+n;
+ if(staminaFill)staminaFill.style.width=Math.round(p.userData.stamina||0)+"%";
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45))}
 addEventListener("resize",resize);resize();
