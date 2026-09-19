@@ -1,53 +1,18 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#07131b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FOOTBALL">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="format-detection" content="telephone=no">
-<title>FOOTBALL 3D MATCH</title>
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="stylesheet" href="./style.css?v=iphone-rebuild-20260920-02">
-</head>
-<body>
-<main id="app">
-  <div id="game" aria-label="3D soccer game"></div>
-  <div id="boot">FOOTBALL<br><small>3D MATCH ENGINE</small></div>
-
-  <header id="matchbar">
-    <div class="teamBadge home">H</div><div class="teamName">HOME</div>
-    <div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">00:00</span></div>
-    <div class="teamName away">AWAY</div><div class="teamBadge away">A</div>
-  </header>
-
-  <div id="topTools"><div class="pill"><span class="dot"></span><span id="matchState">LIVE</span></div></div>
-
-  <div id="playerCard">
-    <div class="playerCardTop"><span id="playerRole">FW</span><span id="playerNo">#10</span></div>
-    <div id="playerLabel">PLAYER 10</div>
-    <div class="stamina"><span id="staminaFill"></span></div>
-  </div>
-
-  <div id="controls">
-    <div id="stick" aria-label="選手移動">
-      <div class="stickRing"></div><div id="knob"></div><span class="stickLabel">MOVE</span>
-    </div>
-  </div>
-  <div id="message"></div>
-</main>
-<script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"}}
-</script>
-<script>
-window.__gameReady=false;
-window.__lastGameError="";
-window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||e?.error||"runtime error")});
-window.addEventListener("unhandledrejection",e=>{window.__lastGameError=String(e?.reason?.message||e?.reason||"promise rejection")});
-</script>
-<script type="module" src="./src/game-hardreset.js?v=iphone-rebuild-20260920-02"></script>
-</body>
-</html>
+<!doctype html><html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07131b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>FOOTBALL</title><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./style.css?v=20260920-home-02"></head><body><main id="app">
+<section id="homeScreen" class="screen active"><div class="homeBg"></div><header class="homeHeader"><div><div class="brand">FOOTBALL</div><div class="season">SEASON • WORLD LEGENDS</div></div><div class="currency"><span>GP</span><b id="gp">10000</b><span>◆</span><b id="coins">100</b></div></header>
+<div class="hero"><div class="heroCopy"><span class="eyebrow">LIVE MATCH</span><h1>BUILD YOUR<br>LEGACY</h1><p>Collect legendary footballers, build your squad and play fast touch-and-flick matches.</p><button id="playNow" class="primary">PLAY MATCH</button></div><div class="heroCard"><div class="cardGlow"></div><div class="cardTier">EPIC</div><div class="cardName">LIONEL<br>MESSI</div><div class="cardPos">AMF • 98</div></div></div>
+<div class="homeGrid"><button class="tile" data-nav="gacha"><span class="tileIcon">✦</span><b>GACHA</b><small>LEGENDS • SPECIAL</small></button><button class="tile" data-nav="squad"><span class="tileIcon">◈</span><b>SQUAD</b><small>FORMATION • PLAYERS</small></button><button class="tile" data-nav="collection"><span class="tileIcon">▦</span><b>COLLECTION</b><small><span id="ownedCount">0</span> PLAYERS</small></button><button class="tile" data-nav="training"><span class="tileIcon">↗</span><b>TRAINING</b><small>LEVEL • SKILLS</small></button></div>
+<nav class="bottomNav"><button class="navBtn active" data-nav="home"><b>HOME</b><small>⌂</small></button><button class="navBtn" data-nav="squad"><b>SQUAD</b><small>◈</small></button><button class="navBtn" data-nav="gacha"><b>GACHA</b><small>✦</small></button><button class="navBtn" data-nav="collection"><b>PLAYERS</b><small>▦</small></button></nav></section>
+<section id="panelScreen" class="screen panelScreen"><header class="panelHeader"><button id="panelBack">‹</button><div><div id="panelTitle">GACHA</div><small id="panelSubtitle">LEGENDARY PLAYER DRAW</small></div><div class="currency mini"><span>GP</span><b id="gp2">10000</b></div></header><div id="panelBody"></div></section>
+<section id="matchScreen" class="screen matchScreen"><div id="game" aria-label="3D soccer game"></div><div id="boot">FOOTBALL<br><small>3D MATCH ENGINE</small></div>
+<header id="matchbar"><div class="teamBadge home">H</div><div class="teamName">LEGENDS</div><div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">00:00</span></div><div class="teamName away">CLASSICS</div><div class="teamBadge away">A</div></header>
+<div id="topTools"><div class="pill"><span class="dot"></span><span id="matchState">LIVE</span></div></div><div id="playerCard"><div class="playerCardTop"><span id="playerRole">FW</span><span id="playerNo">#10</span></div><div id="playerLabel">PLAYER 10</div><div class="stamina"><span id="staminaFill"></span></div></div>
+<div id="controls"><div id="stick" aria-label="選手移動"><div class="stickRing"></div><div id="knob"></div><span class="stickLabel">MOVE</span></div></div>
+<div id="radar" aria-hidden="true"></div><div id="opponentCard"><span>AWAY</span><b id="opponentName">PLAYER 10</b><small id="opponentNo">#10</small></div><div id="gestureHint">TAP • PASS &nbsp; ↑ SHOOT &nbsp; ↓ THROUGH</div>
+<button id="matchExit" class="matchExit">MENU</button><div id="message"></div></section></main>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"}}</script>
+<script>window.__gameReady=false;window.__lastGameError="";window.addEventListener("error",e=>window.__lastGameError=String(e?.message||e?.error||"runtime error"));window.addEventListener("unhandledrejection",e=>window.__lastGameError=String(e?.reason?.message||e?.reason||"promise rejection"));</script>
+<script type="module" src="./src/home.js?v=20260920-home-02"></script><script type="module" src="./src/game-hardreset.js?v=20260920-home-02"></script></body></html>
