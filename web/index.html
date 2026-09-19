@@ -33,7 +33,7 @@ window.addEventListener("error",function(e){
   function draw(){var w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b301b";ctx.fillRect(0,0,w,h);var m=Math.min(w*.05,h*.08),pw=w-2*m,ph=Math.min(h*.72,pw*.64);var x=m,y=(h-ph)/2;ctx.fillStyle="#176b38";ctx.fillRect(x,y,pw,ph);ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.strokeRect(x,y,pw,ph);ctx.beginPath();ctx.moveTo(x+pw/2,y);ctx.lineTo(x+pw/2,y+ph);ctx.stroke();ctx.beginPath();ctx.arc(x+pw/2,y+ph/2,ph*.14,0,Math.PI*2);ctx.stroke();
     function p(px,py,c,n){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x+px*pw,y+py*ph,Math.max(9,ph*.022),0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText(n,x+px*pw,y+py*ph+3)}
     for(var i=0;i<11;i++){p(.08+(i%4)*.16,.14+Math.floor(i/4)*.36,i===0?"#287cf0":"#2f78d0",i+1);p(.92-(i%4)*.16,.14+Math.floor(i/4)*.36,"#d93445",i+1)}p(.5,.5,"#fff","");ctx.fillStyle="#fff";ctx.font="900 28px system-ui";ctx.textAlign="center";ctx.fillText("3D SOCCER",w/2,Math.max(42,y-18));ctx.font="700 13px system-ui";ctx.fillText("3D engine loading / fallback view",w/2,y+ph+28)}
-  resize();draw();addEventListener("resize",function(){resize();draw()});var b=document.getElementById("boot");if(b){b.classList.remove("ready");b.innerHTML="3D ENGINE ERROR<br><small>Fallback match view is active</small>"}
+  cv.style.display="block";resize();draw();addEventListener("resize",function(){resize();draw()});var b=document.getElementById("boot");if(b){b.classList.remove("ready");b.innerHTML="3D ENGINE ERROR<br><small>Fallback match view is active</small>"}
 });
 </script>
 <script type="importmap">
