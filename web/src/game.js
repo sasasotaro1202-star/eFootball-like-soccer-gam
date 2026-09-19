@@ -19,6 +19,14 @@ mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);
 const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
 for(const x of[-54.2,54.2]){const g=new THREE.Group(),pm=M(0xffffff,.35);g.add(cyl(.16,3.1,pm,-7,1.55,0),cyl(.16,3.1,pm,7,1.55,0),box(.16,.16,14,pm,0,3.1,0));g.position.x=x;scene.add(g)}
 
+function jerseyNumberTexture(number,color){
+ const canvas=document.createElement("canvas");canvas.width=128;canvas.height=128;
+ const ctx=canvas.getContext("2d");ctx.clearRect(0,0,128,128);
+ ctx.font="900 76px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.lineWidth=10;ctx.strokeStyle="rgba(0,0,0,.55)";ctx.strokeText(String(number),64,66);
+ ctx.fillStyle=color;ctx.fillText(String(number),64,66);
+ const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;return tex;
+}
 function makePlayer(team,number,controlled=false,role="MID",profileOverrides={}){
  const g=new THREE.Group();
  const palette=team===blue
@@ -50,8 +58,12 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  const bootL=box(.31,.18,.58,bootMat,-.24*v.shoulder,.09,-.18),bootR=box(.31,.18,.58,bootMat,.24*v.shoulder,.09,-.18);
  const stripeL=box(.025,.12,.64,accentMat,-.24*v.shoulder,1.02,.315),stripeR=box(.025,.12,.64,accentMat,.24*v.shoulder,.45,.315);
  const badge=box(.18,.22,.035,accentMat,0,2.32,-.39);
- g.add(torso,neck,head,hair,shorts,armL,armR,sleeveL,sleeveR,thighL,thighR,shinL,shinR,bootL,bootR,stripeL,stripeR,badge);
- g.userData.legL=thighL;g.userData.legR=thighR;g.userData.armL=armL;g.userData.armR=armR;
+ const numberFront=new THREE.Mesh(new THREE.PlaneGeometry(.48,.52),new THREE.MeshBasicMaterial({map:jerseyNumberTexture(number,team===blue?"#ffffff":"#ffffff"),transparent:true,depthWrite:false}));
+ numberFront.position.set(0,2.18,-.355);
+ const numberBack=new THREE.Mesh(new THREE.PlaneGeometry(.48,.52),new THREE.MeshBasicMaterial({map:jerseyNumberTexture(number,team===blue?"#ffffff":"#ffffff"),transparent:true,depthWrite:false}));
+ numberBack.position.set(0,2.18,.355);numberBack.rotation.y=Math.PI;
+ g.add(torso,neck,head,hair,shorts,armL,armR,sleeveL,sleeveR,thighL,thighR,shinL,shinR,bootL,bootR,stripeL,stripeR,badge,numberFront,numberBack);
+ g.userData.legL=thighL;g.userData.legR=thighR;g.userData.armL=armL;g.userData.armR=armR;g.userData.torso=torso;g.userData.head=head;
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:controlled?.9:.25,side:THREE.DoubleSide}));
  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(v.scale);
@@ -125,6 +137,10 @@ function animatePlayers(dt){
    if(a.userData.legL&&a.userData.legR){
      a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
      a.userData.legR.rotation.x=-Math.sin(a.userData.walkPhase)*swing;
+     a.userData.armL.rotation.x=-Math.sin(a.userData.walkPhase)*swing*.7;
+     a.userData.armR.rotation.x=Math.sin(a.userData.walkPhase)*swing*.7;
+     if(a.userData.torso){a.userData.torso.position.y=2.18+Math.abs(Math.sin(a.userData.walkPhase*2))*.025*Math.min(speed/8,1)}
+     if(a.userData.head){a.userData.head.position.y=3.25+Math.abs(Math.sin(a.userData.walkPhase*2))*.018*Math.min(speed/8,1)}
    }
    a.userData.lastX=a.position.x;a.userData.lastZ=a.position.z;
  }
