@@ -8,7 +8,7 @@ const root=document.querySelector("#game"),scoreEl=document.querySelector("#scor
 const boot=document.querySelector("#boot");
 window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||"runtime error");window.__lastGameStack=String(e?.error?.stack||"")});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x020805);scene.fog=new THREE.Fog(0x020805,92,190);
+const scene=new THREE.Scene();\n// Presentation scene is deliberately rebuilt around a stable TV/broadcast coordinate system.\nscene.background=new THREE.Color(0x07150f);\nscene.fog=null;
 const camera=new THREE.PerspectiveCamera(49,1,.1,220);
 
 // Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
@@ -88,70 +88,83 @@ const fill=new THREE.HemisphereLight(0x8fb8ff,0x183b25,1.15);scene.add(fill);
 const rimA=new THREE.DirectionalLight(0x6fa8ff,0.75);rimA.position.set(42,28,-34);scene.add(rimA);
 const rimB=new THREE.DirectionalLight(0xff8b72,0.42);rimB.position.set(-38,20,-42);scene.add(rimB);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
-function addStadiumAtmosphere(){
- const standMat=M(0x18242d),roofMat=M(0x0a1116),seatMat=M(0x27353d);
- for(const side of[-1,1]){
-  const z=side*43;
-  scene.add(box(122,5,9,standMat,0,2.4,z),box(122,1,9,roofMat,0,7.8,z));
-  for(let x=-50;x<=50;x+=8)scene.add(box(5,.12,1.6,seatMat,x,5.2,z-side*1.8));
-  // Low-cost crowd blocks: enough depth to read as a stadium without hundreds of meshes.
-  const crowdMat=M(side<0?0x5b6670:0x49545e,.92);
-  for(let x=-49;x<=49;x+=2.6){
-    for(let row=0;row<3;row++){
-      const h=.48+(Math.abs(Math.sin(x*1.7+row*2.1))*.24);
-      scene.add(box(.72,h,.42,crowdMat,x,5.55+row*.62,z-side*2.25));
-    }
+function buildPresentationWorld(){
+  // Clean broadcast world: one guaranteed floor, one centered pitch, and stadium
+  // geometry kept outside the camera's playing corridor. This avoids the old
+  // near-stand/roof occlusion that produced the white wedge and black lower half.
+  const arenaFloor=new THREE.Mesh(
+    new THREE.PlaneGeometry(320,260),
+    new THREE.MeshBasicMaterial({color:0x0b2b1a,side:THREE.DoubleSide})
+  );
+  arenaFloor.rotation.x=-Math.PI/2;arenaFloor.position.y=-.22;scene.add(arenaFloor);
+
+  const pitchBase=new THREE.Mesh(
+    new THREE.BoxGeometry(FIELD.w,.18,FIELD.d),
+    new THREE.MeshBasicMaterial({color:0x0d4a27})
+  );
+  pitchBase.position.y=-.08;scene.add(pitchBase);
+
+  const stripeMats=[0x176f3c,0x156838];
+  for(let i=0;i<10;i++){
+    const stripe=new THREE.Mesh(
+      new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),
+      new THREE.MeshBasicMaterial({color:stripeMats[i%2],side:THREE.DoubleSide})
+    );
+    stripe.rotation.x=-Math.PI/2;
+    stripe.position.set(0,.015,-FIELD.d/2+(i+.5)*FIELD.d/10);
+    scene.add(stripe);
   }
- }
- for(const x of[-58,58]){
-  const pole=cyl(.16,18,M(0x313b43),x,9,0);scene.add(pole);
-  const lamp=new THREE.PointLight(0xffefc5,11,50,2);lamp.position.set(x,18,0);scene.add(lamp);
- }
+
+  const fieldLine=new THREE.MeshBasicMaterial({color:0xf5f8f6,side:THREE.DoubleSide});
+  const mark=(x1,z1,x2,z2,w=.12)=>{
+    const len=Math.hypot(x2-x1,z2-z1);
+    const o=new THREE.Mesh(new THREE.BoxGeometry(w,.035,len),fieldLine);
+    o.position.set((x1+x2)/2,.055,(z1+z2)/2);
+    o.rotation.y=Math.atan2(x2-x1,z2-z1);
+    scene.add(o);
+  };
+  mark(-53,-34,53,-34);mark(-53,34,53,34);
+  mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);
+  mark(-53,-20,-37,-20);mark(-53,20,-37,20);mark(37,-20,53,-20);mark(37,20,53,20);
+  mark(-37,-20,-37,20);mark(37,-20,37,20);
+  mark(-53,-9,-44,-9);mark(-53,9,-44,9);mark(44,-9,53,-9);mark(44,9,53,9);
+  const circle=new THREE.Mesh(new THREE.RingGeometry(8.92,9.08,96),fieldLine);
+  circle.rotation.x=-Math.PI/2;circle.position.y=.06;scene.add(circle);
+  const spot=new THREE.Mesh(new THREE.CircleGeometry(.24,24),fieldLine);
+  spot.rotation.x=-Math.PI/2;spot.position.y=.061;scene.add(spot);
+
+  // Broadcast-safe goals: all white goal geometry is confined to the end lines.
+  for(const gx of[-54.15,54.15]){
+    const goal=new THREE.Group();
+    const postMat=M(0xf4f6f4,.22);
+    goal.add(cyl(.12,3.6,postMat,-7,1.8,0),cyl(.12,3.6,postMat,7,1.8,0),box(.12,.12,14,postMat,0,3.6,0));
+    goal.add(box(.08,3.1,14,postMat,0,1.58,gx<0?1.15:-1.15));
+    const netMat=new THREE.MeshBasicMaterial({color:0xdfe7e2,transparent:true,opacity:.18,wireframe:true});
+    const net=new THREE.Mesh(new THREE.BoxGeometry(14,3.1,2.3),netMat);net.position.set(0,1.58,gx<0?1.15:-1.15);goal.add(net);
+    goal.position.x=gx;scene.add(goal);
+  }
+
+  // Far-side and lateral stands only. The camera corridor in front of the pitch is empty.
+  const standMat=M(0x17242a,.9),seatMat=M(0x26353d,.95),roofMat=M(0x0e1519,.96),adMat=M(0x111c21,.88);
+  scene.add(box(124,5.5,9,standMat,0,2.75,45));
+  scene.add(box(124,1.0,9,roofMat,0,8.0,47));
+  for(let x=-54;x<=54;x+=6)scene.add(box(4.8,.16,1.8,seatMat,x,5.7,41.5));
+  for(let x=-53;x<=53;x+=8)scene.add(box(7,.9,.35,adMat,x,.8,36.2));
+  for(const sx of[-62,62]){
+    scene.add(box(8,5,108,standMat,sx,2.5,4));
+    scene.add(box(8,1,108,roofMat,sx,7.7,4));
+  }
+  for(const x of[-58,58]){
+    const mast=cyl(.16,19,M(0x313b43,.8),x,9,28);scene.add(mast);
+    const lamp=new THREE.PointLight(0xffefcf,8,58,2);lamp.position.set(x,18,28);scene.add(lamp);
+  }
+  // Subtle stadium edge lines keep the horizon readable without crossing the pitch.
+  const edgeMat=new THREE.MeshBasicMaterial({color:0x0f4b2b});
+  const edge=new THREE.Mesh(new THREE.BoxGeometry(120,.08,3),edgeMat);edge.position.set(0,.02,38);scene.add(edge);
 }
 function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
-addStadiumAtmosphere();
-function mark(x1,z1,x2,z2,w=.16){const l=Math.hypot(x2-x1,z2-z1),o=box(w,.035,l,lineMat);o.position.set((x1+x2)/2,.025,(z1+z2)/2);o.rotation.y=Math.atan2(x2-x1,z2-z1);scene.add(o)}
-const ground=new THREE.Mesh(
- new THREE.PlaneGeometry(122,84),
- new THREE.MeshBasicMaterial({color:0x071c10,side:THREE.DoubleSide})
-);
-ground.rotation.x=-Math.PI/2;ground.position.y=-.08;ground.receiveShadow=true;scene.add(ground);
-// Use a thin solid field base plus a double-sided grass surface. This removes
-// any mobile depth/back-face ambiguity and guarantees the playing surface is
-// visible above the surrounding ground.
-const pitchBase=new THREE.Mesh(
- new THREE.BoxGeometry(FIELD.w,.16,FIELD.d),
- new THREE.MeshBasicMaterial({color:0x0b3f22})
-);
-pitchBase.position.y=-.06;pitchBase.receiveShadow=true;scene.add(pitchBase);
-const pitch=new THREE.Mesh(
- new THREE.PlaneGeometry(FIELD.w,FIELD.d,1,1),
- new THREE.MeshBasicMaterial({color:0x176b38,side:THREE.DoubleSide})
-);
-pitch.rotation.x=-Math.PI/2;pitch.position.y=.045;pitch.receiveShadow=true;scene.add(pitch);
-for(let i=0;i<10;i++){
- const stripe=new THREE.Mesh(
-   new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),
-   new THREE.MeshBasicMaterial({color:i%2?0x155f34:0x176b38,side:THREE.DoubleSide})
- );
- stripe.rotation.x=-Math.PI/2;
- stripe.position.set(0,.05,-FIELD.d/2+(i+.5)*FIELD.d/10);
- stripe.receiveShadow=true;
- scene.add(stripe)
-}
-for(const z of[-34,34])for(let x=-53;x<=53;x+=2)scene.add(cyl(.035,.18,M(0xe9f0ea),x,.06,z));
-mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);mark(-37,-20,-37,20);mark(37,-20,37,20);
-const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
-for(const x of[-54.2,54.2]){
- const g=new THREE.Group(),pm=M(0xf4f4f4,.24),netMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.22,wireframe:true});
- g.add(cyl(.13,3.6,pm,-7,1.8,0),cyl(.13,3.6,pm,7,1.8,0),box(.13,.13,14,pm,0,3.6,0));
- g.add(box(.10,3.15,14,pm,0,1.58,x<0?1.15:-1.15));
- const back=new THREE.Mesh(new THREE.BoxGeometry(14,3.15,2.3,12,6,3),netMat);back.position.set(0,1.58,x<0?1.15:-1.15);g.add(back);
- for(let zi=-6;zi<=6;zi+=2){const v=box(.025,3.1,.025,netMat,zi,1.58,x<0?.65:-.65);g.add(v)}
- for(let yi=.5;yi<=3;yi+=.5){const h=box(14,.025,.025,netMat,0,yi,x<0?.65:-.65);g.add(h)}
- g.position.x=x;scene.add(g)
-}
+buildPresentationWorld();
 
 function jerseyNumberTexture(number,color){
  const canvas=document.createElement("canvas");canvas.width=128;canvas.height=128;
@@ -620,43 +633,27 @@ function update(dt){
  const blendX=p.position.x*.54+ball.position.x*.46,blendZ=p.position.z*.54+ball.position.z*.46;
  const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.24,-8,8);
  const danger=Math.max(0,Math.abs(ball.position.x)-35)/18;
- const mobileView=matchMedia("(pointer:coarse)").matches||navigator.maxTouchPoints>0;
- // Stable mobile broadcast camera. Keep the camera clearly above the pitch and
- // point at the playing surface; do not let the adaptive camera drift toward the stands.
- if(mobileView){
-   // Stable landscape-first broadcast camera. The previous fit calculation
-   // clamped a real iPhone landscape aspect (~2:1) down to 1.25, putting the
-   // camera too close to the pitch and producing the narrow/white band seen
-   // on-device. Keep the actual viewport aspect and give the scene generous
-   // vertical clearance over the near stand.
-   const aspect=THREE.MathUtils.clamp(camera.aspect,.45,2.6);
-   const verticalFov=THREE.MathUtils.degToRad(52);
-   const horizontalFov=2*Math.atan(Math.tan(verticalFov*.5)*aspect);
-   const widthFit=(FIELD.w*.5)/Math.tan(horizontalFov*.5);
-   const cameraDistance=THREE.MathUtils.clamp(widthFit*1.55,100,230);
-   const elevation=THREE.MathUtils.degToRad(aspect>=1.15?50:42);
-   const y=Math.sin(elevation)*cameraDistance;
-   const z=Math.cos(elevation)*cameraDistance;
-   camera.position.set(0,y,z);
-   camera.fov=52;
-   camera.near=.1;
-   camera.far=500;
-   camera.updateProjectionMatrix();
-   camera.lookAt(0,0,0);
- }else{
-   const height=10.2+Math.min(2.1,ballSpeed*.045)+danger*.55;
-   const distance=14.4+Math.min(3.4,ballSpeed*.075);
-   const t=new THREE.Vector3(blendX,0,blendZ);
-   const want=new THREE.Vector3(t.x-dir*distance+sideOffset*.16,height,t.z+sideOffset+dir*2.8);
-   camera.position.lerp(want,1-Math.pow(.00055,dt));
-   camera.fov=THREE.MathUtils.lerp(camera.fov,47.5+Math.min(5.5,ballSpeed*.16)+danger*1.8,1-Math.pow(.0007,dt));
-   camera.updateProjectionMatrix();
-   camera.lookAt(blendX+dir*(4.8+Math.min(3,ballSpeed*.06)),1.2,blendZ+sideOffset*.18);
- }
+ updateBroadcastCamera(dt);
 animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
 }
+function updateBroadcastCamera(dt){
+  // TV camera: fixed on the near touchline, with restrained ball-follow pan.
+  // This is intentionally stable on both portrait and landscape mobile viewports.
+  const aspect=THREE.MathUtils.clamp(camera.aspect,.55,2.6);
+  const landscape=aspect>=1.0;
+  const targetX=THREE.MathUtils.clamp(ball.position.x*.16,-8,8);
+  const targetZ=THREE.MathUtils.clamp(ball.position.z*.08,-2.5,2.5);
+  const desired=new THREE.Vector3(targetX,53.5,landscape?-91:-103);
+  const alpha=1-Math.pow(.00025,Math.min(.05,dt));
+  camera.position.lerp(desired,alpha);
+  camera.fov=landscape?43:38;
+  camera.near=.1;camera.far=500;
+  camera.updateProjectionMatrix();
+  camera.lookAt(targetX*.75,0.4,landscape?3.5:5.5+targetZ);
+}
+
 const radarCanvas=document.querySelector("#radar"),radarCtx=radarCanvas?.getContext("2d"),staminaFill=document.querySelector("#staminaFill"),playerLabel=document.querySelector("#playerLabel"),playerRole=document.querySelector("#playerRole"),playerNo=document.querySelector("#playerNo");
 function updateRadar(){
  if(!radarCtx)return;
@@ -720,7 +717,7 @@ const touchControl={
  leftId:null,rightId:null,leftStart:null,rightStart:null,leftAt:0,rightAt:0,
  lastLeftTap:0,lastRightTap:0,rightHeld:false,sharpTriggered:false
 };
-const gameSurface=document.querySelector("#game");
+const gameSurface=document.querySelector("#game");\nif(gameSurface)gameSurface.style.touchAction="none";
 // Touch & Flick input follows the same two-sided interaction model as modern
 // mobile touch-and-flick football controls: left side = movement/dribble,
 // right side = kick/press intent. There are no visible action buttons.
