@@ -1,0 +1,5 @@
+.godot/
+*.tmp
+*.log
+.DS_Store
+export_presets.cfg
