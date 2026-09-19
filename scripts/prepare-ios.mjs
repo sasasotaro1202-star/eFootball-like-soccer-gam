@@ -24,11 +24,13 @@ const orientationBlock = `\t<key>UISupportedInterfaceOrientations</key>
 \t</array>
 `;
 
-if (plist.includes("<key>UISupportedInterfaceOrientations</key>")) {
-  plist = plist.replace(
-    /\s*<key>UISupportedInterfaceOrientations<\\/key>[\\s\\S]*?<\\/array>/,
-    "\n" + orientationBlock.trimEnd()
-  );
+const orientationKey = "<key>UISupportedInterfaceOrientations</key>";
+if (plist.includes(orientationKey)) {
+  const keyIndex = plist.indexOf(orientationKey);
+  const arrayStart = plist.indexOf("<array>", keyIndex);
+  const arrayEnd = plist.indexOf("</array>", arrayStart);
+  if (arrayStart < 0 || arrayEnd < 0) throw new Error("Malformed UISupportedInterfaceOrientations in Info.plist");
+  plist = plist.slice(0, keyIndex) + orientationBlock.trimEnd() + plist.slice(arrayEnd + "</array>".length);
 } else {
   plist = plist.replace("</dict>", orientationBlock + "</dict>");
 }
