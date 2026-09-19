@@ -16,8 +16,8 @@ jobs:
       - name: Validate rebuilt game
         run: |
           test -f web/index.html
-          test -f web/src/game.js
-          node --check web/src/game.js
+          test -f web/src/game-hardreset.js
+          node --check web/src/game-hardreset.js
           grep -q 'new THREE.WebGLRenderer' web/src/game.js
           grep -q 'buildPitch' web/src/game.js
           grep -q 'updateBroadcastCamera' web/src/game.js
