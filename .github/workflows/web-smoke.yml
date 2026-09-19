@@ -30,6 +30,7 @@ jobs:
           node <<'NODE'
           const fs=require("fs");
           const s=fs.readFileSync("web/src/game.js","utf8");
+          const h=fs.readFileSync("web/index.html","utf8");
           const required=[
             ["kickoff gate",/state\.firstKickoff=false;state\.userTouched=true;state\.aiEnabled=true/],
             ["tactical AI",/function tacticalTarget\(/],
@@ -69,7 +70,7 @@ jobs:
             ["broadcast camera",/sideOffset=.*ball\.position\.z-p\.position\.z/],
             ["touch guide",/TOUCH &amp; FLICK/]
           ];
-          for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
+          for(const [name,re] of required){ const target=name==="touch guide"?h:s; if(!re.test(target)) throw new Error("Missing gameplay invariant: "+name); }
           if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
           if((s.match(/function addStadiumAtmosphere/g)||[]).length!==1) throw new Error("Duplicate stadium initializer");
           if((s.match(/function kickTo\(/g)||[]).length!==1) throw new Error("Duplicate kickTo implementation");
