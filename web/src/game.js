@@ -8,7 +8,10 @@ const root=document.querySelector("#game"),scoreEl=document.querySelector("#scor
 const boot=document.querySelector("#boot");
 window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||"runtime error");window.__lastGameStack=String(e?.error?.stack||"")});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
-const scene=new THREE.Scene();\n// Presentation scene is deliberately rebuilt around a stable TV/broadcast coordinate system.\nscene.background=new THREE.Color(0x07150f);\nscene.fog=null;
+const scene=new THREE.Scene();
+// Presentation scene is deliberately rebuilt around a stable TV/broadcast coordinate system.
+scene.background=new THREE.Color(0x07150f);
+scene.fog=null;
 const camera=new THREE.PerspectiveCamera(49,1,.1,220);
 
 // Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
@@ -174,7 +177,8 @@ function jerseyNumberTexture(number,color){
  ctx.fillStyle=color;ctx.fillText(String(number),64,66);
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 }
-const ENABLE_RIGGED_GLTF=false; // Stable mobile shipping path; enable only after a local GLTF validation/playtest gate.\nconst RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
+const ENABLE_RIGGED_GLTF=false; // Stable mobile shipping path; enable only after a local GLTF validation/playtest gate.
+const RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
 const ANIMATION_LIBRARY_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/universal-animation-library.glb";
 const RIGGED_LOAD_TIMEOUT=9000;
 function loadWithTimeout(loader,url){
@@ -717,7 +721,8 @@ const touchControl={
  leftId:null,rightId:null,leftStart:null,rightStart:null,leftAt:0,rightAt:0,
  lastLeftTap:0,lastRightTap:0,rightHeld:false,sharpTriggered:false
 };
-const gameSurface=document.querySelector("#game");\nif(gameSurface)gameSurface.style.touchAction="none";
+const gameSurface=document.querySelector("#game");
+if(gameSurface)gameSurface.style.touchAction="none";
 // Touch & Flick input follows the same two-sided interaction model as modern
 // mobile touch-and-flick football controls: left side = movement/dribble,
 // right side = kick/press intent. There are no visible action buttons.
