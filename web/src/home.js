@@ -5,9 +5,11 @@ document.addEventListener("click",(e)=>{
   const b=e.target.closest("button");
   if(!b)return;
   const nav=b.dataset?.nav;
-  if(nav){e.preventDefault();if(nav==="home")home();else panel(nav);return;}
-  if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();start();return;}
-  if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();home();return;}
+  if(nav){e.preventDefault();e.stopPropagation();if(nav==="home")home();else if(["gacha","squad","collection","training","missions","extras"].includes(nav))panel(nav);return;}
+  if(b.id==="quickPlay"||b.id==="playNow"||b.id==="squadPlay"){e.preventDefault();e.stopPropagation();start();return;}
+  if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return;}
+  if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return;}
+  if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return;}
 });
 
 const state={gp:+localStorage.getItem("football_gp")||10000,coins:+localStorage.getItem("football_coins")||100,owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
@@ -53,8 +55,8 @@ function bannerPool(id){const b=GACHA_BANNERS.find(x=>x.id===id)||GACHA_BANNERS[
 function pickPlayer(){const pool=bannerPool(activeBanner),r=Math.random();let tier;if(activeBanner==="legend")tier=r<.08?"LEGEND":r<.35?"EPIC":"HIGHLIGHT";else if(activeBanner==="epic")tier=r<.05?"LEGEND":r<.25?"EPIC":"HIGHLIGHT";else if(activeBanner==="highlight")tier=r<.02?"LEGEND":r<.16?"EPIC":"HIGHLIGHT";else tier=r<.03?"EPIC":r<.32?"HIGHLIGHT":"STANDARD";const same=pool.filter(p=>String(p.rarity).toUpperCase()===tier);return (same.length?same:pool)[Math.floor(Math.random()*(same.length?same:pool).length)]||PLAYER_POOL[0]}
 function renderGacha(kind="epic"){
  activeBanner=kind;const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind),featured=pool.slice(0,6);
- $("#panelBody").innerHTML=`<div class="gachaTabs">${GACHA_BANNERS.map(x=>`<button class="gachaTab ${x.id===kind?"active":""}" data-banner="${x.id}">${x.title.split(" • ")[0]}</button>`).join("")}</div><div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>${esc(b.title)}</h2><p>${esc(b.sub)}</p><div class="gachaBadges"><span>抽選確率表示</span><span>10連特典</span><span>重複は育成素材へ</span></div></div><div class="gachaOrb">✦</div></div><div class="drawRow"><button class="drawBtn" data-draw="1">DRAW ×1<small>${b.cost} ◆</small></button><button class="drawBtn gold" data-draw="10">DRAW ×10<small>${b.cost*9} ◆ • BONUS</small></button></div><div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">BOX DRAW</button><button class="subGacha" data-rates="1">RATES</button></div><div class="sectionTitle">FEATURED PLAYERS <span>${pool.length} IN LIST</span></div><div class="playerGrid">${featured.map(card).join("")}</div>`;
- document.querySelectorAll("[data-banner]").forEach(btn=>btn.onclick=()=>renderGacha(btn.dataset.banner));document.querySelectorAll("[data-draw]").forEach(btn=>btn.onclick=()=>draw(+btn.dataset.draw,b.cost));document.querySelector("[data-free]")?.addEventListener("click",()=>draw(1,0,true));document.querySelector("[data-box]")?.addEventListener("click",()=>showMessage("BOX DRAW: 30名から抽選する限定ボックスを準備中"));document.querySelector("[data-rates]")?.addEventListener("click",()=>showMessage("確率: LEGEND 3% • EPIC 12% • HIGHLIGHT 30% • STANDARD 55%"));
+ $("#panelBody").innerHTML=`<div class="gachaTabs">${GACHA_BANNERS.map(x=>`<button class="gachaTab ${x.id===kind?"active":""}" data-banner="${x.id}">${x.title.split(" • ")[0]}</button>`).join("")}</div><div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>${esc(b.title)}</h2><p>${esc(b.sub)}</p><div class="gachaBadges"><span>抽選確率表示</span><span>10連特典</span><span>重複は育成素材へ</span></div></div><div class="gachaOrb">✦</div></div><div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="${b.cost}">DRAW ×1<small>${b.cost} ◆</small></button><button class="drawBtn gold" data-draw="10" data-cost="${b.cost}">DRAW ×10<small>${b.cost*9} ◆ • BONUS</small></button></div><div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">BOX DRAW</button><button class="subGacha" data-rates="1">RATES</button></div><div class="sectionTitle">FEATURED PLAYERS <span>${pool.length} IN LIST</span></div><div class="playerGrid">${featured.map(card).join("")}</div>`;
+ document.querySelectorAll("[data-banner]").forEach(btn=>btn.onclick=()=>renderGacha(btn.dataset.banner));document.querySelector("[data-box]")?.addEventListener("click",()=>showMessage("BOX DRAW: 30名から抽選する限定ボックスを準備中"));document.querySelector("[data-rates]")?.addEventListener("click",()=>showMessage("確率: LEGEND 3% • EPIC 12% • HIGHLIGHT 30% • STANDARD 55%"));
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
@@ -80,7 +82,7 @@ function finishGachaPresentation(skip=false){
   stage.classList.remove("charging","revealing");
   stage.classList.add("show","complete");
   const ms=skip?350:1500;
-  gachaPresentation.timers.push(setTimeout(()=>{stage.classList.remove("show","complete");panel("gacha")},ms));
+  gachaPresentation.timers.push(setTimeout(()=>{stage.onclick=null;stage.classList.remove("show","complete");panel("gacha")},ms));
 }
 function showSigning(results){
   const stage=ensureGachaStage();if(!stage)return;
@@ -92,7 +94,7 @@ function showSigning(results){
   stage.classList.remove("complete");stage.classList.add("show","charging");
   gachaPresentation.timers.push(setTimeout(()=>{
     stage.classList.remove("charging");stage.classList.add("revealing");
-    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;revealGacha()};
+    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;if(e.target.closest(".gachaResult,.stageOrb,.stageName,.stageRarity"))revealGacha()};
   },850));
 }
 function revealGacha(){
@@ -107,7 +109,7 @@ function revealGacha(){
   const top=order[0]||results[0];
   $("#stageName").textContent=top?.name||"PLAYER";
   $("#stageRarity").textContent=(top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
-  stage.classList.remove("charging");stage.classList.add("complete");
+  stage.onclick=null;stage.classList.remove("charging");stage.classList.add("complete");
   gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?3200:2500));
 }
 function draw(n,unitCost=100,free=false){
