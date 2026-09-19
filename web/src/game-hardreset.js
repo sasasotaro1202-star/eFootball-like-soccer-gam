@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { PLAYER_POOL } from "./player-pool.generated.js";
 
 const $ = (s) => document.querySelector(s);
 const mount = $("#game");
@@ -91,6 +92,7 @@ function makePlayer(team, index, role) {
 
   g.userData = {
     team, index, role, number: index + 1,
+    name: PLAYER_POOL[(team * 11 + index) % PLAYER_POOL.length]?.name || `PLAYER ${index + 1}`,
     speed: role === "GK" ? 4.0 : 5.0 + Math.random() * 0.7,
     stamina: 100,
     homeX: 0, homeZ: 0,
@@ -255,7 +257,7 @@ function selectPlayer(index) {
   const p = home[state.selected];
   if (!p) return;
   p.userData.selectedRing.visible = true;
-  playerLabel.textContent = "PLAYER " + String(p.userData.number).padStart(2, "0");
+  playerLabel.textContent = p.userData.name;
   playerNo.textContent = "#" + p.userData.number;
   playerRole.textContent = p.userData.role;
 }
@@ -709,7 +711,7 @@ function bootGame() {
     updateHUD();
 
     window.__gameReady = true;
-    window.__gameVersion = "hard-reset-20260920-03";
+    window.__gameVersion = "home-shell-20260920-01";
     window.__rendererMode = renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1";
     boot.classList.add("ready");
     setTimeout(() => boot.remove(), 500);
