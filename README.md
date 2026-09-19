@@ -58,7 +58,7 @@ CI validation: hard-reset mobile bundle smoke-tested in pull requests.
 
 ## iPhone workflow
 
-The repository now has an automated **iPhone Native Build Check** workflow. It installs Capacitor, generates the Xcode iOS project, syncs the current `web/` game into it, validates the JavaScript bundle, and performs an unsigned iPhone-simulator build.
+The repository now has an automated **Capacitor iOS project check** workflow. It installs Capacitor, generates the Xcode iOS project, syncs the current `web/` game into it, validates the JavaScript bundle, and validates the generated Xcode project and uploads it as an artifact.
 
 For a physical iPhone, download the generated `football-3d-ios-project` artifact from the successful GitHub Actions run, open `ios/App/App.xcworkspace` on a Mac in Xcode, select the iPhone, enable automatic signing with your Apple Account, and Run.
 
