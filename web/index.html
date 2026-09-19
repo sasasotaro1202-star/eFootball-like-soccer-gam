@@ -26,8 +26,10 @@
 </main>
 <script>
 window.__gameModuleLoaded=false;
+window.__threeBootFailed=false;
 window.addEventListener("error",function(e){
   if(window.__gameModuleLoaded)return;
+  window.__threeBootFailed=true;
   var cv=document.getElementById("fallback"),ctx=cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,2);
   function resize(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cv.style.width="100%";cv.style.height="100%";ctx.setTransform(dpr,0,0,dpr,0,0)}
   function draw(){var w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);ctx.fillStyle="#0b301b";ctx.fillRect(0,0,w,h);var m=Math.min(w*.05,h*.08),pw=w-2*m,ph=Math.min(h*.72,pw*.64);var x=m,y=(h-ph)/2;ctx.fillStyle="#176b38";ctx.fillRect(x,y,pw,ph);ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.strokeRect(x,y,pw,ph);ctx.beginPath();ctx.moveTo(x+pw/2,y);ctx.lineTo(x+pw/2,y+ph);ctx.stroke();ctx.beginPath();ctx.arc(x+pw/2,y+ph/2,ph*.14,0,Math.PI*2);ctx.stroke();
