@@ -63,3 +63,20 @@ function start(){screen("match");window.dispatchEvent(new Event("football:match-
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});$("#quickPlay")?.addEventListener("click",start);wallet();
 window.__footballPanel=panel;
+
+// Unified match UX flow: MATCH PREVIEW -> KICKOFF -> PLAY -> GOAL -> FULL TIME -> REWARDS
+(function(){
+  const $=s=>document.querySelector(s);
+  const steps=["pre","kickoff","play","goal","result","reward"];
+  const setFlow=(name)=>{steps.forEach(x=>document.querySelector('[data-flow="'+x+'"]')?.classList.toggle("active",x===name));};
+  const show=(id,on)=>$(id)?.classList.toggle("hidden",!on);
+  window.__setMatchFlow=(name)=>setFlow(name);
+  document.addEventListener("click",e=>{
+    if(e.target.closest("#playNow,#quickPlay,#squadPlay")){setFlow("pre");show("#matchIntro",true);show("#matchResult",false);show("#matchReward",false);}
+    if(e.target.closest("#kickoffBtn")){setFlow("kickoff");show("#matchIntro",false);setTimeout(()=>setFlow("play"),700);}
+    if(e.target.closest("#rewardBtn")){setFlow("reward");show("#matchResult",false);show("#matchReward",true);}
+    if(e.target.closest("#rewardDoneBtn")){show("#matchReward",false);setFlow("pre");}
+  },true);
+  window.addEventListener("football:goal",()=>{setFlow("goal");setTimeout(()=>setFlow("play"),1800);});
+  window.addEventListener("football:fulltime",()=>{setFlow("result");const s=$("#score")?.textContent||"0 - 0";if($("#finalScore"))$("#finalScore").textContent=s;show("#matchResult",true);});
+})();
