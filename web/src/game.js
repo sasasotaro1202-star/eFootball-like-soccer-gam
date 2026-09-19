@@ -9,15 +9,38 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.f
 const camera=new THREE.PerspectiveCamera(54,1,.1,220);
 
 // Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
-let audioCtx=null,audioMaster=null,lastKickSfx=0,lastGoalSfx=0;
+let audioCtx=null,audioMaster=null,lastKickSfx=0,lastGoalSfx=0,crowdGain=null,crowdStarted=false,crowdTimer=null;
+function haptic(ms=12){try{if(navigator.vibrate)navigator.vibrate(ms)}catch{}}
+function startCrowdAmbience(){
+ if(crowdStarted||!audioCtx||!audioMaster)return;
+ crowdStarted=true;
+ const buffer=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate),data=buffer.getChannelData(0);
+ for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*.18;
+ const src=audioCtx.createBufferSource(),filter=audioCtx.createBiquadFilter();
+ crowdGain=audioCtx.createGain();
+ filter.type="bandpass";filter.frequency.value=820;filter.Q.value=.65;
+ crowdGain.gain.value=.012;
+ src.buffer=buffer;src.loop=true;
+ src.connect(filter);filter.connect(crowdGain);crowdGain.connect(audioMaster);src.start();
+ crowdTimer=setInterval(()=>{if(!crowdGain||!audioCtx)return;const t=audioCtx.currentTime;crowdGain.gain.cancelScheduledValues(t);crowdGain.gain.linearRampToValueAtTime(.016,t+.7);crowdGain.gain.linearRampToValueAtTime(.010,t+1.6)},1800);
+}
+function crowdSwell(level=.08,duration=1.8){
+ if(!crowdGain||!audioCtx)return;
+ const t=audioCtx.currentTime;
+ crowdGain.gain.cancelScheduledValues(t);
+ crowdGain.gain.setValueAtTime(crowdGain.gain.value,t);
+ crowdGain.gain.linearRampToValueAtTime(level,t+.16);
+ crowdGain.gain.linearRampToValueAtTime(.012,t+duration);
+}
+
 function initAudio(){if(audioCtx)return;const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioCtx=new Ctx();audioMaster=audioCtx.createGain();audioMaster.gain.value=.34;audioMaster.connect(audioCtx.destination)}
-function resumeAudio(){initAudio();if(audioCtx?.state==="suspended")audioCtx.resume().catch(()=>{})}
+function resumeAudio(){initAudio();startCrowdAmbience();if(audioCtx?.state==="suspended")audioCtx.resume().catch(()=>{})}
 function tone(freq,duration,type="sine",gain=.05,slide=0){if(!audioCtx||!audioMaster)return;const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,now);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),now+duration);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+duration);o.connect(g);g.connect(audioMaster);o.start(now);o.stop(now+duration+.02)}
-function sfxKick(){const now=performance.now();if(now-lastKickSfx<100)return;lastKickSfx=now;tone(105,.07,"triangle",.08,75);tone(55,.045,"sine",.045,-15)}
-function sfxPass(){tone(180,.055,"triangle",.035,90)}
-function sfxTackle(){tone(75,.08,"square",.035,30)}
-function sfxGoal(){const now=performance.now();if(now-lastGoalSfx<400)return;lastGoalSfx=now;[392,494,587,784].forEach((f,i)=>setTimeout(()=>tone(f,.22,"sine",.07),i*95))}
-function sfxWhistle(){tone(980,.18,"square",.045,-120);setTimeout(()=>tone(980,.18,"square",.045,-120),220)}
+function sfxKick(){const now=performance.now();if(now-lastKickSfx<100)return;lastKickSfx=now;haptic(9);tone(105,.07,"triangle",.08,75);tone(55,.045,"sine",.045,-15)}
+function sfxPass(){haptic(5);tone(180,.055,"triangle",.035,90)}
+function sfxTackle(){haptic(18);tone(75,.08,"square",.035,30);tone(48,.055,"sine",.025,-8)}
+function sfxGoal(){const now=performance.now();if(now-lastGoalSfx<400)return;lastGoalSfx=now;haptic(45);crowdSwell(.09,3.2);[392,494,587,784].forEach((f,i)=>setTimeout(()=>tone(f,.22,"sine",.07),i*95))}
+function sfxWhistle(){haptic(22);tone(980,.18,"square",.045,-120);setTimeout(()=>tone(980,.18,"square",.045,-120),220)}
 window.addEventListener("pointerdown",resumeAudio,{once:true,passive:true});
 window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
