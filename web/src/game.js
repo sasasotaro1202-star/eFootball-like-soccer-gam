@@ -309,7 +309,7 @@ function actions(){
  if(a.tackle&&performance.now()>state.tackleLock){
    state.tackleLock=performance.now()+650;resumeAudio();sfxTackle();
    let target=foes.reduce((b,x)=>dist(x,p)<dist(b,p)?x:b,foes[0]);
-   if(dist(target,p)<4.2){ball.userData.owner=null;const dx=target.position.x-p.position.x,dz=target.position.z-p.position.z,l=Math.hypot(dx,dz)||1;ball.position.set(target.position.x,target.position.y+.5,target.position.z);ball.userData.vx=dx/l*10;ball.userData.vz=dz/l*10}
+   if(dist(target,p)<4.2){ball.userData.owner=null;const dx=target.position.x-p.position.x,dz=target.position.z-p.position.z,l=Math.hypot(dx,dz)||1;ball.position.set(target.position.x,target.position.y+.5,target.position.z);ball.userData.vx=dx/l*10;ball.userData.vz=dz/l*10;p.userData.animState="tackle";p.userData.animTimer=.42}
    state.actions.tackle=false
  }
 }
@@ -394,5 +394,10 @@ const stick=document.querySelector("#stick"),knob=document.querySelector("#knob"
 function joy(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),max=r.width*.34,l=Math.hypot(x,y)||1,k=Math.min(1,max/l);state.joy={x:x/l*k,y:y/l*k};knob.style.transform=`translate(${x*k}px,${y*k}px)`}
 stick.addEventListener("pointerdown",e=>{pid=e.pointerId;stick.setPointerCapture(pid);joy(e)});stick.addEventListener("pointermove",e=>{if(e.pointerId===pid)joy(e)});
 function stop(){pid=null;state.joy={x:0,y:0};knob.style.transform=""}stick.addEventListener("pointerup",stop);stick.addEventListener("pointercancel",stop);
-document.querySelectorAll("[data-action]").forEach(b=>{const a=b.dataset.action;b.addEventListener("pointerdown",e=>{e.preventDefault();if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset()}else state.actions[a]=true});b.addEventListener("pointerup",()=>state.actions[a]=false);b.addEventListener("pointercancel",()=>state.actions[a]=false)});
+document.querySelectorAll("[data-action]").forEach(b=>{
+ const a=b.dataset.action;
+ const press=e=>{e.preventDefault();resumeAudio();if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset();return}state.actions[a]=true};
+ const release=()=>{state.actions[a]=false};
+ b.addEventListener("pointerdown",press,{passive:false});b.addEventListener("pointerup",release);b.addEventListener("pointercancel",release);b.addEventListener("pointerleave",release);
+});
 let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
