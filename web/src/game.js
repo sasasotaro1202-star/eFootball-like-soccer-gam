@@ -4,6 +4,8 @@ import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 
 const root=document.querySelector("#game"),scoreEl=document.querySelector("#score"),clockEl=document.querySelector("#clock"),msg=document.querySelector("#message");
+const boot=document.querySelector("#boot");
+window.addEventListener("error",e=>{if(boot){boot.classList.remove("ready");boot.innerHTML="GAME ERROR<br><small>"+String(e.message||"runtime error").slice(0,90)+"</small>"}});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.fog=new THREE.Fog(0x07140d,80,175);
 const camera=new THREE.PerspectiveCamera(54,1,.1,220);
@@ -289,4 +291,4 @@ function joy(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.widt
 stick.addEventListener("pointerdown",e=>{pid=e.pointerId;stick.setPointerCapture(pid);joy(e)});stick.addEventListener("pointermove",e=>{if(e.pointerId===pid)joy(e)});
 function stop(){pid=null;state.joy={x:0,y:0};knob.style.transform=""}stick.addEventListener("pointerup",stop);stick.addEventListener("pointercancel",stop);
 document.querySelectorAll("[data-action]").forEach(b=>{const a=b.dataset.action;b.addEventListener("pointerdown",e=>{e.preventDefault();if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset()}else state.actions[a]=true});b.addEventListener("pointerup",()=>state.actions[a]=false);b.addEventListener("pointercancel",()=>state.actions[a]=false)});
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
