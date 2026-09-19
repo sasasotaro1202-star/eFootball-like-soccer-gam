@@ -47,8 +47,27 @@ function sfxWhistle(){haptic(22);tone(980,.18,"square",.045,-120);setTimeout(()=
 window.addEventListener("pointerdown",resumeAudio,{once:true,passive:true});
 window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
-const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"high-performance",precision:"highp",stencil:false,depth:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
+let renderer=null;
+let rendererBootError=null;
+const rendererAttempts=[
+  {antialias:false,powerPreference:"default",precision:"mediump",stencil:false,depth:true},
+  {antialias:false,powerPreference:"low-power",precision:"mediump",stencil:false,depth:true},
+  {antialias:false,powerPreference:"default",stencil:false,depth:true}
+];
+for(const opts of rendererAttempts){
+  try{
+    renderer=new THREE.WebGLRenderer(opts);
+    break;
+  }catch(err){rendererBootError=err}
+}
+if(!renderer){
+  window.__activateFallback?.("3D renderer could not initialize: "+(rendererBootError?.message||"WebGL unavailable"));
+  throw rendererBootError||new Error("WebGL renderer unavailable");
+}
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+root.appendChild(renderer.domElement);
 let renderPaused=false;
 renderer.domElement.addEventListener("webglcontextlost",e=>{
   e.preventDefault();
