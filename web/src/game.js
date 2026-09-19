@@ -718,28 +718,29 @@ stick.addEventListener("pointerup",stopJoy);stick.addEventListener("pointercance
 
 const touchControl={
  leftId:null,rightId:null,leftStart:null,rightStart:null,leftAt:0,rightAt:0,
- lastLeftTap:0,lastRightTap:0
+ lastLeftTap:0,lastRightTap:0,rightHeld:false,sharpTriggered:false
 };
 const gameSurface=document.querySelector("#game");
-// Touch & Flick must listen on the actual WebGL canvas so UI overlays cannot
-// steal gameplay gestures. Field gestures are ignored when the event starts
-// on an interactive control.
+// Touch & Flick input follows the same two-sided interaction model as modern
+// mobile touch-and-flick football controls: left side = movement/dribble,
+// right side = kick/press intent. There are no visible action buttons.
 function isGameplayPointer(e){
-  const t=e.target;
-  return !!t && !t.closest?.("#controls,button,#stick,#actions,#matchbar,#topTools,#radarWrap,#playerCard");
+ const t=e.target;
+ return !!t && !t.closest?.("#controls,button,#stick,#actions,#matchbar,#topTools,#radarWrap,#playerCard");
 }
 function isLeftSide(x){return x<innerWidth*.50}
 function isRightSide(x){return x>=innerWidth*.50}
 function directionFrom(dx,dy){
- const l=Math.hypot(dx,dy)||1;return {x:dx/l,z:dy/l,mag:Math.min(1,l/95)};
+ const l=Math.hypot(dx,dy)||1;
+ return {x:dx/l,z:dy/l,mag:Math.min(1,l/95)};
 }
 function setGestureJoy(x,y){
  const v=directionFrom(x,y);
  state.joy={x:v.x*v.mag,y:v.z*v.mag};
 }
 function nearestActionFlick(dx,dy){
- const ax=Math.abs(dx),ay=Math.abs(dy);
- if(Math.hypot(dx,dy)<34)return "tap";
+ const ax=Math.abs(dx),ay=Math.abs(dy),m=Math.hypot(dx,dy);
+ if(m<34)return "tap";
  if(ay>ax*1.15)return dy<0?"through":"lob";
  return "shoot";
 }
@@ -765,32 +766,58 @@ function performTouchFlickAction(kind,dx,dy){
  }
 }
 function sharpTouch(){
- const p=controlled();if(!p||ball.userData.owner!==p)return;
- const v=Math.hypot(state.joy.x,state.joy.y)>0.2?directionFrom(state.joy.x*120,state.joy.y*120):{x:Math.sin(p.rotation.y),z:Math.cos(p.rotation.y),mag:1};
- p.userData.sharpTouchUntil=performance.now()+360;
- p.userData.sharpTouchDir={x:v.x,z:v.z};
- p.userData.stamina=Math.max(0,p.userData.stamina-2.2);
+ const p=controlled();
+ if(!p)return;
+ // On attack, a double-tap/gesture is a sharp touch. On defense the same
+ // natural two-tap gesture becomes a close-range tackle/shoulder challenge.
+ if(ball.userData.owner===p){
+   const v=Math.hypot(state.joy.x,state.joy.y)>0.2
+     ?directionFrom(state.joy.x*120,state.joy.y*120)
+     :{x:Math.sin(p.rotation.y),z:Math.cos(p.rotation.y),mag:1};
+   p.userData.sharpTouchUntil=performance.now()+360;
+   p.userData.sharpTouchDir={x:v.x,z:v.z};
+   p.userData.stamina=Math.max(0,p.userData.stamina-2.2);
+ }else{
+   state.actions.tackle=true;
+ }
 }
 function handleFieldPointerDown(e){
  if(!isGameplayPointer(e))return;
  e.preventDefault();
  resumeAudio();
- const x=e.clientX,y=e.clientY;
+ const now=performance.now(),x=e.clientX,y=e.clientY;
  if(isLeftSide(x)){
-   touchControl.leftId=e.pointerId;touchControl.leftStart={x,y};touchControl.leftAt=performance.now();
-   if(performance.now()-touchControl.lastLeftTap<280)sharpTouch();
-   touchControl.lastLeftTap=performance.now();
+   touchControl.leftId=e.pointerId;
+   touchControl.leftStart={x,y};
+   touchControl.leftAt=now;
+   touchControl.sharpTriggered=false;
+   if(now-touchControl.lastLeftTap<280)sharpTouch();
+   touchControl.lastLeftTap=now;
  }else{
-   touchControl.rightId=e.pointerId;touchControl.rightStart={x,y};touchControl.rightAt=performance.now();
+   touchControl.rightId=e.pointerId;
+   touchControl.rightStart={x,y};
+   touchControl.rightAt=now;
+   touchControl.rightHeld=true;
+   // Holding the right side provides the continuous body-shield/match-up
+   // intent; releasing it returns to neutral.
+   state.actions.shield=true;
  }
  gameplayCanvas.setPointerCapture?.(e.pointerId);
 }
 function handleFieldPointerMove(e){
  if(e.pointerId===touchControl.leftId&&touchControl.leftStart){
    e.preventDefault();
-   setGestureJoy(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
-   const mag=Math.hypot(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
+   const dx=e.clientX-touchControl.leftStart.x,dy=e.clientY-touchControl.leftStart.y;
+   setGestureJoy(dx,dy);
+   const mag=Math.hypot(dx,dy);
    state.actions.sprint=mag>105;
+   // Official-style two-finger interaction: if the right side is held,
+   // a left flick immediately performs a sharp touch rather than waiting
+   // for a second visible control.
+   if(touchControl.rightHeld&&!touchControl.sharpTriggered&&mag>42){
+     sharpTouch();
+     touchControl.sharpTriggered=true;
+   }
  }
 }
 function handleFieldPointerUp(e){
@@ -799,13 +826,24 @@ function handleFieldPointerUp(e){
    const st=touchControl.leftStart||{x:e.clientX,y:e.clientY};
    const dx=e.clientX-st.x,dy=e.clientY-st.y,mag=Math.hypot(dx,dy);
    if(mag<24)sharpTouch();
-   touchControl.leftId=null;touchControl.leftStart=null;state.joy={x:0,y:0};state.actions.sprint=false;
+   touchControl.leftId=null;
+   touchControl.leftStart=null;
+   state.joy={x:0,y:0};
+   state.actions.sprint=false;
  }else if(e.pointerId===touchControl.rightId){
    const st=touchControl.rightStart||{x:e.clientX,y:e.clientY};
-   const dx=e.clientX-st.x,dy=e.clientY-st.y;
-   const kind=nearestActionFlick(dx,dy);
-   performTouchFlickAction(kind,dx,dy);
-   touchControl.rightId=null;touchControl.rightStart=null;
+   const dx=e.clientX-st.x,dy=e.clientY-st.y,mag=Math.hypot(dx,dy);
+   const held=performance.now()-touchControl.rightAt;
+   // A held right side is shield/match-up; a quick release becomes the
+   // directional kick gesture. This prevents accidental passes while holding.
+   state.actions.shield=false;
+   if(held<520||mag>34){
+     const kind=nearestActionFlick(dx,dy);
+     performTouchFlickAction(kind,dx,dy);
+   }
+   touchControl.rightHeld=false;
+   touchControl.rightId=null;
+   touchControl.rightStart=null;
  }
 }
 const gameplayCanvas=renderer.domElement;
