@@ -7,6 +7,20 @@ const root=document.querySelector("#game"),scoreEl=document.querySelector("#scor
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.fog=new THREE.Fog(0x07140d,80,175);
 const camera=new THREE.PerspectiveCamera(54,1,.1,220);
+
+// Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
+let audioCtx=null,audioMaster=null,lastKickSfx=0,lastGoalSfx=0;
+function initAudio(){if(audioCtx)return;const Ctx=window.AudioContext||window.webkitAudioContext;if(!Ctx)return;audioCtx=new Ctx();audioMaster=audioCtx.createGain();audioMaster.gain.value=.34;audioMaster.connect(audioCtx.destination)}
+function resumeAudio(){initAudio();if(audioCtx?.state==="suspended")audioCtx.resume().catch(()=>{})}
+function tone(freq,duration,type="sine",gain=.05,slide=0){if(!audioCtx||!audioMaster)return;const now=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.setValueAtTime(freq,now);if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(40,freq+slide),now+duration);g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(gain,now+.012);g.gain.exponentialRampToValueAtTime(.0001,now+duration);o.connect(g);g.connect(audioMaster);o.start(now);o.stop(now+duration+.02)}
+function sfxKick(){const now=performance.now();if(now-lastKickSfx<100)return;lastKickSfx=now;tone(105,.07,"triangle",.08,75);tone(55,.045,"sine",.045,-15)}
+function sfxPass(){tone(180,.055,"triangle",.035,90)}
+function sfxTackle(){tone(75,.08,"square",.035,30)}
+function sfxGoal(){const now=performance.now();if(now-lastGoalSfx<400)return;lastGoalSfx=now;[392,494,587,784].forEach((f,i)=>setTimeout(()=>tone(f,.22,"sine",.07),i*95))}
+function sfxWhistle(){tone(980,.18,"square",.045,-120);setTimeout(()=>tone(980,.18,"square",.045,-120),220)}
+window.addEventListener("pointerdown",resumeAudio,{once:true,passive:true});
+window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
+
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
 scene.add(new THREE.HemisphereLight(0xdceeff,0x153d20,2.2));
@@ -151,7 +165,7 @@ function kickTo(tx,tz,power){
  if(Math.hypot(dx,dz)>3.1||performance.now()<state.kickLock)return;
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
  ball.userData.owner=null;const passScale=p.userData.profile.passing/80;
- ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260
+ ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
 }
 function actions(){
  const a=state.actions,p=controlled();
@@ -159,7 +173,7 @@ function actions(){
  if(a.pass){const t=nearestMate();kickTo(t.position.x,t.position.z,22);state.actions.pass=false}
  if(a.shoot){kickTo(53,-p.position.z*.35,32*(p.userData.profile.shooting/80));state.actions.shoot=false}
  if(a.tackle&&performance.now()>state.tackleLock){
-   state.tackleLock=performance.now()+650;
+   state.tackleLock=performance.now()+650;resumeAudio();sfxTackle();
    let target=foes.reduce((b,x)=>dist(x,p)<dist(b,p)?x:b,foes[0]);
    if(dist(target,p)<4.2){ball.userData.owner=null;const dx=target.position.x-p.position.x,dz=target.position.z-p.position.z,l=Math.hypot(dx,dz)||1;ball.position.set(target.position.x,target.position.y+.5,target.position.z);ball.userData.vx=dx/l*10;ball.userData.vz=dz/l*10}
    state.actions.tackle=false
@@ -226,13 +240,13 @@ function update(dt){
  ball.rotation.x+=ball.userData.vz*dt*1.8;ball.rotation.z-=ball.userData.vx*dt*1.8;
  if(ball.position.z<-33||ball.position.z>33){ball.position.z=THREE.MathUtils.clamp(ball.position.z,-33,33);ball.userData.vz*=-.78}
  if(ball.position.x<-53||ball.position.x>53){
-   if(Math.abs(ball.position.z)<7){const home=ball.position.x>53;state.score[home?0:1]++;scoreEl.textContent=state.score.join(" - ");reset(home?"GOAL!":"AWAY GOAL")}
+   if(Math.abs(ball.position.z)<7){const home=ball.position.x>53;state.score[home?0:1]++;scoreEl.textContent=state.score.join(" - ");resumeAudio();sfxGoal();reset(home?"GOAL!":"AWAY GOAL")}
    else{ball.position.x=THREE.MathUtils.clamp(ball.position.x,-53,53);ball.userData.vx*=-.78}
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
  const t=new THREE.Vector3(p.position.x,0,p.position.z),want=new THREE.Vector3(t.x-13,19,t.z+18);camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+6,0,t.z);
  animatePlayers(dt);
- if(state.time<=0){state.over=true;msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
+ if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  state.actions={}
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7))}
