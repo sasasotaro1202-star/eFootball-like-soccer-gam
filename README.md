@@ -63,3 +63,18 @@ The repository now has an automated **Capacitor iOS project check** workflow. It
 For a physical iPhone, download the generated `football-3d-ios-project` artifact from the successful GitHub Actions run, open `ios/App/App.xcworkspace` on a Mac in Xcode, select the iPhone, enable automatic signing with your Apple Account, and Run.
 
 The browser and native shell use the same game bundle, so gameplay fixes are made once in `web/src/` and then synced into the iPhone app.
+
+
+## Current web-game feature set
+
+The web build now uses a single responsive app shell:
+- Home hub with Play Match, Squad, Gacha, Collection, and Training flows.
+- Persistent local wallet/collection state for GP, coins, and owned players.
+- Reproducible 2,000-player historical database generated in CI from the CC0 openfootball/players dataset, with a broader historical star list prioritized.
+- Collected players feed into the playable match roster.
+- Match HUD includes score/clock, selected-player card, opponent card, radar, and touch gesture guidance.
+- Mobile gameplay keeps only the left movement stick visible. The right side is gesture-only: tap = pass, upward flick = shoot, downward flick = through ball.
+- Optional mobile haptic feedback for pass/shoot actions.
+- Web Pages deployment is gated by deterministic smoke checks; the same generated player database is validated by the iPhone Capacitor workflow.
+
+The presentation is a clean-room football game inspired by the interaction patterns of modern football games; proprietary game code, assets, branding, and UI artwork are not copied.
