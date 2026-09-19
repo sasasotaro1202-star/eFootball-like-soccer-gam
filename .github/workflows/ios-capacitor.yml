@@ -35,6 +35,7 @@ jobs:
       - name: Validate the exact game bundle used by iPhone
         run: |
           node --check web/src/game-hardreset.js
+          node --check scripts/prepare-ios.mjs
           grep -q 'game-hardreset.js' web/index.html
           grep -q 'id="stick"' web/index.html
           if grep -q 'id="actions"' web/index.html; then exit 1; fi
