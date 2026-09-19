@@ -1,17 +1,18 @@
 {
-  "name":"football-3d-match",
-  "private":true,
-  "version":"1.0.0",
-  "scripts":{
-    "web:check":"node --check web/src/game.js",
-    "cap:sync":"npx cap sync ios",
-    "cap:open":"npx cap open ios"
+  "name": "football-3d-match",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "web:check": "node --check web/src/game.js",
+    "cap:sync": "npx cap sync ios",
+    "cap:open": "npx cap open ios"
   },
-  "dependencies":{
-    "@capacitor/core":"^7.4.3",
-    "@capacitor/ios":"^7.4.3"
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3"
   },
-  "devDependencies":{
-    "@capacitor/cli":"^7.4.3"
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3",
+    "typescript": "^5.8.3"
   }
 }
