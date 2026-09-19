@@ -139,7 +139,13 @@ function cardTypeMark(p){
  return marks[t]||t;
 }
 
-// Local illustrated player portraits. No external image/API request is required during gameplay.\nconst REAL_PHOTO_NAMES=new Set();\nconst realPhotoCache=new Map();\nfunction photoPageName(name){return String(name||"").replace(/\\s+/g," ").trim()}\nasync function resolveRealPhoto(){return null}\nfunction hydrateRealPhotos(){}\n
+// Local illustrated player portraits. No external image/API request is required during gameplay.
+const REAL_PHOTO_NAMES=new Set();
+const realPhotoCache=new Map();
+function photoPageName(name){return String(name||"").replace(/\\s+/g," ").trim()}
+async function resolveRealPhoto(){return null}
+function hydrateRealPhotos(){}
+
 function portraitLetters(p){return esc((p.name||"P").split(" ").map(x=>x[0]).join("").slice(0,2))}
 function card(p){
  const s=playerStats(p),x=getProgress(p),nextXp=x.level*100,type=rarityLabel(p.cardType||p.rarity),stars=p.star||starFor(p.overall);
