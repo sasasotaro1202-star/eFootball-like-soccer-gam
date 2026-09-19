@@ -22,4 +22,25 @@ jobs:
           node --check web/src/playerProfiles.js
           grep -q 'type="module"' web/index.html
           grep -q 'src="./src/game.js"' web/index.html
+          grep -q 'data-action="pass"' web/index.html
+          grep -q 'data-action="shoot"' web/index.html
+          grep -q 'data-action="tackle"' web/index.html
+          grep -q 'id="radar"' web/index.html
+          node <<'NODE'
+          const fs=require("fs");
+          const s=fs.readFileSync("web/src/game.js","utf8");
+          const required=[
+            ["kickoff gate",/state\.firstKickoff=false;state\.userTouched=true;state\.aiEnabled=true/],
+            ["tactical AI",/function tacticalTarget\(/],
+            ["goal direction gate",/towardAway=.*towardHome/],
+            ["rigged animation",/THREE\.AnimationMixer/],
+            ["two-legged rig",/thigh_l.*thigh_r/s],
+            ["ball possession",/function stealBall\(/],
+            ["audio",/function sfxGoal\(/]
+          ];
+          for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
+          if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
+          if((s.match(/function addStadiumAtmosphere/g)||[]).length!==1) throw new Error("Duplicate stadium initializer");
+          console.log("Gameplay invariants passed.");
+          NODE
           echo "Web smoke checks passed."
