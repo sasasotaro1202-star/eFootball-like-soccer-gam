@@ -100,7 +100,7 @@ function keepRiggedFeetOnPitch(group){
  const box=new THREE.Box3().setFromObject(model);
  if(Number.isFinite(box.min.y))model.position.y-=box.min.y;
 }
-async function attachRiggedVisual(g,team){
+async async function attachRiggedVisual(g,team){
  try{
   const source=await loadRiggedSource(),model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
   try{const anim=await loadAnimationSource();if(anim?.animations?.length){const mixer=new THREE.AnimationMixer(model),clips=anim.animations,preferred=clips.find(x=>/idle|jog|walk/i.test(x.name))||clips[0],action=mixer.clipAction(preferred);action.play();g.userData.rigMixer=mixer;g.userData.rigAction=action}}catch{}
