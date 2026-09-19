@@ -61,7 +61,13 @@ jobs:
             ["deceleration",/decel=23\*agility/],
             ["formation",/formation:"4-3-3"/],
             ["automatic substitutions",/function runAutomaticSubstitution\(/],
-            ["body orientation",/const desired=Math\.atan2\(nx,nz\)/]
+            ["body orientation",/const desired=Math\.atan2\(nx,nz\)/],
+            ["touch flick surface",/handleFieldPointerDown/],
+            ["touch flick action",/performTouchFlickAction/],
+            ["sharp touch",/function sharpTouch\(/],
+            ["sharp touch acceleration",/sharpTouchUntil/],
+            ["broadcast camera",/sideOffset=.*ball\.position\.z-p\.position\.z/],
+            ["touch guide",/TOUCH &amp; FLICK/]
           ];
           for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
           if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
