@@ -566,6 +566,22 @@ function stealBall(taker,carrier,force=false){
  sfxTackle();
  return true;
 }
+function runEnhancedActions(){
+ const a=state.actions,p=controlled();
+ if(a.switch){selectBestDefender();state.actions.switch=false}
+ if(a.pass){enhancedKick("pass",state.chargePower??.55);state.actions.pass=false;state.chargePower=null}
+ if(a.through){enhancedKick("through",state.chargePower??.65);state.actions.through=false;state.chargePower=null}
+ if(a.lob){enhancedKick("lob",state.chargePower??.7);state.actions.lob=false;state.chargePower=null}
+ if(a.shoot){enhancedKick("shoot",state.chargePower??.65);state.actions.shoot=false;state.chargePower=null}
+ if(a.tackle&&performance.now()>state.tackleLock){
+   state.tackleLock=performance.now()+650;resumeAudio();
+   const target=ball.userData.owner?.team===red?ball.userData.owner:foes.reduce((b,x)=>dist(x,p)<dist(b,p)?x:b,foes[0]);
+   if(target&&dist(target,p)<4.4){p.userData.animState="tackle";p.userData.animTimer=.42;stealBall(p,target,true)}
+   state.actions.tackle=false
+ }
+}
+actions=runEnhancedActions;
+
 const coreUpdate=update;
 update=function(dt){
  coreUpdate(dt);
