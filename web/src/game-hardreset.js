@@ -229,8 +229,9 @@ function buildPitch() {
     scene.add(base);
   }
 
-  // Intentionally no stadium walls/stands in the render volume.
-  // Keeping the presentation volume empty prevents clipping artifacts on mobile GPUs.
+  const standMat=mat(0x151d28,0.92), crowdMat=mat(0xd8d0b8,1);
+  for(const side of [-1,1]){for(let row=0;row<4;row++){const stand=new THREE.Mesh(new THREE.BoxGeometry(125,2.2,4.8),standMat);stand.position.set(0,1.2+row*1.8,side*(39+row*4.2));scene.add(stand);for(let k=0;k<24;k+=2){const c=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.75,0.9),mat((k+row)%4===0?0xd8d0b8:0x7d8a96,1));c.position.set(-49+k*4.1,2.7+row*1.8,side*(38+row*4.2));scene.add(c)}}const led=new THREE.Mesh(new THREE.BoxGeometry(106,0.55,0.35),new THREE.MeshBasicMaterial({color:0x263b4c}));led.position.set(0,0.65,side*35.2);scene.add(led)}
+  for(const x of [-57,57])for(const z of [-39,39]){const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.3,18,8),standMat);pole.position.set(x,9,z);scene.add(pole);const lamp=new THREE.PointLight(0xffffff,8,75,2);lamp.position.set(x,18,z);scene.add(lamp)}
 }
 
 function buildBall() {
