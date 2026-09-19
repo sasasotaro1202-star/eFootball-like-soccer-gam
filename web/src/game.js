@@ -116,38 +116,67 @@ function rigOffset(rig,name,x=0,y=0,z=0){
  b.quaternion.copy(q).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
 }
 function animateRiggedLocomotion(a,speed,dt){
+ const mixer=a.userData.rigMixer;
+ if(mixer){
+   const state=a.userData.animState;
+   const desired=state==="kick"||state==="tackle"?(speed>10?"Sprint_Loop":"Jog_Fwd_Loop"):speed>10?"Sprint_Loop":speed>.35?"Jog_Fwd_Loop":"Idle_Loop";
+   setRigAnimation(a,desired,speed>.35?.10:.18);
+   mixer.update(dt);
+   if(a.userData.animTimer>0){a.userData.animTimer-=dt;if(a.userData.animTimer<=0)a.userData.animState="locomotion"}
+   return;
+ }
  const rig=a.userData.rigBones;if(!rig)return;
- const phase=a.userData.walkPhase;
- const moving=speed>.25,run=speed>10;
- const amp=moving?(run?.72:.48):0;
- const swing=Math.sin(phase)*amp;
- const opposite=-swing;
- // Local joint presentation only: world translation stays simulation-owned.
- rigOffset(rig,"thigh_l",swing,0,0);
- rigOffset(rig,"thigh_r",opposite,0,0);
- rigOffset(rig,"calf_l",Math.max(0,-swing)*.72,0,0);
- rigOffset(rig,"calf_r",Math.max(0,-opposite)*.72,0,0);
- rigOffset(rig,"foot_l",Math.max(0,-swing)*-.38,0,0);
- rigOffset(rig,"foot_r",Math.max(0,-opposite)*-.38,0,0);
- rigOffset(rig,"upperarm_l",opposite*.48,0,0);
- rigOffset(rig,"upperarm_r",swing*.48,0,0);
- rigOffset(rig,"lowerarm_l",opposite*.16,0,0);
- rigOffset(rig,"lowerarm_r",swing*.16,0,0);
- rigOffset(rig,"pelvis",0,0,moving?Math.sin(phase*2)*.035:0);
- rigOffset(rig,"spine_02",moving?Math.sin(phase*2)*.018:0,0,0);
- rigOffset(rig,"Head",0,moving?Math.sin(phase*2)*.012:0,0);
+ const phase=a.userData.walkPhase,swing=Math.sin(phase)*(speed>10?.72:speed>.25?.48:0),opposite=-swing;
+ rigOffset(rig,"thigh_l",swing,0,0);rigOffset(rig,"thigh_r",opposite,0,0);
+ rigOffset(rig,"calf_l",Math.max(0,-swing)*.72,0,0);rigOffset(rig,"calf_r",Math.max(0,-opposite)*.72,0,0);
+ rigOffset(rig,"foot_l",Math.max(0,-swing)*-.38,0,0);rigOffset(rig,"foot_r",Math.max(0,-opposite)*-.38,0,0);
+ rigOffset(rig,"upperarm_l",opposite*.48,0,0);rigOffset(rig,"upperarm_r",swing*.48,0,0);
+ rigOffset(rig,"lowerarm_l",opposite*.16,0,0);rigOffset(rig,"lowerarm_r",swing*.16,0,0);
+ rigOffset(rig,"pelvis",0,0,speed>.25?Math.sin(phase*2)*.035:0);
+}
+let rigClipCache=null;
+const RIG_CLIP_NAMES=["Idle_Loop","Walk_Loop","Jog_Fwd_Loop","Sprint_Loop"];
+function retargetClipToHumanoid(clip){
+ const tracks=[];
+ for(const track of clip.tracks){
+   const parts=track.name.split(".");
+   if(parts.length<2||parts.at(-1)!=="quaternion")continue;
+   const boneName=parts.slice(0,-1).join(".").split("/").at(-1);
+   if(!["pelvis","spine_01","spine_02","spine_03","neck_01","Head","upperarm_l","lowerarm_l","upperarm_r","lowerarm_r","thigh_l","calf_l","foot_l","thigh_r","calf_r","foot_r"].includes(boneName))continue;
+   const cloned=track.clone();cloned.name=boneName+".quaternion";tracks.push(cloned);
+ }
+ const out=clip.clone();out.tracks=tracks;return out;
+}
+function buildRigClipCache(){
+ if(rigClipCache||!animationSource?.animations?.length)return;
+ rigClipCache={};
+ for(const name of RIG_CLIP_NAMES){
+   const src=animationSource.animations.find(c=>c.name===name);
+   if(src){const clip=retargetClipToHumanoid(src);if(clip.tracks.length)rigClipCache[name]=clip}
+ }
+}
+function setRigAnimation(a,name,fade=.14){
+ const mixer=a.userData.rigMixer,actions=a.userData.rigActions;if(!mixer||!actions?.[name])return;
+ if(a.userData.rigAnim===name)return;
+ const next=actions[name];next.reset().setEffectiveWeight(1).setEffectiveTimeScale(1).play();
+ if(a.userData.rigAnim&&actions[a.userData.rigAnim])actions[a.userData.rigAnim].crossFadeTo(next,fade,true);
+ a.userData.rigAnim=name;
 }
 async function attachRiggedVisual(g,team){
  try{
-  const source=await loadRiggedSource(),model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
+  const [source]=await Promise.all([loadRiggedSource(),loadAnimationSource()]);
+  buildRigClipCache();
+  const model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
   const rig=setupRigBones(model);if(rig)g.userData.rigBones=rig;
-  // Root motion is intentionally disabled: simulation owns the player's world position.
-  // The imported animation library is retained as an audited asset, while locomotion is driven
-  // by deterministic local joint poses so every player visibly walks/runs instead of sliding.
+  if(rigClipCache){
+    const mixer=new THREE.AnimationMixer(model),actions={};
+    for(const [name,clip] of Object.entries(rigClipCache))actions[name]=mixer.clipAction(clip);
+    g.userData.rigMixer=mixer;g.userData.rigActions=actions;g.userData.rigAnim="";
+    setRigAnimation(g,"Idle_Loop",.01);
+  }
   for(const ch of [...g.children])if(ch!==model&&ch.userData?.legacyVisual)g.remove(ch);
  }catch{}
 }
-
 function makePlayer(team,number,controlled=false,role="MID",profileOverrides={}){
  const g=new THREE.Group();
  const palette=team===blue
@@ -238,6 +267,7 @@ function kickTo(tx,tz,power){
  const p=controlled(),dx=ball.position.x-p.position.x,dz=ball.position.z-p.position.z;
  if(Math.hypot(dx,dz)>3.1||performance.now()<state.kickLock)return;
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
+ p.userData.animState="kick";p.userData.animTimer=.34;
  ball.userData.owner=null;state.firstKickoff=false;state.aiEnabled=true;const passScale=p.userData.profile.passing/80;
  ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
 }
@@ -277,6 +307,7 @@ function update(dt){
  if(state.over)return;
  state.time=Math.max(0,state.time-dt);
  const p=controlled(),sprint=state.actions.sprint,pace=p.userData.profile.pace/90,s=(sprint?14:9.2)*(.82+.28*pace)*(p.userData.stamina>0?1:.65);
+ const kickoffLocked=state.firstKickoff;
  if(sprint)p.userData.stamina=Math.max(0,p.userData.stamina-20*dt);else p.userData.stamina=Math.min(100,p.userData.stamina+8*dt);
  if(Math.hypot(state.joy.x,state.joy.y)>.08){state.firstKickoff=false;move(p,p.position.x+state.joy.x,p.position.z+state.joy.y,s,dt);}p.position.x=THREE.MathUtils.clamp(p.position.x,-51,51);p.position.z=THREE.MathUtils.clamp(p.position.z,-32,32);
  mates.forEach((m,i)=>{const q=homePos[i],tx=q[0]+(ball.position.x-q[0])*.18,tz=q[1]+(ball.position.z-q[1])*.18;move(m,tx,tz,5.0,dt)});
@@ -294,8 +325,7 @@ function update(dt){
    }
  });
  const owner=ball.userData.owner;
- // AI is forbidden to shoot/pass during the opening kickoff until the user has moved or kicked the ball.
- const kickoffLocked=state.firstKickoff && (owner===player || (ball.userData.vx===0&&ball.userData.vz===0));
+ // Hard kickoff gate: until the user's first touch, the AI cannot attack, pass, shoot, or score.
  if(state.aiEnabled&&!kickoffLocked && owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
    owner.userData.aiPossessionSince=0;
    owner.userData.aiKick=performance.now()+900;
