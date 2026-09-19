@@ -45,8 +45,19 @@ const ball=new THREE.Mesh(new THREE.SphereGeometry(.48,16,12),ballMat);ball.cast
 function allHome(){return [player,...mates]}
 function controlled(){return allHome()[state.selected]}
 function selectPlayer(n){
- state.selected=n%allHome().length;
+ state.selected=((n%allHome().length)+allHome().length)%allHome().length;
  allHome().forEach((p,i)=>p.userData.controlled=i===state.selected);
+}
+function selectBestDefender(){
+ const hs=allHome(), target=ball.userData.owner&&ball.userData.owner.team===red?ball.userData.owner:ball;
+ let best=0,bestScore=Infinity;
+ hs.forEach((p,i)=>{
+   const d=dist(p,target);
+   const forwardBias=Math.max(0,p.position.x-target.position.x)*0.18;
+   const score=d+forwardBias-(p.userData.profile.defending/100)*1.8;
+   if(score<bestScore){bestScore=score;best=i}
+ });
+ selectPlayer(best);
 }
 function reset(text="KICK OFF"){
  ball.position.set(0,.48,0);ball.userData.vx=ball.userData.vz=0;ball.userData.owner=null;
@@ -67,7 +78,7 @@ function kickTo(tx,tz,power){
 }
 function actions(){
  const a=state.actions,p=controlled();
- if(a.switch){selectPlayer(state.selected+1);state.actions.switch=false}
+ if(a.switch){selectBestDefender();state.actions.switch=false}
  if(a.pass){const t=nearestMate();kickTo(t.position.x,t.position.z,22);state.actions.pass=false}
  if(a.shoot){kickTo(53,-p.position.z*.35,32*(p.userData.profile.shooting/80));state.actions.shoot=false}
  if(a.tackle&&performance.now()>state.tackleLock){
@@ -108,8 +119,20 @@ function update(dt){
    }
  });
  const owner=ball.userData.owner;
+ if(owner && owner.team===red && performance.now()>owner.userData.aiKick){
+   owner.userData.aiKick=performance.now()+900;
+   const matesAway=foes.filter(x=>x!==owner&&x.position.x<owner.position.x+20);
+   const target=matesAway.sort((a,b)=>Math.abs(a.position.z-ball.position.z)-Math.abs(b.position.z-ball.position.z))[0];
+   const shouldPass=target && owner.position.x>8 && Math.random()<0.28;
+   if(shouldPass){
+     const dx=target.position.x-ball.position.x,dz=target.position.z-ball.position.z,l=Math.hypot(dx,dz)||1;
+     ball.userData.owner=null;ball.userData.vx=dx/l*(14+owner.userData.profile.passing*.12);ball.userData.vz=dz/l*(14+owner.userData.profile.passing*.12);
+   }
+ }
  if(owner){
-   ball.position.x=owner.position.x+Math.sin(owner.rotation.y)*.9;ball.position.z=owner.position.z+Math.cos(owner.rotation.y)*.9;ball.position.y=.5;
+   const control=owner.userData.profile.dribbling/90;
+   const lead=.72+.38*control;
+   ball.position.x=owner.position.x+Math.sin(owner.rotation.y)*lead;ball.position.z=owner.position.z+Math.cos(owner.rotation.y)*lead;ball.position.y=.5;
  }else{
    ball.position.x+=ball.userData.vx*dt;ball.position.z+=ball.userData.vz*dt;ball.userData.vx*=Math.pow(.985,dt*60);ball.userData.vz*=Math.pow(.985,dt*60);
    const near=allHome().concat(foes).reduce((b,x)=>dist(x,ball)<dist(b,ball)?x:b,allHome()[0]);
