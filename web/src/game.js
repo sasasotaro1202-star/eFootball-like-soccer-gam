@@ -576,6 +576,13 @@ const touchControl={
  lastLeftTap:0,lastRightTap:0
 };
 const gameSurface=document.querySelector("#game");
+// Touch & Flick must listen on the actual WebGL canvas so UI overlays cannot
+// steal gameplay gestures. Field gestures are ignored when the event starts
+// on an interactive control.
+function isGameplayPointer(e){
+  const t=e.target;
+  return !!t && !t.closest?.("#controls,button,#stick,#actions,#matchbar,#topTools,#radarWrap,#playerCard");
+}
 function isLeftSide(x){return x<innerWidth*.50}
 function isRightSide(x){return x>=innerWidth*.50}
 function directionFrom(dx,dy){
@@ -620,6 +627,8 @@ function sharpTouch(){
  p.userData.stamina=Math.max(0,p.userData.stamina-2.2);
 }
 function handleFieldPointerDown(e){
+ if(!isGameplayPointer(e))return;
+ e.preventDefault();
  resumeAudio();
  const x=e.clientX,y=e.clientY;
  if(isLeftSide(x)){
@@ -629,10 +638,11 @@ function handleFieldPointerDown(e){
  }else{
    touchControl.rightId=e.pointerId;touchControl.rightStart={x,y};touchControl.rightAt=performance.now();
  }
- gameSurface.setPointerCapture?.(e.pointerId);
+ gameplayCanvas.setPointerCapture?.(e.pointerId);
 }
 function handleFieldPointerMove(e){
  if(e.pointerId===touchControl.leftId&&touchControl.leftStart){
+   e.preventDefault();
    setGestureJoy(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
    const mag=Math.hypot(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
    state.actions.sprint=mag>105;
@@ -640,6 +650,7 @@ function handleFieldPointerMove(e){
 }
 function handleFieldPointerUp(e){
  if(e.pointerId===touchControl.leftId){
+   e.preventDefault();
    const st=touchControl.leftStart||{x:e.clientX,y:e.clientY};
    const dx=e.clientX-st.x,dy=e.clientY-st.y,mag=Math.hypot(dx,dy);
    if(mag<24)sharpTouch();
@@ -652,10 +663,11 @@ function handleFieldPointerUp(e){
    touchControl.rightId=null;touchControl.rightStart=null;
  }
 }
-gameSurface.addEventListener("pointerdown",handleFieldPointerDown,{passive:false});
-gameSurface.addEventListener("pointermove",handleFieldPointerMove,{passive:false});
-gameSurface.addEventListener("pointerup",handleFieldPointerUp,{passive:false});
-gameSurface.addEventListener("pointercancel",handleFieldPointerUp,{passive:false});
+const gameplayCanvas=renderer.domElement;
+gameplayCanvas.addEventListener("pointerdown",handleFieldPointerDown,{passive:false});
+gameplayCanvas.addEventListener("pointermove",handleFieldPointerMove,{passive:false});
+gameplayCanvas.addEventListener("pointerup",handleFieldPointerUp,{passive:false});
+gameplayCanvas.addEventListener("pointercancel",handleFieldPointerUp,{passive:false});
 function updateTouchControlHint(){
  const has=document.getElementById("touchHint");
  if(!has)return;
