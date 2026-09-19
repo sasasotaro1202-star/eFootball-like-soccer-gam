@@ -19,12 +19,20 @@ const CARD_TYPES=[{id:"STANDARD",label:"NORMAL",mult:1,stars:1},{id:"HIGHLIGHT",
 const CARD_RANK={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};
 const starFor=o=>Math.max(1,Math.min(5,Math.ceil((Number(o)||60)/20)));
 const typeByLegacy=r=>String(r||"STANDARD").toUpperCase()==="LEGEND"?"LEGEND":String(r||"STANDARD").toUpperCase()==="EPIC"?"EPIC":"STANDARD";
+const REAL_POSITIONS={"Messi":"FW","Cristiano Ronaldo":"FW","Pelé":"FW","Diego Maradona":"MF","Johan Cruyff":"FW","Franz Beckenbauer":"DF","Zinedine Zidane":"MF","Ronaldo Nazário":"FW","Ronaldinho":"FW","Neymar":"FW","Kylian Mbappé":"FW","Robert Lewandowski":"FW","Xavi":"MF","Andrés Iniesta":"MF","Luka Modrić":"MF","Kevin De Bruyne":"MF","Mohamed Salah":"FW","Erling Haaland":"FW","Thierry Henry":"FW","David Beckham":"MF","Wayne Rooney":"FW","Steven Gerrard":"MF","Frank Lampard":"MF","Andrea Pirlo":"MF","Paolo Maldini":"DF","Alessandro Del Piero":"FW","Gianluigi Buffon":"GK","Iker Casillas":"GK","Manuel Neuer":"GK","Sergio Ramos":"DF","Carles Puyol":"DF","Virgil van Dijk":"DF","Luis Suárez":"FW","Karim Benzema":"FW","Kaká":"MF","Rivaldo":"FW","Romário":"FW","Roberto Carlos":"DF","Cafu":"DF","Garrincha":"FW","George Best":"FW","Bobby Charlton":"MF","Michel Platini":"MF","Marco van Basten":"FW","Ruud Gullit":"MF","Dennis Bergkamp":"FW","Patrick Vieira":"MF","Didier Drogba":"FW","Samuel Eto'o":"FW","Yaya Touré":"MF","Sadio Mané":"FW","Kevin Keegan":"FW","Kenny Dalglish":"FW","George Weah":"FW","Lev Yashin":"GK","Ferenc Puskás":"FW","Eusébio":"FW","Gerd Müller":"FW","Franco Baresi":"DF","Fabio Cannavaro":"DF","Arjen Robben":"FW","Franck Ribéry":"FW"};
+const CAREER_RATING={"Messi":99,"Cristiano Ronaldo":99,"Pelé":99,"Diego Maradona":98,"Johan Cruyff":97,"Franz Beckenbauer":97,"Zinedine Zidane":97,"Ronaldo Nazário":97,"Ronaldinho":96,"Neymar":95,"Kylian Mbappé":96,"Robert Lewandowski":96,"Xavi":96,"Andrés Iniesta":96,"Luka Modrić":96,"Kevin De Bruyne":95,"Mohamed Salah":94,"Erling Haaland":96,"Thierry Henry":96,"David Beckham":93,"Wayne Rooney":94,"Steven Gerrard":94,"Frank Lampard":93,"Andrea Pirlo":94,"Paolo Maldini":97,"Alessandro Del Piero":93,"Gianluigi Buffon":97,"Iker Casillas":96,"Manuel Neuer":97,"Sergio Ramos":95,"Carles Puyol":94,"Virgil van Dijk":95,"Luis Suárez":96,"Karim Benzema":95,"Kaká":94,"Rivaldo":95,"Romário":95,"Roberto Carlos":95,"Cafu":95,"Garrincha":96,"George Best":95,"Bobby Charlton":95,"Michel Platini":96,"Marco van Basten":96,"Ruud Gullit":95,"Dennis Bergkamp":94,"Patrick Vieira":94,"Didier Drogba":94,"Samuel Eto'o":94,"Yaya Touré":93,"Sadio Mané":92,"Kevin Keegan":94,"Kenny Dalglish":94,"George Weah":94,"Lev Yashin":97,"Ferenc Puskás":96,"Eusébio":96,"Gerd Müller":96,"Franco Baresi":96,"Fabio Cannavaro":94,"Arjen Robben":93,"Franck Ribéry":92};
+const starFor=o=>{o=Number(o)||60;return o>=96?5:o>=92?4:o>=86?3:o>=78?2:1};
+const typeByLegacy=r=>String(r||"STANDARD").toUpperCase()==="LEGEND"?"LEGEND":String(r||"STANDARD").toUpperCase()==="EPIC"?"EPIC":"STANDARD";
 const CARD_POOL=PLAYER_POOL.flatMap(p=>{
- const baseType=typeByLegacy(p.rarity),variants=[{type:baseType,star:Math.max(starFor(p.overall),baseType==="STANDARD"?1:5)}];
- if(baseType==="STANDARD")variants.push({type:"HIGHLIGHT",star:4},{type:"SHOWTIME",star:5},{type:"EPIC",star:5},{type:"LEGEND",star:5},{type:"BIG_TIME",star:5});
- if(baseType==="EPIC")variants.push({type:"SHOWTIME",star:5},{type:"LEGEND",star:5},{type:"BIG_TIME",star:5});
- if(baseType==="LEGEND")variants.push({type:"SHOWTIME",star:5},{type:"EPIC",star:5},{type:"BIG_TIME",star:5});
- return variants.map((v,i)=>{const t=CARD_TYPES.find(x=>x.id===v.type)||CARD_TYPES[0],o=Math.min(99,Math.max(45,Math.round(Number(p.overall)*t.mult+(v.type==="BIG_TIME"?1:0))));return {...p,id:String(p.id)+"-"+v.type.toLowerCase(),baseId:p.id,rarity:v.type,cardType:v.type,cardLabel:t.label,star:v.star,overall:o,sourceRarity:p.rarity,variantIndex:i}});
+ const position=REAL_POSITIONS[p.name]||p.position;
+ const baseOverall=CAREER_RATING[p.name]||Math.max(70,Math.min(94,Number(p.overall)||80));
+ const variants=["STANDARD","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"];
+ return variants.map((type,i)=>{
+   const t=CARD_TYPES.find(x=>x.id===type)||CARD_TYPES[0];
+   const mult=type==="STANDARD"?1:type==="HIGHLIGHT"?1.015:type==="BIG_TIME"?1.035:1.025;
+   const o=Math.min(99,Math.round(baseOverall*mult));
+   return {...p,id:String(p.id)+"-"+type.toLowerCase(),baseId:p.id,position,rarity:type,cardType:type,cardLabel:t.label,star:starFor(o),overall:o,sourceRarity:p.rarity,variantIndex:i};
+ });
 });
 const rarityRank=r=>CARD_RANK[String(r||"STANDARD").toUpperCase()]||1;
 const rarityLabel=r=>({STANDARD:"NORMAL",HIGHLIGHT:"HIGHLIGHT",SHOWTIME:"SHOWTIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"}[String(r||"STANDARD").toUpperCase()]||r);
@@ -37,13 +45,55 @@ function wallet(){$("#gp").textContent=money(state.gp);$("#gp2").textContent=mon
 function screen(n){Object.values(screens).forEach(x=>x.classList.remove("active"));screens[n].classList.add("active");document.body.classList.toggle("inMatch",n==="match");}
 function getProgress(p){const x=state.progress[p.id]||{};return{level:Math.max(1,Math.min(x.level||1,x.maxLevel||30)),maxLevel:Math.max(30,x.maxLevel||30),xp:Math.max(0,x.xp||0),breakthrough:Math.max(0,Math.min(x.breakthrough||0,5)),points:Math.max(0,x.points||0),positions:x.positions||[p.position]}}
 function playerStats(p){
- const o=Number(p.overall)||80,pos=p.position,x=getProgress(p),boost=x.level-1+x.breakthrough*2,cardBoost=(rarityRank(p.cardType||p.rarity)-1)*2+(p.cardType==="BIG_TIME"?2:0);
+ const o=Number(p.overall)||80,pos=p.position,x=getProgress(p),boost=Math.min(8,x.level-1+x.breakthrough*2);
  const s={offAwareness:o,ballControl:o,dribbling:o,tightPossession:o,lowPass:o,loftedPass:o,finishing:o,heading:o,setPiece:o,curl:o,speed:o,acceleration:o,kickingPower:o,jumping:o,physicalContact:o,balance:o,stamina:o,gkAwareness:o,gkCatching:o,gkParrying:o,gkReflexes:o,gkReach:o};
- if(pos==="FW"){s.offAwareness+=5;s.finishing+=5;s.dribbling+=3;s.speed+=3}
- if(pos==="MF"){s.ballControl+=4;s.lowPass+=5;s.loftedPass+=3;s.tightPossession+=4}
- if(pos==="DF"){s.physicalContact+=5;s.heading+=4}
- if(pos==="GK"){s.gkAwareness+=7;s.gkCatching+=7;s.gkParrying+=7;s.gkReflexes+=7;s.gkReach+=6}
- Object.keys(s).forEach(k=>s[k]=clampStat(s[k]+boost+cardBoost));return s
+ const role={
+   FW:{offAwareness:4,finishing:5,speed:2,acceleration:2,dribbling:2,kickingPower:2},
+   MF:{ballControl:4,dribbling:3,tightPossession:4,lowPass:5,loftedPass:4,setPiece:2,stamina:2},
+   DF:{physicalContact:4,heading:3,defAwareness:5,lowPass:2,stamina:2,balance:2},
+   GK:{gkAwareness:7,gkCatching:7,gkParrying:7,gkReflexes:7,gkReach:6,heading:-15,finishing:-20,dribbling:-10,speed:-6}
+ }[pos]||{};
+ Object.keys(role).forEach(k=>{if(k in s)s[k]+=role[k]});
+ const style={
+   "Lionel Messi":{dribbling:7,tightPossession:8,ballControl:7,lowPass:6,finishing:5,curl:5,setPiece:6,acceleration:4},
+   "Cristiano Ronaldo":{finishing:8,heading:6,jumping:6,physicalContact:5,speed:4,kickingPower:6,offAwareness:7},
+   "Pelé":{finishing:7,dribbling:6,ballControl:6,heading:4,speed:4,kickingPower:5},
+   "Diego Maradona":{dribbling:8,tightPossession:9,ballControl:8,lowPass:6,setPiece:7,curl:6,balance:5},
+   "Johan Cruyff":{offAwareness:6,ballControl:6,dribbling:6,lowPass:7,finishing:5,speed:5,stamina:4},
+   "Franz Beckenbauer":{lowPass:6,loftedPass:6,physicalContact:5,heading:5,offAwareness:2},
+   "Zinedine Zidane":{ballControl:7,tightPossession:7,lowPass:7,loftedPass:6,heading:4,setPiece:5,physicalContact:3},
+   "Ronaldo Nazário":{finishing:8,speed:7,acceleration:8,dribbling:7,physicalContact:5,kickingPower:5},
+   Ronaldinho:{dribbling:8,tightPossession:8,ballControl:8,lowPass:6,setPiece:7,curl:6,acceleration:4},
+   Neymar:{dribbling:8,tightPossession:8,ballControl:8,lowPass:6,setPiece:6,finishing:4,acceleration:5},
+   "Kylian Mbappé":{speed:9,acceleration:9,finishing:6,offAwareness:6,dribbling:5},
+   "Robert Lewandowski":{finishing:9,heading:7,offAwareness:8,physicalContact:5,kickingPower:5},
+   Xavi:{ballControl:7,lowPass:9,loftedPass:7,tightPossession:7,stamina:4},
+   "Andrés Iniesta":{ballControl:8,dribbling:7,tightPossession:8,lowPass:8,acceleration:4,balance:5},
+   "Luka Modrić":{lowPass:8,loftedPass:8,ballControl:7,tightPossession:6,stamina:6,curl:4},
+   "Kevin De Bruyne":{lowPass:9,loftedPass:8,kickingPower:6,offAwareness:5,setPiece:5,stamina:5},
+   "Erling Haaland":{finishing:9,offAwareness:8,physicalContact:8,speed:7,acceleration:6,heading:7,kickingPower:6},
+   "Thierry Henry":{speed:7,acceleration:7,finishing:7,dribbling:6,offAwareness:7,kickingPower:5},
+   "Paolo Maldini":{physicalContact:7,heading:6,stamina:7,balance:5,lowPass:5,offAwareness:2},
+   "Gianluigi Buffon":{gkAwareness:9,gkCatching:8,gkParrying:8,gkReflexes:8,gkReach:8},
+   "Manuel Neuer":{gkAwareness:9,gkCatching:7,gkParrying:7,gkReflexes:8,gkReach:8,speed:3,lowPass:4},
+   "Sergio Ramos":{physicalContact:7,heading:7,stamina:6,offAwareness:4,kickingPower:5},
+   "Virgil van Dijk":{physicalContact:9,heading:8,defAwareness:8,speed:5,stamina:6},
+   "Luis Suárez":{finishing:8,offAwareness:8,physicalContact:5,balance:5,dribbling:5},
+   "Karim Benzema":{finishing:7,offAwareness:7,ballControl:6,lowPass:6,heading:5},
+   "Roberto Carlos":{speed:7,kickingPower:9,lowPass:6,stamina:7,physicalContact:5},
+   Cafu:{speed:7,stamina:8,lowPass:6,defAwareness:6,balance:5},
+   Garrincha:{dribbling:8,ballControl:8,acceleration:7,tightPossession:7},
+   "Michel Platini":{finishing:6,lowPass:8,setPiece:8,curl:7,offAwareness:6},
+   "Marco van Basten":{finishing:9,heading:8,offAwareness:8,ballControl:6,kickingPower:5},
+   "Ruud Gullit":{physicalContact:7,speed:6,stamina:7,finishing:5,heading:6,ballControl:5},
+   "Franco Baresi":{defAwareness:9,physicalContact:7,heading:6,lowPass:6,balance:5},
+   "Fabio Cannavaro":{defAwareness:9,physicalContact:6,heading:6,balance:7,jumping:6},
+   "Lev Yashin":{gkAwareness:9,gkCatching:8,gkParrying:9,gkReflexes:9,gkReach:8}
+ }[p.name]||{};
+ Object.keys(style).forEach(k=>{if(k in s)s[k]+=style[k]});
+ const cardBoost=(rarityRank(p.cardType||p.rarity)-1)*1+(p.cardType==="BIG_TIME"?1:0);
+ Object.keys(s).forEach(k=>s[k]=clampStat(s[k]+boost+cardBoost));
+ return s
 }
 function clampStat(v){return Math.max(45,Math.min(99,Math.round(v)))}
 function playerArchetype(p){return p.position==="FW"?"Goal Poacher":p.position==="MF"?"Creative Playmaker":p.position==="DF"?"Build Up":"Offensive Goalkeeper"}
@@ -77,30 +127,35 @@ function panel(kind){
  const target=CARD_POOL.find(p=>state.owned.includes(p.id))||CARD_POOL[0],tx=getProgress(target);$("#panelBody").innerHTML=`<div class="trainingHero"><span class="eyebrow">PLAYER DEVELOPMENT</span><h2>TRAINING<br>CENTER</h2><p>Level Training • Player Progression • Position Training • Limit Break</p><div class="trainingPlayer"><div class="trainingPortrait">${portraitSvg(target)}</div><div><b>${esc(target.name)}</b><small>${esc(playerArchetype(target))} • OVR ${target.overall}</small></div></div><div class="trainingStat"><span>LEVEL</span><b>${tx.level}/${tx.maxLevel}</b></div><div class="trainingStat"><span>PROGRESSION POINTS</span><b>${tx.points}</b></div><div class="trainingStat"><span>LIMIT BREAK</span><b>${tx.breakthrough}/5</b></div><div class="trainingPositions">${positionMap(target).map(q=>`<span>${q}</span>`).join("")}</div></div><div class="trainingActions"><button class="primary" id="levelTrain">LEVEL +1</button><button class="primary" id="limitBreak">BREAKTHROUGH</button></div><button class="primary wide" id="trainingReward">CLAIM DAILY +500 GP</button>`;$("#levelTrain").onclick=()=>{const x=getProgress(target);if(x.level<x.maxLevel){x.level++;x.points+=3;x.xp=0;state.progress[target.id]=x;save();panel("training")}};$("#limitBreak").onclick=()=>{const x=getProgress(target);if(x.breakthrough<5&&state.gp>=1000){state.gp-=1000;x.breakthrough++;x.maxLevel=Math.min(40,x.maxLevel+2);state.progress[target.id]=x;save();wallet();panel("training")}};$("#trainingReward").onclick=()=>{state.gp+=500;save();wallet();panel("training")}
 }
 const GACHA_BANNERS=[
- {id:"bigtime",title:"BIG TIME • MOMENT",sub:"記憶に残る一戦をモチーフにした最上位カード",rarities:["BIG_TIME"],cost:150},
- {id:"epic",title:"EPIC • SEASON ARCHIVE",sub:"特定シーズンを再現した特別カード",rarities:["EPIC","LEGEND","SHOWTIME"],cost:100},
- {id:"legend",title:"LEGEND • WORLD ICONS",sub:"歴代スターを集めた限定リスト",rarities:["LEGEND","BIG_TIME"],cost:120},
- {id:"showtime",title:"SHOWTIME • SPECIAL SKILL",sub:"特別なプレー特性をテーマにした限定カード",rarities:["SHOWTIME"],cost:100},
- {id:"highlight",title:"HIGHLIGHT • HOT FORM",sub:"好調期をテーマにしたピックアップ",rarities:["HIGHLIGHT","SHOWTIME"],cost:80},
- {id:"position",title:"POSITION SELECT",sub:"FW / MF / DF / GK から狙いを絞る",rarities:["STANDARD","HIGHLIGHT","EPIC"],cost:60}
+ {id:"standard",title:"STANDARD • ALL STARS",sub:"基本カード。5★は実績・能力に応じた最上位の通常カード",rarities:["STANDARD","HIGHLIGHT"],cost:60,rates:{STANDARD:84,HIGHLIGHT:14,SHOWTIME:1.2,EPIC:.6,LEGEND:.18,BIG_TIME:.02}},
+ {id:"highlight",title:"HIGHLIGHT • HOT FORM",sub:"好調・注目パフォーマンスをテーマにした限定リスト",rarities:["HIGHLIGHT","SHOWTIME"],cost:80,rates:{STANDARD:55,HIGHLIGHT:38,SHOWTIME:5,EPIC:1.5,LEGEND:.45,BIG_TIME:.05}},
+ {id:"showtime",title:"SHOWTIME • SPECIAL SKILL",sub:"特別なプレー特性を持つ限定カード",rarities:["SHOWTIME"],cost:100,rates:{STANDARD:40,HIGHLIGHT:25,SHOWTIME:25,EPIC:7,LEGEND:2.5,BIG_TIME:.5}},
+ {id:"epic",title:"EPIC • SEASON ARCHIVE",sub:"歴史的シーズン・突出した実績をテーマにした限定リスト",rarities:["EPIC","LEGEND","SHOWTIME"],cost:100,rates:{STANDARD:42,HIGHLIGHT:25,SHOWTIME:15,EPIC:12,LEGEND:5.5,BIG_TIME:.5}},
+ {id:"legend",title:"LEGEND • WORLD ICONS",sub:"歴代スターの実績をテーマにした限定リスト",rarities:["LEGEND","BIG_TIME"],cost:120,rates:{STANDARD:40,HIGHLIGHT:22,SHOWTIME:12,EPIC:10,LEGEND:14.5,BIG_TIME:1.5}},
+ {id:"bigtime",title:"BIG TIME • MOMENT",sub:"歴史的な一瞬・記録級パフォーマンスをテーマにした最上位カード",rarities:["BIG_TIME"],cost:150,rates:{STANDARD:35,HIGHLIGHT:20,SHOWTIME:10,EPIC:10,LEGEND:15,BIG_TIME:10}},
+ {id:"position",title:"POSITION SELECT",sub:"FW / MF / DF / GK を絞って獲得する基本契約",rarities:["STANDARD","HIGHLIGHT"],cost:60,rates:{STANDARD:82,HIGHLIGHT:16,SHOWTIME:1.5,EPIC:.4,LEGEND:.09,BIG_TIME:.01}}
 ];
 let activeBanner="epic";
 function bannerPool(id){
- const map={bigtime:["BIG_TIME"],epic:["EPIC","LEGEND","SHOWTIME","BIG_TIME"],legend:["LEGEND","BIG_TIME"],showtime:["SHOWTIME"],highlight:["HIGHLIGHT","SHOWTIME"],position:["STANDARD","HIGHLIGHT"]};
- const types=map[id]||["STANDARD"];const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));return pool.length?pool:CARD_POOL
+ const map={standard:["STANDARD","HIGHLIGHT"],highlight:["HIGHLIGHT","SHOWTIME"],showtime:["SHOWTIME"],epic:["EPIC","LEGEND","SHOWTIME"],legend:["LEGEND","BIG_TIME"],bigtime:["BIG_TIME"],position:["STANDARD","HIGHLIGHT"]};
+ const types=map[id]||["STANDARD"];const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD")
 }
 function pickPlayer(){
- const pool=bannerPool(activeBanner),r=Math.random();
- const weights=activeBanner==="legend"?[["BIG_TIME",.01],["LEGEND",.045],["EPIC",.055],["SHOWTIME",.06],["HIGHLIGHT",.20],["STANDARD",.63]]
- :activeBanner==="epic"?[["BIG_TIME",.008],["LEGEND",.032],["EPIC",.06],["SHOWTIME",.06],["HIGHLIGHT",.24],["STANDARD",.60]]
- :activeBanner==="highlight"?[["BIG_TIME",.003],["LEGEND",.012],["EPIC",.025],["SHOWTIME",.05],["HIGHLIGHT",.40],["STANDARD",.51]]
- :[["BIG_TIME",.002],["LEGEND",.008],["EPIC",.015],["SHOWTIME",.025],["HIGHLIGHT",.30],["STANDARD",.65]];
- const available=weights.filter(([k])=>pool.some(p=>String(p.cardType||p.rarity).toUpperCase()===k));const total=available.reduce((a,x)=>a+x[1],0)||1;let a=0,tier=available[available.length-1]?.[0]||"STANDARD";for(const [k,w] of available){a+=w/total;if(r<a){tier=k;break}}const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return same[Math.floor(Math.random()*same.length)]||pool[Math.floor(Math.random()*pool.length)]||CARD_POOL[0]
+ const b=GACHA_BANNERS.find(x=>x.id===activeBanner)||GACHA_BANNERS[0],pool=bannerPool(activeBanner),rates=b.rates||{},r=Math.random();
+ const tiers=Object.entries(rates),available=tiers.filter(([k])=>pool.some(p=>String(p.cardType||p.rarity).toUpperCase()===k));
+ let a=0,tier=available[available.length-1]?.[0]||"STANDARD";for(const [k,w] of available){a+=Number(w)/available.reduce((s,x)=>s+Number(x[1]),0);if(r<a){tier=k;break}}
+ const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return same[Math.floor(Math.random()*same.length)]||pool[Math.floor(Math.random()*pool.length)]||CARD_POOL[0]
 }
 function renderGacha(kind="epic"){
- activeBanner=kind;const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind),featured=pool.slice(0,6);
- $("#panelBody").innerHTML=`<div class="gachaTabs">${GACHA_BANNERS.map(x=>`<button class="gachaTab ${x.id===kind?"active":""}" data-banner="${x.id}">${x.title.split(" • ")[0]}</button>`).join("")}</div><div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>${esc(b.title)}</h2><p>${esc(b.sub)}</p><div class="gachaBadges"><span>抽選確率表示</span><span>10連特典</span><span>重複は育成素材へ</span></div></div><div class="gachaOrb">✦</div></div><div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="${b.cost}">DRAW ×1<small>${b.cost} ◆</small></button><button class="drawBtn gold" data-draw="10" data-cost="${b.cost}">DRAW ×10<small>${b.cost*9} ◆ • BONUS</small></button></div><div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">BOX DRAW</button><button class="subGacha" data-rates="1">RATES</button></div><div class="sectionTitle">FEATURED PLAYERS <span>${pool.length} IN LIST</span></div><div class="playerGrid">${featured.map(card).join("")}</div>`;
- document.querySelectorAll("[data-banner]").forEach(btn=>btn.onclick=()=>renderGacha(btn.dataset.banner));document.querySelector("[data-box]")?.addEventListener("click",()=>showMessage("BOX DRAW: 30名から抽選する限定ボックスを準備中"));document.querySelector("[data-rates]")?.addEventListener("click",()=>showMessage("通常基準: STANDARD 65% • HIGHLIGHT 30% • SHOWTIME 2.5% • EPIC 1.5% • LEGEND 0.8% • BIG TIME 0.2%（バナーで変動）"));
+ activeBanner=kind;const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind),featured=pool.slice(0,8),rates=b.rates;
+ const rateRows=Object.entries(rates).map(([k,v])=>'<div><span>'+rarityLabel(k)+'</span><b>'+v+'%</b></div>').join('');
+ const guarantee=kind==="bigtime"?"BIG TIME 10%":kind==="legend"?"LEGEND 14.5% / BIG TIME 1.5%":"10連：10回目は EPIC以上を確定";
+ $("#panelBody").innerHTML='<div class="gachaTabs">'+GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title.split(" • ")[0]+'</button>').join('')+'</div>'+
+ '<div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>排出率 合計100%</span><span>'+guarantee+'</span><span>重複はGP</span></div></div><div class="gachaOrb">✦</div></div>'+
+ '<div class="gachaRatePanel"><div class="rateHead"><b>排出率</b><small>このリストの1回抽選</small></div><div class="rateGrid">'+rateRows+'</div></div>'+
+ '<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'">DRAW ×1<small>'+b.cost+' ◆</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'">DRAW ×10<small>'+b.cost*9+' ◆ • 10回抽選</small></button></div>'+
+ '<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">BOX DRAW</button><button class="subGacha" data-rates="1">RATES</button></div>'+
+ '<div class="sectionTitle">FEATURED PLAYERS <span>'+pool.length+' IN LIST</span></div><div class="playerGrid">'+featured.map(card).join('')+'</div>';
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
@@ -157,21 +212,16 @@ function revealGacha(){
   gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?3200:2500));
 }
 function draw(n,unitCost=100,free=false){
-  const cost=free?0:(n===10?unitCost*9:unitCost);
-  if(!free&&state.coins<cost){showMessage("コインが足りません");return}
-  if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
-  state.coins-=cost;
-  const meta=gachaMeta(),results=[];
-  for(let i=0;i<n;i++){
-    let p=pickPlayer();
-    const next=meta.pulls+i+1;
-    if(next%10===0){const pool=bannerPool(activeBanner),epic=pool.filter(x=>["EPIC","LEGEND"].includes(String(x.rarity).toUpperCase()));if(epic.length)p=epic[Math.floor(Math.random()*epic.length)]}
-    results.push(p);
-    if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
-  }
-  const best=results.reduce((a,b)=>{const rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};return(rank[String(b.cardType||b.rarity).toUpperCase()]||0)>(rank[String(a.cardType||a.rarity).toUpperCase()]||0)?b:a},results[0]);
-  setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.rarity||""});
-  state.gp+=n*120;save();wallet();showSigning(results);
+ const cost=free?0:(n===10?unitCost*9:unitCost);
+ if(!free&&state.coins<cost){showMessage("コインが足りません");return}
+ if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
+ state.coins-=cost;const meta=gachaMeta(),results=[];
+ for(let i=0;i<n;i++){let p=pickPlayer();const next=meta.pulls+i+1;
+   if(next%10===0){const pool=bannerPool(activeBanner),guaranteed=pool.filter(x=>["EPIC","LEGEND","BIG_TIME"].includes(String(x.cardType).toUpperCase()));if(guaranteed.length)p=guaranteed[Math.floor(Math.random()*guaranteed.length)]}
+   results.push(p);if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
+ }
+ const best=results.reduce((a,b)=>{const rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};return(rank[String(b.cardType||b.rarity).toUpperCase()]||0)>(rank[String(a.cardType||a.rarity).toUpperCase()]||0)?b:a},results[0]);
+ setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});state.gp+=n*120;save();wallet();showSigning(results);
 }
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
