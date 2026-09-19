@@ -25,6 +25,7 @@ jobs:
           grep -q 'data-action="pass"' web/index.html
           grep -q 'data-action="shoot"' web/index.html
           grep -q 'data-action="tackle"' web/index.html
+          grep -q 'data-action="shield"' web/index.html
           grep -q 'id="radar"' web/index.html
           node <<'NODE'
           const fs=require("fs");
