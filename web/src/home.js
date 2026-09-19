@@ -36,8 +36,8 @@ const CARD_POOL=PLAYER_POOL.flatMap(p=>{
 const rarityRank=r=>CARD_RANK[String(r||"STANDARD").toUpperCase()]||1;
 const rarityLabel=r=>({STANDARD:"NORMAL",HIGHLIGHT:"HIGHLIGHT",SHOWTIME:"SHOWTIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"}[String(r||"STANDARD").toUpperCase()]||r);
 const starText=n=>{n=Math.max(1,Math.min(5,Number(n)||1));return "★".repeat(n)+"☆".repeat(5-n)};
-const state={gp:+localStorage.getItem("football_gp")||10000,coins:+localStorage.getItem("football_coins")||100,owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
-const localSave=()=>{localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned));localStorage.setItem("football_progress",JSON.stringify(state.progress))};
+const state={gp:+localStorage.getItem("football_gp")||10000,coins:999999999,owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
+const localSave=()=>{state.coins=999999999;localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned));localStorage.setItem("football_progress",JSON.stringify(state.progress))};
 const save=()=>localSave();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])), money=n=>Math.max(0,Math.floor(n)).toLocaleString("ja-JP");
 function wallet(){$("#gp").textContent=money(state.gp);$("#gp2").textContent=money(state.gp);$("#coins").textContent=money(state.coins);$("#ownedCount").textContent=state.owned.length}
@@ -194,7 +194,7 @@ function finishGachaPresentation(skip=false){
   const ms=skip?350:1500;
   gachaPresentation.timers.push(setTimeout(()=>{stage.onclick=null;stage.classList.remove("show","complete");panel("gacha")},ms));
 }
-function showSigning(results){
+function gachaPattern(results){const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);const r=rarityRank(best?.cardType||best?.rarity);const patterns=r>=4?["burst","rain","spotlight","galaxy"][Math.floor(Math.random()*4)]:r>=3?["flash","orbit","spotlight","rain"][Math.floor(Math.random()*4)]:["flash","orbit","scan","burst"][Math.floor(Math.random()*4)];return patterns}\\nfunction showSigning(results){
   const stage=ensureGachaStage(); if(!stage){showMessage("ガチャ演出画面を初期化できません");return;}
   clearGachaTimers();
   gachaPresentation={results:results||[],revealed:false,timers:[]};
@@ -225,7 +225,7 @@ function revealGacha(){
   $("#stageName").textContent=top?.name||"PLAYER";
   $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
   stage.onclick=(ev)=>{if(ev.target.closest("#gachaSkip"))return;const card=ev.target.closest(".revealCard");if(card)showPlayerDetail(card.dataset.playerId)};
-  stage.classList.remove("charging","revealing");stage.classList.add("complete");
+  stage.classList.remove("charging","revealing");stage.classList.add("complete","pattern-"+(stage.dataset.pattern||"flash"));
   gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?6000:4500));
 }
 
