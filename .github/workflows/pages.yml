@@ -25,6 +25,11 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Generate 2,000-player historical pool
         run: node scripts/build-player-pool.mjs
+      - name: Validate web shell before deployment
+        run: |
+          node scripts/web-smoke.mjs
+          node --check web/src/home.js
+          node --check web/src/game-hardreset.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./web
