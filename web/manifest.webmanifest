@@ -1,1 +1,10 @@
-{"name":"eFootball-like Soccer","short_name":"Soccer","start_url":"./","display":"fullscreen","orientation":"landscape","background_color":"#07140d","theme_color":"#07140d"}
+{
+  "name":"FOOTBALL 3D MATCH",
+  "short_name":"FOOTBALL",
+  "start_url":"./",
+  "display":"fullscreen",
+  "orientation":"landscape",
+  "background_color":"#07131d",
+  "theme_color":"#07131d",
+  "icons":[]
+}
