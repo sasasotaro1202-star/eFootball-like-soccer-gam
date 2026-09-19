@@ -61,3 +61,4 @@ function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});$("#quickPlay")?.addEventListener("click",start);wallet();void initCloudSave();
+window.__footballPanel=panel;
