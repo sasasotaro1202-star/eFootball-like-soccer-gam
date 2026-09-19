@@ -763,8 +763,13 @@ function performTouchFlickAction(kind,dx,dy){
    state.chargePower=THREE.MathUtils.clamp(v.mag,.25,1);
    state.actions.lob=true;
  }else{
-   state.actions.pass=true;
-   state.chargePower=.52;
+   // Tap is a short pass in possession; without possession it is pressure/tackle.
+   if(ball.userData.owner===p){
+     state.actions.pass=true;
+     state.chargePower=.52;
+   }else{
+     state.actions.tackle=true;
+   }
  }
 }
 function sharpTouch(){
