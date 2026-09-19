@@ -98,11 +98,36 @@ function playerArchetype(p){return p.position==="FW"?"Goal Poacher":p.position==
 function positionMap(p){const base=p.position==="FW"?["CF","ST","LWF","RWF"]:p.position==="MF"?["AMF","CMF","DMF","LMF","RMF"]:p.position==="DF"?["CB","LB","RB","DMF"]:["GK"];const x=getProgress(p);return [...new Set([...base,...x.positions])].slice(0,5)}
 function portraitSeed(p){let h=0;for(const ch of String(p.id)+String(p.name||""))h=(h*31+ch.charCodeAt(0))>>>0;return h}
 function portraitSvg(p,large=false){
- const h=portraitSeed(p);
- const skin=["#f2c6a5","#d99b72","#b96f4d","#8f573f"][h%4],hair=["#17191b","#3b2418","#6b4a2e","#8a8f95"][Math.floor(h/7)%4],shirt=["#183c5d","#49316a","#174b3d","#5b2830"][Math.floor(h/13)%4];
- const rx=large?42:30,ry=large?51:37;
- const eye=(h%3===0?"#263238":h%3===1?"#3b271d":"#111");
- return '<svg class="facePortrait photoRealism" viewBox="0 0 120 140" role="img" aria-label="'+esc(p.name)+' face portrait"><defs><radialGradient id="faceBg'+p.id+'"><stop offset="0" stop-color="#516575"/><stop offset=".62" stop-color="#1b2832"/><stop offset="1" stop-color="#080d12"/></radialGradient><linearGradient id="skin'+p.id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+skin+'"/><stop offset=".65" stop-color="'+skin+'"/><stop offset="1" stop-color="#704335"/></linearGradient></defs><rect width="120" height="140" rx="18" fill="url(#faceBg'+p.id+')"/><ellipse cx="60" cy="137" rx="45" ry="31" fill="'+shirt+'"/><path d="M38 106Q60 96 82 106L91 140H29Z" fill="'+shirt+'"/><rect x="49" y="89" width="22" height="25" rx="9" fill="url(#skin'+p.id+')"/><ellipse cx="60" cy="62" rx="'+rx+'" ry="'+ry+'" fill="url(#skin'+p.id+')"/><path d="M18 61Q19 15 60 14Q101 15 102 61L91 49Q79 39 72 36Q47 47 28 49Z" fill="'+hair+'"/><path d="M28 48Q43 38 60 39Q78 39 92 50" fill="none" stroke="#ffffff" stroke-opacity=".10" stroke-width="3"/><ellipse cx="45" cy="64" rx="4.5" ry="3.5" fill="#fff"/><ellipse cx="75" cy="64" rx="4.5" ry="3.5" fill="#fff"/><circle cx="45" cy="64" r="2" fill="'+eye+'"/><circle cx="75" cy="64" r="2" fill="'+eye+'"/><path d="M39 55Q45 51 52 54M68 54Q76 51 82 55" fill="none" stroke="'+hair+'" stroke-width="3" stroke-linecap="round"/><path d="M60 66L56 78L62 80" fill="none" stroke="#7b4b3d" stroke-width="2" stroke-linecap="round"/><path d="M49 85Q60 91 71 85" fill="none" stroke="#713b32" stroke-width="3" stroke-linecap="round"/><path d="M31 91Q60 103 89 91" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/><text x="60" y="128" text-anchor="middle" fill="#fff" opacity=".85" font-size="8" font-weight="900">'+esc(p.position)+'</text></svg>'
+ const n=String(p.name||"");
+ const profiles={
+  "Lionel Messi":{skin:"#d39a76",hair:"#241b17",beard:true,hairStyle:"short",shirt:"#69a7c8",face:.96},
+  "Cristiano Ronaldo":{skin:"#c98b69",hair:"#171514",beard:false,hairStyle:"slick",shirt:"#8b1820",face:.92},
+  "Kylian Mbappé":{skin:"#7f4a35",hair:"#151515",beard:false,hairStyle:"crop",shirt:"#173d70",face:1.02},
+  "Erling Haaland":{skin:"#e7b895",hair:"#d5bd9b",beard:false,hairStyle:"long",shirt:"#67a8d1",face:1.08},
+  "Neymar":{skin:"#b87855",hair:"#211914",beard:true,hairStyle:"curly",shirt:"#3b5c91",face:.98},
+  "Mohamed Salah":{skin:"#9a5c40",hair:"#151312",beard:true,hairStyle:"curly",shirt:"#c91420",face:1.02},
+  "Robert Lewandowski":{skin:"#d7a27f",hair:"#4b3022",beard:true,hairStyle:"short",shirt:"#c9182b",face:1.0},
+  "Luka Modrić":{skin:"#d8a47f",hair:"#a08b72",beard:false,hairStyle:"long",shirt:"#315b9a",face:.96},
+  "Kevin De Bruyne":{skin:"#e0ae89",hair:"#b77b55",beard:true,hairStyle:"short",shirt:"#73a8cf",face:1.0},
+  "Virgil van Dijk":{skin:"#7c4734",hair:"#151515",beard:true,hairStyle:"short",shirt:"#c51d2a",face:1.06},
+  "Jude Bellingham":{skin:"#865039",hair:"#171414",beard:false,hairStyle:"crop",shirt:"#2c4f9b",face:1.02},
+  "Vinícius Júnior":{skin:"#78422f",hair:"#141414",beard:false,hairStyle:"crop",shirt:"#f4f4f4",face:.98},
+  "Cristiano Ronaldo":{skin:"#c98b69",hair:"#171514",beard:false,hairStyle:"slick",shirt:"#8b1820",face:.92},
+  "Pelé":{skin:"#8b5037",hair:"#171311",beard:false,hairStyle:"crop",shirt:"#173e75",face:1.0},
+  "Diego Maradona":{skin:"#b97855",hair:"#171311",beard:false,hairStyle:"curly",shirt:"#5d7eb7",face:1.04},
+  "Ronaldinho":{skin:"#8b5039",hair:"#151211",beard:true,hairStyle:"curly",shirt:"#315b9a",face:1.02},
+  "Zinedine Zidane":{skin:"#b97855",hair:"#2b201b",beard:false,hairStyle:"crop",shirt:"#173e75",face:1.04},
+  "Ronaldo Nazário":{skin:"#a56547",hair:"#171514",beard:false,hairStyle:"crop",shirt:"#2c4f9b",face:1.04},
+  "Thierry Henry":{skin:"#824b36",hair:"#151312",beard:false,hairStyle:"crop",shirt:"#a61e2b",face:1.02},
+  "Sergio Ramos":{skin:"#c28a68",hair:"#2a1b17",beard:true,hairStyle:"slick",shirt:"#e8e8e8",face:1.02},
+  "Manuel Neuer":{skin:"#d8a47f",hair:"#705039",beard:false,hairStyle:"short",shirt:"#55a16d",face:1.04}
+ };
+ const h=portraitSeed(p),q=profiles[n]||{skin:["#f2c6a5","#d99b72","#b96f4d","#8f573f"][h%4],hair:["#17191b","#3b2418","#6b4a2e","#8a8f95"][Math.floor(h/7)%4],beard:h%5===0,hairStyle:["short","crop","curly","slick"][Math.floor(h/13)%4],shirt:["#183c5d","#49316a","#174b3d","#5b2830"][Math.floor(h/17)%4],face:1};
+ const rx=(large?42:30)*q.face,ry=(large?51:37)*q.face;
+ const eye=h%3===0?"#263238":h%3===1?"#3b271d":"#111";
+ const hairPath=q.hairStyle==="long"?"M17 66Q18 10 60 10Q102 10 103 66L92 46Q79 29 60 31Q40 29 28 47Z":q.hairStyle==="curly"?"M15 62Q16 11 60 10Q104 11 105 62L94 43Q83 25 60 29Q37 25 26 44Z":q.hairStyle==="slick"?"M18 53Q23 10 63 14Q92 15 101 51L88 42Q74 29 52 31Q35 30 23 47Z":"M19 58Q20 14 60 13Q100 14 101 58L91 45Q77 35 60 36Q43 35 29 46Z";
+ const beard=q.beard?'<path d="M37 79Q42 101 60 104Q78 101 83 79L78 91Q60 98 42 91Z" fill="#3a2923" opacity=".88"/>':"";
+ return '<svg class="facePortrait illustratedPortrait" viewBox="0 0 120 140" role="img" aria-label="'+esc(n)+' illustrated face portrait"><defs><radialGradient id="faceBg'+p.id+'"><stop offset="0" stop-color="#526a7b"/><stop offset=".62" stop-color="#1b2832"/><stop offset="1" stop-color="#080d12"/></radialGradient><linearGradient id="skin'+p.id+'" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+q.skin+'"/><stop offset=".65" stop-color="'+q.skin+'"/><stop offset="1" stop-color="#704335"/></linearGradient></defs><rect width="120" height="140" rx="18" fill="url(#faceBg'+p.id+')"/><ellipse cx="60" cy="137" rx="45" ry="31" fill="'+q.shirt+'"/><path d="M38 106Q60 96 82 106L91 140H29Z" fill="'+q.shirt+'"/><rect x="49" y="89" width="22" height="25" rx="9" fill="url(#skin'+p.id+')"/><ellipse cx="60" cy="62" rx="'+rx+'" ry="'+ry+'" fill="url(#skin'+p.id+')"/><path d="'+hairPath+'" fill="'+q.hair+'"/><path d="M28 49Q43 38 60 39Q78 39 92 50" fill="none" stroke="#ffffff" stroke-opacity=".10" stroke-width="3"/><ellipse cx="45" cy="64" rx="4.5" ry="3.5" fill="#fff"/><ellipse cx="75" cy="64" rx="4.5" ry="3.5" fill="#fff"/><circle cx="45" cy="64" r="2" fill="'+eye+'"/><circle cx="75" cy="64" r="2" fill="'+eye+'"/><path d="M39 55Q45 51 52 54M68 54Q76 51 82 55" fill="none" stroke="'+q.hair+'" stroke-width="3" stroke-linecap="round"/><path d="M60 66L56 78L62 80" fill="none" stroke="#7b4b3d" stroke-width="2" stroke-linecap="round"/><path d="M49 85Q60 91 71 85" fill="none" stroke="#713b32" stroke-width="3" stroke-linecap="round"/>'+beard+'<path d="M31 91Q60 103 89 91" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/><text x="60" y="128" text-anchor="middle" fill="#fff" opacity=".85" font-size="8" font-weight="900">'+esc(p.position)+'</text></svg>'
 }
 function cardVisualClass(p){
  const t=String(p.cardType||p.rarity||"STANDARD").toUpperCase();
@@ -114,50 +139,7 @@ function cardTypeMark(p){
  return marks[t]||t;
 }
 
-// Real-player photo layer: uses Wikimedia/Wikipedia thumbnails when available.
-// The game keeps an original SVG fallback so missing/network-blocked photos never break cards.
-const REAL_PHOTO_NAMES=new Set([
- "Messi","Cristiano Ronaldo","Pelé","Diego Maradona","Johan Cruyff","Franz Beckenbauer","Zinedine Zidane",
- "Ronaldo Nazário","Ronaldinho","Neymar","Kylian Mbappé","Robert Lewandowski","Xavi","Andrés Iniesta",
- "Luka Modrić","Kevin De Bruyne","Mohamed Salah","Erling Haaland","Thierry Henry","David Beckham",
- "Wayne Rooney","Steven Gerrard","Frank Lampard","Andrea Pirlo","Paolo Maldini","Alessandro Del Piero",
- "Gianluigi Buffon","Iker Casillas","Manuel Neuer","Sergio Ramos","Carles Puyol","Virgil van Dijk",
- "Luis Suárez","Karim Benzema","Kaká","Rivaldo","Romário","Roberto Carlos","Cafu","Garrincha",
- "George Best","Bobby Charlton","Michel Platini","Marco van Basten","Ruud Gullit","Dennis Bergkamp",
- "Patrick Vieira","Didier Drogba","Samuel Eto'o","Yaya Touré","Sadio Mané","Kevin Keegan","Kenny Dalglish",
- "George Weah","Lev Yashin","Ferenc Puskás","Eusébio","Gerd Müller","Franco Baresi","Fabio Cannavaro",
- "Arjen Robben","Franck Ribéry"
-]);
-const realPhotoCache=new Map();
-function photoPageName(name){return String(name||"").replace(/\s+/g," ").trim()}
-async function resolveRealPhoto(name){
- const key=photoPageName(name);
- if(!REAL_PHOTO_NAMES.has(key))return null;
- if(realPhotoCache.has(key))return realPhotoCache.get(key);
- const p=fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(key),{mode:"cors",credentials:"omit"})
-   .then(r=>r.ok?r.json():null).then(j=>j?.thumbnail?.source||j?.originalimage?.source||null).catch(()=>null);
- realPhotoCache.set(key,p);
- return p;
-}
-function hydrateRealPhotos(root=document){
- const nodes=[...root.querySelectorAll?.(".realPhoto[data-photo-name]")||[]];
- nodes.forEach(async node=>{
-   if(node.dataset.photoLoaded)return;
-   const url=await resolveRealPhoto(node.dataset.photoName);
-   node.dataset.photoLoaded="1";
-   if(!url)return;
-   const img=new Image();
-   img.loading="lazy";img.decoding="async";img.referrerPolicy="no-referrer";
-   img.onload=()=>{
-     node.innerHTML="";
-     node.appendChild(img);
-     node.classList.add("realPhotoLoaded");
-     node.setAttribute("aria-label",(node.dataset.photoName||"")+" real player photo");
-   };
-   img.src=url;
- });
-}
-
+// Local illustrated player portraits. No external image/API request is required during gameplay.\nconst REAL_PHOTO_NAMES=new Set();\nconst realPhotoCache=new Map();\nfunction photoPageName(name){return String(name||"").replace(/\\s+/g," ").trim()}\nasync function resolveRealPhoto(){return null}\nfunction hydrateRealPhotos(){}\n
 function portraitLetters(p){return esc((p.name||"P").split(" ").map(x=>x[0]).join("").slice(0,2))}
 function card(p){
  const s=playerStats(p),x=getProgress(p),nextXp=x.level*100,type=rarityLabel(p.cardType||p.rarity),stars=p.star||starFor(p.overall);
