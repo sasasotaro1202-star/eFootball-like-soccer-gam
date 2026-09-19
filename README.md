@@ -51,3 +51,6 @@ GitHub Pages remains the browser test target. Base44 is not used.
 ### Design rule
 
 The project targets high-quality football gameplay while remaining clean-room: no proprietary eFootball code, assets, branding, UI copy, or player likenesses are shipped.
+
+
+CI validation: hard-reset mobile bundle smoke-tested in pull requests.
