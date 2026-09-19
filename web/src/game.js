@@ -22,10 +22,12 @@ function makePlayer(team,number,controlled=false){
  const g=new THREE.Group(),body=cyl(.58,1.5,team,0,2.02,0);
  g.add(body,cyl(.38,.76,skin,0,3.2,0),cyl(.4,.24,hair,0,3.65,0));
  g.add(box(.22,1,.22,team,-.76,2.08,0),box(.22,1,.22,team,.76,2.08,0));
- g.add(box(.28,1.15,.3,black,-.28,.72,0),box(.28,1.15,.3,black,.28,.72,0));
+ const legL=box(.28,1.15,.3,black,-.28,.72,0),legR=box(.28,1.15,.3,black,.28,.72,0);
+ g.add(legL,legR);
+ g.userData.legL=legL;g.userData.legR=legR;
  g.add(box(.32,.18,.62,white,-.28,.14,-.18),box(.32,.18,.62,white,.28,.14,-.18));
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
- g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team};scene.add(g);return g;
+ g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0};scene.add(g);return g;
 }
 const player=makePlayer(blue,10,true);
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i]));
@@ -72,6 +74,20 @@ function actions(){
    state.actions.tackle=false
  }
 }
+function animatePlayers(dt){
+ const actors=[...allHome(),...foes,...gks];
+ for(const a of actors){
+   const dx=a.position.x-a.userData.lastX,dz=a.position.z-a.userData.lastZ;
+   const speed=Math.hypot(dx,dz)/Math.max(dt,.001);
+   a.userData.walkPhase+=Math.min(speed*.018,1.2);
+   const swing=Math.min(speed/10,1)*.55;
+   if(a.userData.legL&&a.userData.legR){
+     a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
+     a.userData.legR.rotation.x=-Math.sin(a.userData.walkPhase)*swing;
+   }
+   a.userData.lastX=a.position.x;a.userData.lastZ=a.position.z;
+ }
+}
 function update(dt){
  if(state.over)return;
  state.time=Math.max(0,state.time-dt);
@@ -96,6 +112,7 @@ function update(dt){
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
  const t=new THREE.Vector3(p.position.x,0,p.position.z),want=new THREE.Vector3(t.x-13,19,t.z+18);camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+6,0,t.z);
+ animatePlayers(dt);
  if(state.time<=0){state.over=true;msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  state.actions={}
 }
