@@ -40,3 +40,9 @@ button:active{transform:scale(.95);filter:brightness(1.18)}
 #fallback{position:fixed;inset:0;width:100vw;height:100dvh;display:none;z-index:2;pointer-events:none}
 @media (min-width:760px){#controls{padding-left:24px;padding-right:24px}#radarWrap{width:150px;height:92px}#playerCard{bottom:28px}}
 @media (max-height:560px){#radarWrap,#playerCard{display:none}#matchbar{height:54px}.topTools{display:none}#controls{padding-bottom:8px}button{min-height:50px}}
+
+#actions button{position:relative;overflow:hidden}
+#actions button .charge{position:absolute;left:0;bottom:0;width:0;height:3px;background:linear-gradient(90deg,#72f0ba,#fff);transition:width .04s linear;box-shadow:0 0 8px #72f0ba}
+#actions button.primary .charge{background:linear-gradient(90deg,#7cb5ff,#fff);box-shadow:0 0 8px #7cb5ff}
+#actions button[data-action="through"],#actions button[data-action="lob"]{background:linear-gradient(145deg,rgba(26,61,70,.9),rgba(8,19,25,.78))}
+@media (max-width:420px){#actions{grid-template-columns:repeat(2,clamp(68px,18vw,82px));gap:7px}button{min-height:56px}}
