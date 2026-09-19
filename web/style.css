@@ -165,3 +165,9 @@ body{overscroll-behavior:none}
 .cardMiniStats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:7px}
 .cardMiniStats b{font-size:9px;text-align:center;padding:3px 2px;border-radius:4px;background:rgba(255,255,255,.06)}
 .rarity-showtime .rarity,.rarity-epic .rarity,.rarity-legend .rarity,.rarity-big_time .rarity{font-weight:900}
+
+/* Clear gacha rate display */
+.gachaRatePanel{margin:12px 0;padding:13px 14px;border:1px solid #ffffff14;border-radius:15px;background:linear-gradient(145deg,#101e23,#071015);box-shadow:0 8px 24px #0005}
+.rateHead{display:flex;justify-content:space-between;align-items:end;margin-bottom:9px}.rateHead b{font-size:11px;letter-spacing:.12em}.rateHead small{font-size:7px;color:#71847f}
+.rateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.rateGrid div{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border:1px solid #ffffff0d;border-radius:8px;background:#ffffff05}.rateGrid span{font-size:7px;color:#9db0aa}.rateGrid b{font-size:9px;color:#e5f1ed}
+@media(max-width:520px){.rateGrid{grid-template-columns:repeat(2,1fr)}}
