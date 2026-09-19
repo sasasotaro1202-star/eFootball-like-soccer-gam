@@ -113,10 +113,55 @@ function cardTypeMark(p){
  const marks={STANDARD:"NORMAL",FEATURED:"FEATURED",HIGHLIGHT:"LIMITED",SHOWTIME:"SHOW TIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"};
  return marks[t]||t;
 }
+
+// Real-player photo layer: uses Wikimedia/Wikipedia thumbnails when available.
+// The game keeps an original SVG fallback so missing/network-blocked photos never break cards.
+const REAL_PHOTO_NAMES=new Set([
+ "Messi","Cristiano Ronaldo","Pelé","Diego Maradona","Johan Cruyff","Franz Beckenbauer","Zinedine Zidane",
+ "Ronaldo Nazário","Ronaldinho","Neymar","Kylian Mbappé","Robert Lewandowski","Xavi","Andrés Iniesta",
+ "Luka Modrić","Kevin De Bruyne","Mohamed Salah","Erling Haaland","Thierry Henry","David Beckham",
+ "Wayne Rooney","Steven Gerrard","Frank Lampard","Andrea Pirlo","Paolo Maldini","Alessandro Del Piero",
+ "Gianluigi Buffon","Iker Casillas","Manuel Neuer","Sergio Ramos","Carles Puyol","Virgil van Dijk",
+ "Luis Suárez","Karim Benzema","Kaká","Rivaldo","Romário","Roberto Carlos","Cafu","Garrincha",
+ "George Best","Bobby Charlton","Michel Platini","Marco van Basten","Ruud Gullit","Dennis Bergkamp",
+ "Patrick Vieira","Didier Drogba","Samuel Eto'o","Yaya Touré","Sadio Mané","Kevin Keegan","Kenny Dalglish",
+ "George Weah","Lev Yashin","Ferenc Puskás","Eusébio","Gerd Müller","Franco Baresi","Fabio Cannavaro",
+ "Arjen Robben","Franck Ribéry"
+]);
+const realPhotoCache=new Map();
+function photoPageName(name){return String(name||"").replace(/\s+/g," ").trim()}
+async function resolveRealPhoto(name){
+ const key=photoPageName(name);
+ if(!REAL_PHOTO_NAMES.has(key))return null;
+ if(realPhotoCache.has(key))return realPhotoCache.get(key);
+ const p=fetch("https://en.wikipedia.org/api/rest_v1/page/summary/"+encodeURIComponent(key),{mode:"cors",credentials:"omit"})
+   .then(r=>r.ok?r.json():null).then(j=>j?.thumbnail?.source||j?.originalimage?.source||null).catch(()=>null);
+ realPhotoCache.set(key,p);
+ return p;
+}
+function hydrateRealPhotos(root=document){
+ const nodes=[...root.querySelectorAll?.(".realPhoto[data-photo-name]")||[]];
+ nodes.forEach(async node=>{
+   if(node.dataset.photoLoaded)return;
+   const url=await resolveRealPhoto(node.dataset.photoName);
+   node.dataset.photoLoaded="1";
+   if(!url)return;
+   const img=new Image();
+   img.loading="lazy";img.decoding="async";img.referrerPolicy="no-referrer";
+   img.onload=()=>{
+     node.innerHTML="";
+     node.appendChild(img);
+     node.classList.add("realPhotoLoaded");
+     node.setAttribute("aria-label",(node.dataset.photoName||"")+" real player photo");
+   };
+   img.src=url;
+ });
+}
+
 function portraitLetters(p){return esc((p.name||"P").split(" ").map(x=>x[0]).join("").slice(0,2))}
 function card(p){
  const s=playerStats(p),x=getProgress(p),nextXp=x.level*100,type=rarityLabel(p.cardType||p.rarity),stars=p.star||starFor(p.overall);
- return `<article class="playerCardItem playerCardTap rarityCard rarity-${String(p.cardType||p.rarity).toLowerCase()} ${cardVisualClass(p)}" data-player-id="${p.id}" data-rarity="${esc(p.cardType||p.rarity)}"><div class="cardRating"><b>${p.overall}</b><small>${esc(p.position)}</small></div><div class="cardPortrait photoPortrait"><span class="portraitGlow"></span><span class="photoBadge">${cardTypeMark(p)}</span>${portraitSvg(p,true)}<i>${starText(stars)}</i></div><div class="cardLevel">LV ${x.level}/${x.maxLevel}</div><span class="rarity">${esc(type)}</span><strong>${esc(p.name)}</strong><span>${esc(playerArchetype(p))}</span><small>${esc(p.nation||"World")} • ${starText(stars)}</small><div class="cardMeta"><span>POS ${positionMap(p).join(" / ")}</span><span>${type}</span></div><div class="cardMiniStats"><b>OFF ${s.offAwareness}</b><b>BC ${s.ballControl}</b><b>DRI ${s.dribbling}</b><b>FIN ${s.finishing}</b></div><div class="xpBar"><i style="width:${Math.min(100,x.xp/nextXp*100)}%"></i></div></article>`
+ return `<article class="playerCardItem playerCardTap rarityCard rarity-${String(p.cardType||p.rarity).toLowerCase()} ${cardVisualClass(p)}" data-player-id="${p.id}" data-rarity="${esc(p.cardType||p.rarity)}"><div class="cardRating"><b>${p.overall}</b><small>${esc(p.position)}</small></div><div class="cardPortrait photoPortrait"><span class="portraitGlow"></span><span class="photoBadge">${cardTypeMark(p)}</span><div class="realPhoto" data-photo-name="${esc(p.name)}">${portraitSvg(p,true)}</div><i>${starText(stars)}</i></div><div class="cardLevel">LV ${x.level}/${x.maxLevel}</div><span class="rarity">${esc(type)}</span><strong>${esc(p.name)}</strong><span>${esc(playerArchetype(p))}</span><small>${esc(p.nation||"World")} • ${starText(stars)}</small><div class="cardMeta"><span>POS ${positionMap(p).join(" / ")}</span><span>${type}</span></div><div class="cardMiniStats"><b>OFF ${s.offAwareness}</b><b>BC ${s.ballControl}</b><b>DRI ${s.dribbling}</b><b>FIN ${s.finishing}</b></div><div class="xpBar"><i style="width:${Math.min(100,x.xp/nextXp*100)}%"></i></div></article>`
 }
 function skillList(p){return p.position==="FW"?["First-time Shot","Acrobatic Finishing","One-touch Pass","Long Range Drive"]:p.position==="MF"?["One-touch Pass","Through Passing","Weighted Pass","Long Range Curler"]:p.position==="DF"?["Blocker","Interception","Man Marking","Aerial Superiority"]:["GK Low Punt","GK Long Throw","Penalty Saver","GK Reflexes"]}
 function radarSvg(s){const vals=[s.speed,s.finishing,s.lowPass,s.dribbling,s.physicalContact,s.stamina],pts=vals.map((v,i)=>{const a=-Math.PI/2+i*Math.PI/3,r=12+(v-45)/54*48;return (60+Math.cos(a)*r).toFixed(1)+","+(60+Math.sin(a)*r).toFixed(1)}).join(" ");return `<svg class="statRadar" viewBox="0 0 120 120" role="img"><polygon points="60,12 101.6,36 101.6,84 60,108 18.4,84 18.4,36" class="radarGrid"/><polygon points="60,30 86,45 86,75 60,90 34,75 34,45" class="radarGrid"/><polygon points="${pts}" class="radarValue"/></svg>`}
@@ -131,7 +176,7 @@ function panel(kind){
  const title={gacha:"CONTRACT",squad:"GAME PLAN",collection:"MY TEAM",training:"PLAYER DEVELOPMENT",missions:"MISSIONS",extras:"EXTRAS"}[kind]||"MENU";$("#panelTitle").textContent=title;$("#panelSubtitle").textContent={gacha:"SPECIAL PLAYER LIST",squad:"TACTICAL TEAM MANAGEMENT",collection:"PLAYER ARCHIVE",training:"PLAYER DEVELOPMENT",missions:"DAILY OBJECTIVES",extras:"SETTINGS & INFO"}[kind]||"";screen("panel");
  if(kind==="missions"){const claimed=JSON.parse(localStorage.getItem("football_missions")||"{}");$("#panelBody").innerHTML=`<div class="detailBlock missionPanel"><span class="eyebrow">DAILY OBJECTIVES</span><h2>MISSIONS</h2><div class="missionRow"><div><b>PLAY A MATCH</b><small>Complete 1 match</small></div><button class="primary missionClaim" data-mission="match" ${claimed.match?"disabled":""}>${claimed.match?"CLAIMED":"+300 GP"}</button></div><div class="missionRow"><div><b>DEVELOP A PLAYER</b><small>Open Player Development</small></div><button class="primary missionClaim" data-mission="train" ${claimed.train?"disabled":""}>${claimed.train?"CLAIMED":"+200 GP"}</button></div><div class="missionRow"><div><b>VISIT CONTRACT</b><small>Open Special Player List</small></div><button class="primary missionClaim" data-mission="contract" ${claimed.contract?"disabled":""}>${claimed.contract?"CLAIMED":"+150 GP"}</button></div></div>`;document.querySelectorAll(".missionClaim").forEach(b=>b.onclick=()=>{const m=JSON.parse(localStorage.getItem("football_missions")||"{}");if(m[b.dataset.mission])return;m[b.dataset.mission]=1;localStorage.setItem("football_missions",JSON.stringify(m));state.gp+=Number(b.textContent.match(/\d+/)?.[0]||0);save();wallet();panel("missions")});return}
  if(kind==="extras"){$("#panelBody").innerHTML=`<div class="detailBlock"><span class="eyebrow">GAME SETTINGS</span><h2>EXTRAS</h2><div class="settingsRow"><b>GRAPHICS</b><span>Auto / Mobile Optimized</span></div><div class="settingsRow"><b>CONTROL</b><span>Touch + Flick</span></div><div class="settingsRow"><b>DATA</b><span>Local save • Free-first</span></div><div class="settingsRow"><b>ABOUT</b><span>Original browser football game</span></div></div>`;return}
- if(kind==="gacha"){renderGacha(activeBanner);return}
+ if(kind==="gacha"){renderGacha(activeBanner);hydrateRealPhotos(document);return}
  if(kind==="squad"){const ps=CARD_POOL.filter(p=>p.star>=4).slice(0,11);$("#panelBody").innerHTML=`<div class="formation"><div class="pitchMini">${ps.map((p,i)=>`<div class="miniPlayer" style="--i:${i}">${esc(p.name.split(" ").pop())}</div>`).join("")}</div><div class="formationInfo"><span>4-3-3</span><b>WORLD XI</b><small>Possession • Balanced</small></div></div><div class="sectionTitle">STARTING XI <span>11 / 11</span></div><div class="playerList">${ps.map((p,i)=>{const s=playerStats(p);return `<div class="listRow"><b>${p.overall}</b><span><strong>${esc(p.name)}</strong><small>${esc(playerArchetype(p))}</small></span><small>SPD ${s.speed} • PAS ${s.lowPass} • FIN ${s.finishing}</small></div>`}).join("")}</div><button class="primary wide" id="squadPlay">PLAY WITH THIS XI</button>`;$("#squadPlay").onclick=start;return}
  if(kind==="collection"){const own=new Set(state.owned),ps=CARD_POOL.filter(p=>own.has(p.id));$("#panelBody").innerHTML=`<div class="collectionStats"><div><b>${ps.length}</b><small>OWNED</small></div><div><b>${CARD_POOL.length}</b><small>DATABASE</small></div><div><b>${Math.round(ps.length/CARD_POOL.length*100)}%</b><small>COLLECTED</small></div></div><div class="sectionTitle">PLAYER ARCHIVE</div><div class="playerGrid">${(ps.length?ps:CARD_POOL.slice(0,8)).map(card).join("")}</div>`;return}
  const target=CARD_POOL.find(p=>state.owned.includes(p.id))||CARD_POOL[0],tx=getProgress(target);$("#panelBody").innerHTML=`<div class="trainingHero"><span class="eyebrow">PLAYER DEVELOPMENT</span><h2>TRAINING<br>CENTER</h2><p>Level Training • Player Progression • Position Training • Limit Break</p><div class="trainingPlayer"><div class="trainingPortrait">${portraitSvg(target)}</div><div><b>${esc(target.name)}</b><small>${esc(playerArchetype(target))} • OVR ${target.overall}</small></div></div><div class="trainingStat"><span>LEVEL</span><b>${tx.level}/${tx.maxLevel}</b></div><div class="trainingStat"><span>PROGRESSION POINTS</span><b>${tx.points}</b></div><div class="trainingStat"><span>LIMIT BREAK</span><b>${tx.breakthrough}/5</b></div><div class="trainingPositions">${positionMap(target).map(q=>`<span>${q}</span>`).join("")}</div></div><div class="trainingActions"><button class="primary" id="levelTrain">LEVEL +1</button><button class="primary" id="limitBreak">BREAKTHROUGH</button></div><button class="primary wide" id="trainingReward">CLAIM DAILY +500 GP</button>`;$("#levelTrain").onclick=()=>{const x=getProgress(target);if(x.level<x.maxLevel){x.level++;x.points+=3;x.xp=0;state.progress[target.id]=x;save();panel("training")}};$("#limitBreak").onclick=()=>{const x=getProgress(target);if(x.breakthrough<5&&state.gp>=1000){state.gp-=1000;x.breakthrough++;x.maxLevel=Math.min(40,x.maxLevel+2);state.progress[target.id]=x;save();wallet();panel("training")}};$("#trainingReward").onclick=()=>{state.gp+=500;save();wallet();panel("training")}
