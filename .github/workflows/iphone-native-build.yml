@@ -1,0 +1,54 @@
+name: iPhone Native Build Check
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "web/**"
+      - "package.json"
+      - "package-lock.json"
+      - "capacitor.config.ts"
+      - ".github/workflows/iphone-native-build.yml"
+
+jobs:
+  ios-project:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Capacitor
+        run: npm install
+
+      - name: Generate iOS project
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+
+      - name: Validate web bundle
+        run: npm run web:check
+
+      - name: Build unsigned iPhone simulator target
+        run: |
+          xcodebuild             -workspace ios/App/App.xcworkspace             -scheme App             -sdk iphonesimulator             -configuration Debug             CODE_SIGNING_ALLOWED=NO             build
+
+      - name: Package native project
+        run: |
+          zip -qr football-3d-ios-project.zip ios capacitor.config.ts package.json package-lock.json
+
+      - name: Upload iPhone project
+        uses: actions/upload-artifact@v4
+        with:
+          name: football-3d-ios-project
+          path: football-3d-ios-project.zip
+          if-no-files-found: error
+          retention-days: 14
