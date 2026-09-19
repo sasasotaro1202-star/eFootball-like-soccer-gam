@@ -217,3 +217,8 @@ body{overscroll-behavior:none}
 .cardVisual-big_time .photoBadge,.cardVisual-epic .photoBadge,.cardVisual-legend .photoBadge,.cardVisual-showtime .photoBadge{z-index:8;font-weight:1000;box-shadow:0 3px 10px #0008}
 @keyframes foilSweep{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.cardVisual-showtime:before,.cardVisual-epic:before,.cardVisual-legend:before,.cardVisual-big_time:before{animation:none}}
+
+.generatedCardReference{display:block;width:min(46vw,430px);max-height:42vh;object-fit:cover;object-position:center;border-radius:22px;filter:saturate(1.08) contrast(1.04);box-shadow:0 20px 60px rgba(0,0,0,.45),0 0 34px rgba(64,190,255,.18);border:1px solid rgba(255,255,255,.18);transform:perspective(900px) rotateY(-5deg);}
+.eventPlayers:has(.generatedCardReference){display:flex;align-items:center;justify-content:center;min-width:46%;height:100%;}
+@media(max-width:720px){.generatedCardReference{width:min(58vw,340px);max-height:34vh;border-radius:16px;transform:none}.eventPlayers:has(.generatedCardReference){min-width:42%;}}
+@media(prefers-reduced-motion:reduce){.generatedCardReference{transform:none}}
