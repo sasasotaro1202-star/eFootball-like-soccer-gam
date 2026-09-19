@@ -776,8 +776,13 @@ const advancedState={
   half:1,
   lastBallX:ball.position.x,
   lastBallZ:ball.position.z,
-  event:"KICK OFF"
+  event:"KICK OFF",
+  passTarget:null,
+  firstTouchLock:0,
+  lastKick:0
 };
+// Backward-compatible name used by the enhanced input layer.
+const enhancedState=advancedState;
 function showMatchEvent(text,duration=1100){
   msg.textContent=text;
   setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},duration);
