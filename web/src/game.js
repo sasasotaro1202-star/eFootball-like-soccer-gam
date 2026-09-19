@@ -8,7 +8,7 @@ const root=document.querySelector("#game"),scoreEl=document.querySelector("#scor
 const boot=document.querySelector("#boot");
 window.addEventListener("error",e=>{if(boot){boot.classList.remove("ready");boot.innerHTML="GAME ERROR<br><small>"+String(e.message||"runtime error").slice(0,90)+"</small>"}});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.fog=new THREE.Fog(0x07140d,80,175);
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x020805);scene.fog=new THREE.Fog(0x020805,92,190);
 const camera=new THREE.PerspectiveCamera(49,1,.1,220);
 
 // Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
@@ -47,7 +47,7 @@ function sfxWhistle(){haptic(22);tone(980,.18,"square",.045,-120);setTimeout(()=
 window.addEventListener("pointerdown",resumeAudio,{once:true,passive:true});
 window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
-const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"default"});
+const renderer=new THREE.WebGLRenderer({antialias:false,powerPreference:"high-performance",precision:"highp",stencil:false,depth:true});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
 let renderPaused=false;
 renderer.domElement.addEventListener("webglcontextlost",e=>{
@@ -57,9 +57,12 @@ renderer.domElement.addEventListener("webglcontextlost",e=>{
 });
 renderer.domElement.addEventListener("webglcontextrestored",()=>{window.location.reload()});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
-renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.outputColorSpace=THREE.SRGBColorSpace;
 scene.add(new THREE.HemisphereLight(0xdceeff,0x153d20,2.2));
-const sun=new THREE.DirectionalLight(0xffffff,3.2);sun.position.set(-35,55,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffffff,3.6);sun.position.set(-35,55,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);sun.shadow.camera.near=1;sun.shadow.camera.far=170;sun.shadow.camera.left=-72;sun.shadow.camera.right=72;sun.shadow.camera.top=72;sun.shadow.camera.bottom=-72;scene.add(sun);
+const fill=new THREE.HemisphereLight(0x8fb8ff,0x183b25,1.15);scene.add(fill);
+const rimA=new THREE.DirectionalLight(0x6fa8ff,0.75);rimA.position.set(42,28,-34);scene.add(rimA);
+const rimB=new THREE.DirectionalLight(0xff8b72,0.42);rimB.position.set(-38,20,-42);scene.add(rimB);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
 function addStadiumAtmosphere(){
  const standMat=M(0x18242d),roofMat=M(0x0a1116),seatMat=M(0x27353d),lampMat=M(0xfff1c4);
