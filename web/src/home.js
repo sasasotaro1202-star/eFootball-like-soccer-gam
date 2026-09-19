@@ -176,7 +176,18 @@ function draw(n,unitCost=100,free=false){
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
-document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});$("#quickPlay")?.addEventListener("click",start);wallet();
+document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});wallet();
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button"); if(!b)return;
+ if(b.dataset?.nav){e.preventDefault();e.stopPropagation();b.dataset.nav==="home"?home():panel(b.dataset.nav);return}
+ if(b.dataset?.banner){e.preventDefault();e.stopPropagation();renderGacha(b.dataset.banner);return}
+ if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
+ if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return}
+ if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("STANDARD 65% • HIGHLIGHT 30% • SHOWTIME 2.5% • EPIC 1.5% • LEGEND 0.8% • BIG TIME 0.2%");return}
+ if(b.dataset?.box){e.preventDefault();e.stopPropagation();showMessage("BOX DRAW: 準備中");return}
+ if(b.id==="quickPlay"||b.id==="playNow"||b.id==="squadPlay"){e.preventDefault();e.stopPropagation();start();return}
+ if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return}
+});
 window.__footballPanel=panel;
 
 // Unified match UX flow: MATCH PREVIEW -> KICKOFF -> PLAY -> GOAL -> FULL TIME -> REWARDS
