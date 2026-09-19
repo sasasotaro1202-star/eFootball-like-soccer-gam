@@ -396,6 +396,7 @@ function passOrShoot(mode, power = 0.8) {
   ball.userData.vx = dx / len * speed;
   ball.userData.vz = dz / len * speed;
   ball.userData.vy = mode === "shoot" ? 1.5 + power * 2.0 : 0.7 + power * 1.2;
+  navigator.vibrate?.(mode === "shoot" ? [20, 25, 20] : 12);
   showMessage(mode === "shoot" ? "SHOOT" : "PASS", 450);
 }
 
