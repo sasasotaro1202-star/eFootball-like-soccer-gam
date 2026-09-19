@@ -697,8 +697,13 @@ function updateTouchControlHint(){
  has.textContent=attacking?"左ドラッグ=ドリブル / 右フリック=シュート・スルー・ロブ":"左ドラッグ=移動 / 右タップ=プレス";
 }
 function updateChargeUI(){
- const now=performance.now();
- for(const [a,started] of heldActions){const p=THREE.MathUtils.clamp((now-started)/850,0,1);const bar=chargeUI.get(a);if(bar)bar.style.width=(p*100)+"%"}
+ const power=THREE.MathUtils.clamp(Number.isFinite(state.chargePower)?state.chargePower:0,0,1);
+ const active=state.chargeAction||"";
+ document.querySelectorAll("#actions button").forEach(btn=>{
+   const bar=btn.querySelector(".charge"); if(!bar)return;
+   const action=btn.dataset.action||"";
+   bar.style.width=action===active?(power*100)+"%":"0%";
+ });
 }
 
 
