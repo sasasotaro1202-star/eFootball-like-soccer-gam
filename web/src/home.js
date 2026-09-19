@@ -56,8 +56,77 @@ function renderGacha(kind="epic"){
  $("#panelBody").innerHTML=`<div class="gachaTabs">${GACHA_BANNERS.map(x=>`<button class="gachaTab ${x.id===kind?"active":""}" data-banner="${x.id}">${x.title.split(" • ")[0]}</button>`).join("")}</div><div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>${esc(b.title)}</h2><p>${esc(b.sub)}</p><div class="gachaBadges"><span>抽選確率表示</span><span>10連特典</span><span>重複は育成素材へ</span></div></div><div class="gachaOrb">✦</div></div><div class="drawRow"><button class="drawBtn" data-draw="1">DRAW ×1<small>${b.cost} ◆</small></button><button class="drawBtn gold" data-draw="10">DRAW ×10<small>${b.cost*9} ◆ • BONUS</small></button></div><div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">BOX DRAW</button><button class="subGacha" data-rates="1">RATES</button></div><div class="sectionTitle">FEATURED PLAYERS <span>${pool.length} IN LIST</span></div><div class="playerGrid">${featured.map(card).join("")}</div>`;
  document.querySelectorAll("[data-banner]").forEach(btn=>btn.onclick=()=>renderGacha(btn.dataset.banner));document.querySelectorAll("[data-draw]").forEach(btn=>btn.onclick=()=>draw(+btn.dataset.draw,b.cost));document.querySelector("[data-free]")?.addEventListener("click",()=>draw(1,0,true));document.querySelector("[data-box]")?.addEventListener("click",()=>showMessage("BOX DRAW: 30名から抽選する限定ボックスを準備中"));document.querySelector("[data-rates]")?.addEventListener("click",()=>showMessage("確率: LEGEND 3% • EPIC 12% • HIGHLIGHT 30% • STANDARD 55%"));
 }
-function showSigning(results){const stage=$("#gachaStage");if(!stage)return;const p=results[results.length-1];$("#stageName").textContent=p.name;$("#stageRarity").textContent=p.rarity+" • "+p.position+" • "+p.overall;$("#gachaResult").innerHTML=results.map(x=>`<div class="miniResult"><b>${esc(x.name)}</b><small>${esc(x.rarity)} • ${x.overall}</small></div>`).join("");stage.classList.add("show");setTimeout(()=>stage.classList.remove("show"),2600)}
-function draw(n,unitCost=100,free=false){const cost=free?0:(n===10?unitCost*9:unitCost);if(!free&&state.coins<cost){showMessage("コインが足りません");return}state.coins-=cost;const results=[];for(let i=0;i<n;i++){const p=pickPlayer();results.push(p);if(p&&!state.owned.includes(p.id))state.owned.push(p.id)}state.gp+=n*120;save();wallet();showSigning(results);setTimeout(()=>panel("gacha"),2800)}
+const GACHA_PITY_KEY="football_gacha_pity";
+const GACHA_FREE_KEY="football_gacha_free";
+const gachaMeta=()=>{const p=JSON.parse(localStorage.getItem(GACHA_PITY_KEY)||"{}");return{pulls:Math.max(0,Number(p.pulls)||0),lastRarity:String(p.lastRarity||"").toUpperCase()}};
+function setGachaMeta(p){localStorage.setItem(GACHA_PITY_KEY,JSON.stringify(p))}
+function ensureGachaStage(){
+  const stage=$("#gachaStage");if(!stage)return null;
+  if(!stage.querySelector("#gachaSkip")){const b=document.createElement("button");b.id="gachaSkip";b.className="gachaSkip";b.textContent="SKIP";stage.appendChild(b);b.onclick=()=>finishGachaPresentation(true)}
+  return stage;
+}
+let gachaPresentation={results:[],revealed:false,timers:[]};
+function clearGachaTimers(){gachaPresentation.timers.forEach(clearTimeout);gachaPresentation.timers=[]}
+function finishGachaPresentation(skip=false){
+  const stage=ensureGachaStage();if(!stage)return;
+  clearGachaTimers();
+  const results=gachaPresentation.results;
+  if(results.length){
+    const p=results[results.length-1];
+    $("#stageName").textContent=p.name;
+    $("#stageRarity").textContent=p.rarity+" • "+p.position+" • OVR "+p.overall;
+    $("#gachaResult").innerHTML=results.map((x,i)=>`<div class="miniResult revealCard rarity-${String(x.rarity).toLowerCase()}" style="--i:${i}"><span>${i+1}</span><b>${esc(x.name)}</b><small>${esc(x.rarity)} • OVR ${x.overall}</small></div>`).join("");
+  }
+  stage.classList.remove("charging","revealing");
+  stage.classList.add("show","complete");
+  const ms=skip?350:1500;
+  gachaPresentation.timers.push(setTimeout(()=>{stage.classList.remove("show","complete");panel("gacha")},ms));
+}
+function showSigning(results){
+  const stage=ensureGachaStage();if(!stage)return;
+  clearGachaTimers();gachaPresentation={results,revealed:false,timers:[]};
+  const best=results.reduce((a,b)=>({overall:Math.max(Number(a?.overall)||0,Number(b?.overall)||0),rarity:(String(a?.rarity||"").length>String(b?.rarity||"").length?a?.rarity:b?.rarity)}),{});
+  $("#stageName").textContent="PLAYER SIGNING";
+  $("#stageRarity").textContent=results.length===10?"10 PLAYERS • TAP TO REVEAL":"TAP TO REVEAL";
+  $("#gachaResult").innerHTML=`<div class="gachaPrompt"><span class="promptRing">✦</span><b>${results.length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>カードをタップして開封</small></div>`;
+  stage.classList.remove("complete");stage.classList.add("show","charging");
+  gachaPresentation.timers.push(setTimeout(()=>{
+    stage.classList.remove("charging");stage.classList.add("revealing");
+    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;revealGacha()};
+  },850));
+}
+function revealGacha(){
+  if(gachaPresentation.revealed)return;
+  gachaPresentation.revealed=true;clearGachaTimers();
+  const stage=ensureGachaStage(),results=gachaPresentation.results;
+  const order=[...results].sort((a,b)=>{
+    const rank={STANDARD:1,HIGHLIGHT:2,EPIC:3,LEGEND:4};
+    return (rank[String(b.rarity).toUpperCase()]||0)-(rank[String(a.rarity).toUpperCase()]||0);
+  });
+  $("#gachaResult").innerHTML=order.map((x,i)=>`<div class="miniResult revealCard rarity-${String(x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${x.id}"><span>${i+1}</span><b>${esc(x.name)}</b><small>${esc(x.rarity)} • OVR ${x.overall}</small></div>`).join("");
+  const top=order[0]||results[0];
+  $("#stageName").textContent=top?.name||"PLAYER";
+  $("#stageRarity").textContent=(top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
+  stage.classList.remove("charging");stage.classList.add("complete");
+  gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?3200:2500));
+}
+function draw(n,unitCost=100,free=false){
+  const cost=free?0:(n===10?unitCost*9:unitCost);
+  if(!free&&state.coins<cost){showMessage("コインが足りません");return}
+  if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
+  state.coins-=cost;
+  const meta=gachaMeta(),results=[];
+  for(let i=0;i<n;i++){
+    let p=pickPlayer();
+    const next=meta.pulls+i+1;
+    if(next%10===0){const pool=bannerPool(activeBanner),epic=pool.filter(x=>["EPIC","LEGEND"].includes(String(x.rarity).toUpperCase()));if(epic.length)p=epic[Math.floor(Math.random()*epic.length)]}
+    results.push(p);
+    if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
+  }
+  const best=results.reduce((a,b)=>{const rank={STANDARD:1,HIGHLIGHT:2,EPIC:3,LEGEND:4};return(rank[String(b.rarity).toUpperCase()]||0)>(rank[String(a.rarity).toUpperCase()]||0)?b:a},results[0]);
+  setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.rarity||""});
+  state.gp+=n*120;save();wallet();showSigning(results);
+}
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
