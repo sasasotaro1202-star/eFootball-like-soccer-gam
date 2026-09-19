@@ -1052,28 +1052,56 @@ update=function(dt){
   updateChargeUI();
 };
 
-let last=performance.now(),simAcc=0,runtimeHalted=false;
-function haltRuntime(err){
-  if(runtimeHalted)return;
-  runtimeHalted=true;
-  window.__lastGameError=String(err?.message||err||"runtime error");
+let last=performance.now(),simAcc=0;
+const runtimeHealth={actions:true,update:true,press:true,gk:true,subs:true,diagnostic:""};
+function isolateRuntimeError(phase,err){
+  const message=String(err?.message||err||"runtime error");
+  runtimeHealth.diagnostic=phase+": "+message;
+  window.__lastGameError=runtimeHealth.diagnostic;
   window.__lastGameStack=String(err?.stack||"");
-  state.aiEnabled=false;
-  state.actions={};
-  const detail=window.__lastGameError.slice(0,140);
-  if(boot){boot.classList.remove("ready");boot.innerHTML="RUNTIME RECOVERY<br><small>"+detail+"</small>"}
+  // Never kill the match loop because of one optional subsystem. Disable only the
+  // failing layer and keep rendering/input alive so mobile browsers can recover.
+  if(phase==="actions")runtimeHealth.actions=false;
+  if(phase==="update")runtimeHealth.update=false;
+  if(phase==="press")runtimeHealth.press=false;
+  if(phase==="gk")runtimeHealth.gk=false;
+  if(phase==="subs")runtimeHealth.subs=false;
+  state.actions=state.actions||{};
 }
 function loop(now){
   const frameDt=Math.min(.05,(now-last)/1000);last=now;simAcc=Math.min(.5,simAcc+frameDt);
-  if(!runtimeHalted){
-    const fixed=1/120;let steps=0;
-    try{
-      while(simAcc>=fixed&&steps<8){dtForAI=fixed;actions();update(fixed);defensiveLineAndPress();goalkeeperBrain();simAcc-=fixed;steps++}
-      runAutomaticSubstitution();updateChargeUI();
-    }catch(err){haltRuntime(err)}
+  const fixed=1/120;let steps=0;
+  while(simAcc>=fixed&&steps<8){
+    dtForAI=fixed;
+    if(runtimeHealth.actions){try{actions()}catch(err){isolateRuntimeError("actions",err)}}
+    if(runtimeHealth.update){
+      try{update(fixed)}
+      catch(err){
+        isolateRuntimeError("update",err);
+        // The enhanced wrapper is optional. Fall back to the original core simulation.
+        try{coreUpdate(fixed)}catch(coreErr){isolateRuntimeError("coreUpdate",coreErr)}
+      }
+    }else{
+      try{coreUpdate(fixed)}catch(err){isolateRuntimeError("coreUpdate",err)}
+    }
+    if(runtimeHealth.press){try{defensiveLineAndPress()}catch(err){isolateRuntimeError("press",err)}}
+    if(runtimeHealth.gk){try{goalkeeperBrain()}catch(err){isolateRuntimeError("gk",err)}}
+    simAcc-=fixed;steps++;
   }
+  if(runtimeHealth.subs){try{runAutomaticSubstitution()}catch(err){isolateRuntimeError("subs",err)}}
+  try{updateChargeUI()}catch(err){isolateRuntimeError("ui",err)}
   clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;
-  if(!renderPaused&&!runtimeHalted){try{renderer.render(scene,camera)}catch(err){haltRuntime(err)}}
+  if(!renderPaused){
+    try{renderer.render(scene,camera)}
+    catch(err){
+      window.__lastGameError="render: "+String(err?.message||err);
+      window.__lastGameStack=String(err?.stack||"");
+      renderPaused=true;
+      window.__activateFallback?.("WebGL render failed — recovery");
+    }
+  }
   requestAnimationFrame(loop)
 }
-reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
+try{reset()}catch(err){isolateRuntimeError("reset",err)}
+if(boot)boot.classList.add("ready");
+requestAnimationFrame(loop);
