@@ -61,7 +61,15 @@ const ground=new THREE.Mesh(new THREE.PlaneGeometry(122,84),M(0x0b301b));ground.
 const pitch=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d),M(0x176b38));pitch.rotation.x=-Math.PI/2;pitch.position.y=.01;pitch.receiveShadow=true;scene.add(pitch);
 mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);mark(-37,-20,-37,20);mark(37,-20,37,20);
 const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
-for(const x of[-54.2,54.2]){const g=new THREE.Group(),pm=M(0xffffff,.28);g.add(cyl(.11,3.5,pm,-7,1.75,0),cyl(.11,3.5,pm,7,1.75,0),box(.11,.11,14,pm,0,3.5,0));const net=new THREE.Mesh(new THREE.BoxGeometry(14,3.2,.12,8,4,1),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.18,wireframe:true}));net.position.set(0,1.6,x<0?.55:-.55);g.add(net);g.position.x=x;scene.add(g)}
+for(const x of[-54.2,54.2]){
+ const g=new THREE.Group(),pm=M(0xf4f4f4,.24),netMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.22,wireframe:true});
+ g.add(cyl(.13,3.6,pm,-7,1.8,0),cyl(.13,3.6,pm,7,1.8,0),box(.13,.13,14,pm,0,3.6,0));
+ g.add(box(.10,3.15,14,pm,0,1.58,x<0?1.15:-1.15));
+ const back=new THREE.Mesh(new THREE.BoxGeometry(14,3.15,2.3,12,6,3),netMat);back.position.set(0,1.58,x<0?1.15:-1.15);g.add(back);
+ for(let zi=-6;zi<=6;zi+=2){const v=box(.025,3.1,.025,netMat,zi,1.58,x<0?.65:-.65);g.add(v)}
+ for(let yi=.5;yi<=3;yi+=.5){const h=box(14,.025,.025,netMat,0,yi,x<0?.65:-.65);g.add(h)}
+ g.position.x=x;scene.add(g)
+}
 
 function jerseyNumberTexture(number,color){
  const canvas=document.createElement("canvas");canvas.width=128;canvas.height=128;
@@ -82,9 +90,31 @@ const rigLoader=new GLTFLoader();
 let riggedSource=null,animationSource=null,rigLoadPromise=null,animationLoadPromise=null;
 function loadRiggedSource(){if(rigLoadPromise)return rigLoadPromise;rigLoadPromise=new Promise((resolve,reject)=>loadWithTimeout(rigLoader,RIGGED_PLAYER_URL).then(g=>{riggedSource=g;resolve(g)}).catch(reject));return rigLoadPromise}
 function loadAnimationSource(){if(animationLoadPromise)return animationLoadPromise;animationLoadPromise=new Promise((resolve,reject)=>loadWithTimeout(rigLoader,ANIMATION_LIBRARY_URL).then(g=>{animationSource=g;resolve(g)}).catch(reject));return animationLoadPromise}
-function recolorRiggedModel(model,team){
+function recolorRiggedModel(model,team,variantIndex=0){
+ const variants=[
+  {skin:0xf0bd8a,hair:0x241a16,boot:0x101318},
+  {skin:0xc98b63,hair:0x111111,boot:0x26384a},
+  {skin:0x8d5a3b,hair:0x21150f,boot:0x171717},
+  {skin:0xf3c9a5,hair:0x6b3f22,boot:0x3a2420},
+  {skin:0xb66b45,hair:0x3a2419,boot:0x0e2740}
+ ];
+ const v=variants[variantIndex%variants.length];
  const shirt=team===blue?0x2f78d0:team===red?0xd93445:0xf0f0f0,shorts=team===blue?0x174f9d:team===red?0x8f1728:0x333333;
- model.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=(m?.name||o.name||"").toLowerCase(),mm=m.clone();if(/shirt|jersey|top|upper|torso|clothes/.test(n))mm.color?.setHex(shirt);else if(/short|pants|trouser/.test(n))mm.color?.setHex(shorts);return mm});if(o.material.length===1)o.material=o.material[0]});
+ model.traverse(o=>{
+  if(!o.isMesh)return;
+  o.castShadow=true;o.receiveShadow=true;
+  const mats=Array.isArray(o.material)?o.material:[o.material];
+  o.material=mats.map(m=>{
+   const n=(m?.name||"")+" "+(o.name||"");const k=n.toLowerCase(),mm=m.clone();
+   if(/shirt|jersey|top|upper|torso|clothes/.test(k))mm.color?.setHex(shirt);
+   else if(/short|pants|trouser/.test(k))mm.color?.setHex(shorts);
+   else if(/hair|hairstyle/.test(k))mm.color?.setHex(v.hair);
+   else if(/skin|body|head|face|hand|arm|leg/.test(k))mm.color?.setHex(v.skin);
+   else if(/boot|shoe|footwear/.test(k))mm.color?.setHex(v.boot);
+   return mm;
+  });
+  if(o.material.length===1)o.material=o.material[0];
+ });
 }
 function fitRiggedModel(model){
  const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
@@ -162,7 +192,7 @@ function setRigAnimation(a,name,fade=.14){
  if(a.userData.rigAnim&&actions[a.userData.rigAnim])actions[a.userData.rigAnim].crossFadeTo(next,fade,true);
  a.userData.rigAnim=name;
 }
-async function attachRiggedVisual(g,team){
+async function attachRiggedVisual(g,team,variantIndex=0,number=0){
  try{
   const [source]=await Promise.all([loadRiggedSource(),loadAnimationSource()]);
   buildRigClipCache();
@@ -191,7 +221,7 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
    {skin:0xf3c9a5,hair:0x6b3f22,scale:.94,shoulder:.92},
    {skin:0xb66b45,hair:0x3a2419,scale:1.06,shoulder:1.08}
  ];
- const v=variants[(number+role.length+(team===red?2:0))%variants.length];
+ const variantIndex=(number+role.length+(team===red?2:0))%variants.length;const v=variants[variantIndex];
  const skinMat=M(v.skin),hairMat=M(v.hair),shirtMat=M(palette.shirt),shortMat=M(palette.shorts),sockMat=M(palette.socks),bootMat=M(0x101318),accentMat=M(palette.accent);
  const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.56*v.shoulder,.82*v.scale,6,10),shirtMat);
  torso.position.y=2.18;torso.scale.z=.68;torso.castShadow=true;
@@ -217,11 +247,11 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:controlled?.9:.25,side:THREE.DoubleSide}));
  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(v.scale);
- Object.assign(g.userData,{number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0,aiPossessionSince:0});
+ Object.assign(g.userData,{number,variantIndex,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0,aiPossessionSince:0,animState:"locomotion",animTimer:0});
  g.children.forEach(ch=>{if(ch!==ring&&ch!==numberFront&&ch!==numberBack)ch.userData.legacyVisual=true});
  // Persistent shirt numbers stay visible even when the rigged body replaces the procedural body.
  numberFront.renderOrder=4;numberBack.renderOrder=4;
- scene.add(g);attachRiggedVisual(g,team);return g;
+ scene.add(g);attachRiggedVisual(g,team,v.variantIndex,number);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
