@@ -206,6 +206,8 @@ function renderGacha(kind="special"){
  const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
  const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
  const composition=mixed?'<div class="listComposition"><b>PLAYER LIST CONTENTS</b>'+counts.map(x=>'<span>'+x[0]+' <strong>'+x[1]+'</strong></span>').join("")+'</div>':"";
+ const previewPool=pool.slice(0,Math.min(8,pool.length));
+ const previewCards='<div class="gachaPlayerPreview"><div class="gachaPreviewTitle">PLAYERS IN THIS LIST</div><div class="gachaPreviewGrid">'+previewPool.map(p=>'<button class="gachaPlayerMini" data-player-id="'+esc(p.id)+'" type="button"><div class="gachaMiniPortrait">'+portraitSvg(p,true)+'</div><div class="gachaMiniInfo"><b>'+esc(p.name)+'</b><span>'+esc(p.position)+' • '+esc(cardTypeMark(p))+'</span><strong>'+p.overall+'</strong></div></button>').join("")+'</div></div>';
  const notice=kind==="special"?'<div class="rateNotice">この1つのSPECIAL PLAYER LISTから、STANDARD〜BIG TIMEまで複数タイプを抽選。10連には対象リストのヘッドライナー保証を設定。</div>':"";
  $( "#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
  '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>PLAYER LIST</span></div></div><div class="gachaOrb">✦</div></div>'+
@@ -283,7 +285,10 @@ function draw(n,unitCost=100,free=false){
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
-document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{const el=e.target.closest(".playerCardTap");if(el)showPlayerDetail(el.dataset.playerId)});wallet();
+document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{
+ const el=e.target.closest(".playerCardTap,.gachaPlayerMini");
+ if(el)showPlayerDetail(el.dataset.playerId);
+});wallet();
 (function mountGeneratedCardReference(){
   const host=document.querySelector(".eventPlayers");
   if(!host||host.querySelector(".generatedCardReference"))return;
