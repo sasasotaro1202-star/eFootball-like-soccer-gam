@@ -54,6 +54,19 @@ renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.
 scene.add(new THREE.HemisphereLight(0xdceeff,0x153d20,2.2));
 const sun=new THREE.DirectionalLight(0xffffff,3.2);sun.position.set(-35,55,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
+function addStadiumAtmosphere(){
+ const standMat=M(0x18242d),roofMat=M(0x0a1116),seatMat=M(0x27353d),lampMat=M(0xfff1c4);
+ for(const side of[-1,1]){
+  const z=side*43;
+  scene.add(box(122,5,9,standMat,0,2.4,z),box(122,1,9,roofMat,0,7.8,z));
+  for(let x=-50;x<=50;x+=8)scene.add(box(5,.12,1.6,seatMat,x,5.2,z-side*1.8));
+ }
+ for(const x of[-58,58]){
+  const pole=cyl(.16,18,M(0x313b43),x,9,0);scene.add(pole);
+  const lamp=new THREE.PointLight(0xffefc5,11,50,2);lamp.position.set(x,18,0);scene.add(lamp);
+ }
+}
+addStadiumAtmosphere();
 function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
 function mark(x1,z1,x2,z2,w=.16){const l=Math.hypot(x2-x1,z2-z1),o=box(w,.035,l,lineMat);o.position.set((x1+x2)/2,.025,(z1+z2)/2);o.rotation.y=Math.atan2(x2-x1,z2-z1);scene.add(o)}
