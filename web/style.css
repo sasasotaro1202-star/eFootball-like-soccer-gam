@@ -120,3 +120,33 @@ body{overscroll-behavior:none}
 .matchOverlay.hidden{display:none}.matchPanel{min-width:min(86vw,430px);padding:28px;text-align:center;background:rgba(7,18,25,.94);border:1px solid rgba(255,255,255,.16);box-shadow:0 18px 60px rgba(0,0,0,.45)}
 .matchPanel span{font-size:10px;letter-spacing:.16em;opacity:.65}.matchPanel h2{margin:10px 0;font-size:28px}.matchPanel h2 b{font-size:12px;opacity:.5;margin:0 8px}.matchPanel p{opacity:.65;font-size:12px}.matchPanel .primary{margin-top:14px;min-width:170px}
 @media(max-width:600px){.matchFlow{top:8px}.flowStep{font-size:8px;padding:4px 5px}.matchPanel{min-width:82vw;padding:22px}.matchPanel h2{font-size:23px}}
+
+/* Gacha cinematic presentation: original sports-game reveal flow */
+.gachaStage{transition:opacity .18s ease,visibility .18s ease;background:radial-gradient(circle at 50% 36%,#234f43 0,#0a1c18 26%,#02070a 62%);overflow:hidden}
+.gachaStage:before{content:"";position:absolute;inset:-20%;background:conic-gradient(from 0deg,transparent 0 12%,#9ff8d522 15%,transparent 20% 37%,#dfffee18 40%,transparent 45% 70%,#7feac31c 76%,transparent 82%);animation:gachaSweep 5s linear infinite;pointer-events:none}
+.gachaStage.charging .stageOrb{animation:orbCharge .85s cubic-bezier(.15,.8,.2,1) both}
+.gachaStage.revealing .stageOrb{animation:orbPulse .65s infinite alternate}
+.gachaStage.complete .stageOrb{animation:orbBurst .6s cubic-bezier(.1,.8,.2,1) both}
+.gachaSkip{position:absolute;z-index:5;right:max(14px,env(safe-area-inset-right));top:max(14px,env(safe-area-inset-top));border:1px solid #ffffff2b;border-radius:999px;background:#02080dcc;color:#dceae5;padding:9px 13px;font-size:8px;font-weight:950;letter-spacing:.16em}
+.gachaPrompt{display:grid;place-items:center;gap:8px;min-width:220px;padding:16px}
+.promptRing{width:74px;height:74px;display:grid;place-items:center;border-radius:50%;border:1px solid #bfffe055;background:radial-gradient(circle,#dffff833,transparent 62%);font-size:28px;animation:promptBeat .7s ease-in-out infinite alternate}
+.gachaPrompt b{font-size:12px;letter-spacing:.16em}.gachaPrompt small{font-size:8px;color:#91a8a0}
+.gachaResult{position:relative;max-width:min(92vw,820px);flex-wrap:wrap;align-items:flex-end;perspective:900px}
+.revealCard{position:relative;opacity:0;transform:translateY(28px) rotateY(80deg) scale(.72);animation:cardReveal .65s cubic-bezier(.12,.8,.2,1) calc(var(--i)*.08s) forwards;overflow:hidden}
+.revealCard:before{content:"";position:absolute;inset:-35%;background:radial-gradient(circle,#fff8,transparent 45%);opacity:.7;animation:cardShine 1.2s ease-out .35s both;pointer-events:none}
+.revealCard span{position:absolute;left:7px;top:6px;font-size:6px;color:#ffffff88}.revealCard b,.revealCard small{position:relative;z-index:1}
+.rarity-standard{border-color:#ffffff20!important}.rarity-highlight{border-color:#7fe5a866!important;background:linear-gradient(145deg,#234f3b,#08110e)!important;box-shadow:0 0 22px #6ee0a822}
+.rarity-epic{border-color:#b995ff88!important;background:linear-gradient(145deg,#4a3569,#0d0913)!important;box-shadow:0 0 28px #b995ff33}
+.rarity-legend{border-color:#ffe08caa!important;background:linear-gradient(145deg,#67501e,#100c05)!important;box-shadow:0 0 38px #ffd86a44}
+.gachaStage.complete .stageName{animation:nameImpact .55s cubic-bezier(.1,.9,.2,1)}
+.gachaStage.complete .stageRarity{animation:rarityFlash .8s ease-out}
+@keyframes gachaSweep{to{transform:rotate(360deg)}}
+@keyframes orbCharge{0%{transform:scale(.55);filter:brightness(.7);box-shadow:0 0 20px #8df4c855}55%{transform:scale(1.08);filter:brightness(1.35)}100%{transform:scale(.96);filter:brightness(1)}}
+@keyframes orbBurst{0%{transform:scale(1)}45%{transform:scale(1.35);filter:brightness(2)}100%{transform:scale(.9);filter:brightness(1)}}
+@keyframes promptBeat{to{transform:scale(1.08);box-shadow:0 0 35px #8df4c855}}
+@keyframes cardReveal{0%{opacity:0;transform:translateY(28px) rotateY(80deg) scale(.72)}55%{opacity:1;transform:translateY(-5px) rotateY(-8deg) scale(1.04)}100%{opacity:1;transform:translateY(0) rotateY(0) scale(1)}}
+@keyframes cardShine{0%{transform:translateX(-90%) rotate(20deg);opacity:0}25%{opacity:.9}100%{transform:translateX(90%) rotate(20deg);opacity:0}}
+@keyframes nameImpact{0%{transform:scale(.8);opacity:.2}55%{transform:scale(1.08);opacity:1}100%{transform:scale(1)}}
+@keyframes rarityFlash{0%{opacity:.2;letter-spacing:.05em}45%{opacity:1;letter-spacing:.38em}100%{letter-spacing:.3em}}
+@media(max-width:560px){.gachaResult{max-width:94vw;gap:5px}.miniResult{width:66px;height:92px;padding:7px}.gachaSkip{font-size:7px;padding:8px 11px}}
+@media(prefers-reduced-motion:reduce){.gachaStage:before,.stageOrb,.promptRing,.revealCard{animation:none!important}.revealCard{opacity:1;transform:none}}
