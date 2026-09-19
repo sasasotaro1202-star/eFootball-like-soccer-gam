@@ -1,6 +1,6 @@
 # FOOTBALL 3D MATCH
 
-A clean-room, playable soccer prototype built with Godot and managed in GitHub.
+A clean-room, playable 3D football game built with Three.js and packaged for iPhone with Capacitor.
 
 ## Current target
 Build a responsive soccer game foundation first, then expand toward:
@@ -16,7 +16,7 @@ Build a responsive soccer game foundation first, then expand toward:
 - online multiplayer
 
 ## Engine
-Godot 4.7.2 stable.
+Three.js r162 in the web runtime; Capacitor 7 for the iPhone native shell.
 
 ## Controls
 - WASD / Arrow keys: move
@@ -46,7 +46,7 @@ npx cap sync ios
 npx cap open ios
 ```
 
-GitHub Pages remains the browser test target. Base44 is not used.
+GitHub Pages remains the visual test target. Base44 is not used. The iPhone native project is generated and validated by GitHub Actions on macOS.
 
 ### Design rule
 
@@ -54,3 +54,12 @@ The project targets high-quality football gameplay while remaining clean-room: n
 
 
 CI validation: hard-reset mobile bundle smoke-tested in pull requests.
+
+
+## iPhone workflow
+
+The repository now has an automated **iPhone Native Build Check** workflow. It installs Capacitor, generates the Xcode iOS project, syncs the current `web/` game into it, validates the JavaScript bundle, and performs an unsigned iPhone-simulator build.
+
+For a physical iPhone, download the generated `football-3d-ios-project` artifact from the successful GitHub Actions run, open `ios/App/App.xcworkspace` on a Mac in Xcode, select the iPhone, enable automatic signing with your Apple Account, and Run.
+
+The browser and native shell use the same game bundle, so gameplay fixes are made once in `web/src/` and then synced into the iPhone app.
