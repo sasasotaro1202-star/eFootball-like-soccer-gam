@@ -18,15 +18,15 @@ jobs:
           test -f web/index.html
           test -f web/src/game-hardreset.js
           node --check web/src/game-hardreset.js
-          grep -q 'new THREE.WebGLRenderer' web/src/game.js
-          grep -q 'buildPitch' web/src/game.js
-          grep -q 'updateBroadcastCamera' web/src/game.js
-          grep -q 'passOrShoot' web/src/game.js
-          grep -q 'pointerdown' web/src/game.js
+          grep -q 'new THREE.WebGLRenderer' web/src/game-hardreset.js
+          grep -q 'buildPitch' web/src/game-hardreset.js
+          grep -q 'updateBroadcastCamera' web/src/game-hardreset.js
+          grep -q 'passOrShoot' web/src/game-hardreset.js
+          grep -q 'pointerdown' web/src/game-hardreset.js
           grep -q 'id="stick"' web/index.html
           if grep -q 'id="actions"' web/index.html; then exit 1; fi
           if grep -q 'data-action=' web/index.html; then exit 1; fi
-          grep -q 'hard-reset-20260920-03' web/index.html
+          grep -q 'hard-reset-20260920-05' web/index.html
           grep -q 'Capacitor' README.md || true
-          node -e "const fs=require('fs'); const s=fs.readFileSync('web/src/game.js','utf8'); if((s.match(/function buildPitch/g)||[]).length!==1) throw new Error('duplicate buildPitch'); if((s.match(/function updateBroadcastCamera/g)||[]).length!==1) throw new Error('duplicate broadcast camera'); console.log('Rebuild invariants passed.')"
+          node -e "const fs=require('fs'); const s=fs.readFileSync('web/src/game-hardreset.js','utf8'); if((s.match(/function buildPitch/g)||[]).length!==1) throw new Error('duplicate buildPitch'); if((s.match(/function updateBroadcastCamera/g)||[]).length!==1) throw new Error('duplicate broadcast camera'); console.log('Rebuild invariants passed.')"
           echo "Web smoke checks passed."
