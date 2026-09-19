@@ -20,6 +20,8 @@ jobs:
           test -f web/src/playerProfiles.js
           node --check web/src/game.js
           node --check web/src/playerProfiles.js
+          grep -q "new THREE.WebGLRenderer" web/src/game.js
+          grep -q "rendererAttempts" web/src/game.js
           grep -q 'type="module"' web/index.html
           grep -q 'src="./src/game.js"' web/index.html
           grep -q 'data-action="pass"' web/index.html
