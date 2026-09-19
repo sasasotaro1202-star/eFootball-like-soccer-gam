@@ -638,16 +638,16 @@ function keyboardUp(e) {
 }
 
 function keyboardMove() {
-  let x = 0, y = 0;
-  const keys = new Set(window.__keys || []);
-  if (keys.has("a") || keys.has("arrowleft")) x -= 1;
-  if (keys.has("d") || keys.has("arrowright")) x += 1;
-  if (keys.has("w") || keys.has("arrowup")) y -= 1;
-  if (keys.has("s") || keys.has("arrowdown")) y += 1;
-  if (x || y) {
-    const len = Math.hypot(x, y);
-    state.joy.x = x / len;
-    state.joy.y = y / len;
+  let x=0,y=0;
+  const keys=new Set(window.__keys||[]);
+  if(keys.has("a")||keys.has("arrowleft"))x-=1;
+  if(keys.has("d")||keys.has("arrowright"))x+=1;
+  if(keys.has("w")||keys.has("arrowup"))y-=1;
+  if(keys.has("s")||keys.has("arrowdown"))y+=1;
+  if(x||y){
+    const len=Math.hypot(x,y); state.joy.x=x/len; state.joy.y=y/len;
+  }else if(state.leftPointerId===null){
+    state.joy.x=0; state.joy.y=0;
   }
 }
 
