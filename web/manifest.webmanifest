@@ -1,10 +1,9 @@
 {
   "name":"FOOTBALL 3D MATCH",
   "short_name":"FOOTBALL",
-  "start_url":"./",
+  "start_url":"./?v=hard-reset-20260920-03",
   "display":"fullscreen",
   "orientation":"landscape",
-  "background_color":"#07131b",
-  "theme_color":"#07131b",
-  "icons":[]
+  "background_color":"#07131d",
+  "theme_color":"#07131d"
 }
