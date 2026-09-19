@@ -49,12 +49,8 @@ window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
 let renderer=null;
 let rendererBootError=null;
-const webglProbe=document.createElement("canvas");
-let webgl2Available=false;
-try{webgl2Available=!!webglProbe.getContext("webgl2",{antialias:false,preserveDrawingBuffer:false})}catch{}
-if(!webgl2Available){
-  window.__activateFallback?.("WebGL2 unavailable on this browser/device");
-}
+// Do not pre-create a WebGL context here: a probe consumes a GPU context on some mobile browsers.
+// Three.js WebGLRenderer performs the authoritative WebGL2 capability/context creation itself.
 const rendererAttempts=[
   {antialias:false,powerPreference:"default",precision:"mediump",stencil:false,depth:true},
   {antialias:false,powerPreference:"low-power",precision:"mediump",stencil:false,depth:true},
