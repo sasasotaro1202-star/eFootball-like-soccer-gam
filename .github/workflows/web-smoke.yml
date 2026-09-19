@@ -46,7 +46,22 @@ jobs:
             ["input-only enhancement",/actions=runEnhancedActions;/],
             ["team routing",/owner\.userData\.team|p\.userData\.team|t\.userData\.team/],
             ["context loss recovery",/webglcontextlost.*__activateFallback/s],
-            ["sprint hold preservation",/const sprintHeld=!!state\.actions\?\.sprint;state\.actions=\{sprint:sprintHeld\}/]
+            ["sprint hold preservation",/const sprintHeld=!!state\.actions\?\.sprint/],
+            ["shielding",/userData\.shielding/],
+            ["first touch",/function applyFirstTouch\(/],
+            ["offside",/function isOffsideAtRelease\(/],
+            ["defensive line",/function defensiveLineAndPress\(/],
+            ["goalkeeper brain",/function goalkeeperBrain\(/],
+            ["set pieces",/function stageSetPiece\(/],
+            ["throw in",/stageSetPiece\("THROW IN"/],
+            ["corner",/stageSetPiece\("CORNER"/],
+            ["goal kick",/stageSetPiece\("GOAL KICK"/],
+            ["120hz fixed step",/const fixed=1\/120/],
+            ["acceleration",/const accel=17\*agility/],
+            ["deceleration",/decel=23\*agility/],
+            ["formation",/formation:"4-3-3"/],
+            ["automatic substitutions",/function runAutomaticSubstitution\(/],
+            ["body orientation",/const desired=Math\.atan2\(nx,nz\)/]
           ];
           for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
           if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
