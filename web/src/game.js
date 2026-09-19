@@ -70,7 +70,7 @@ if(!renderer){
   window.__activateFallback?.("3D renderer could not initialize: "+(rendererBootError?.message||"WebGL unavailable"));
   throw rendererBootError||new Error("WebGL renderer unavailable");
 }
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.35));
+const deviceMemory=Number(navigator.deviceMemory||4);const maxPixels=deviceMemory<=2?900000:deviceMemory<=4?1400000:1900000;const baseDpr=Math.min(devicePixelRatio||1,1.35);const maxDpr=Math.sqrt(maxPixels/Math.max(1,innerWidth*innerHeight));renderer.setPixelRatio(Math.max(1,Math.min(baseDpr,maxDpr)));
 renderer.shadowMap.enabled=true;
 renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 root.appendChild(renderer.domElement);window.__threeRendererReady=true;
@@ -624,7 +624,7 @@ function updatePlayerCard(){
  playerLabel.textContent="PLAYER "+String(n).padStart(2,"0");playerRole.textContent=role;playerNo.textContent="#"+n;
  if(staminaFill)staminaFill.style.width=Math.round(p.userData.stamina||0)+"%";
 }
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45))}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const memory=Number(navigator.deviceMemory||4);const maxPixels=memory<=2?900000:memory<=4?1400000:1900000;const dpr=Math.min(devicePixelRatio||1,1.35,Math.sqrt(maxPixels/Math.max(1,innerWidth*innerHeight)));renderer.setPixelRatio(Math.max(1,dpr));if(sun.shadow.mapSize.x>(memory<=4?512:1024))sun.shadow.mapSize.set(memory<=4?512:1024,memory<=4?512:1024)}
 addEventListener("resize",resize);resize();
 const stick=document.querySelector("#stick"),knob=document.querySelector("#knob");
 let pid=null;
@@ -1050,4 +1050,4 @@ update=function(dt){
   updateChargeUI();
 };
 
-let last=performance.now(),simAcc=0;function loop(now){const frameDt=Math.min(.05,(now-last)/1000);last=now;simAcc=Math.min(simAcc+.5,simAcc+frameDt);const fixed=1/120;let steps=0;while(simAcc>=fixed&&steps<8){dtForAI=fixed;actions();update(fixed);defensiveLineAndPress();goalkeeperBrain();simAcc-=fixed;steps++}runAutomaticSubstitution();updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;if(!renderPaused)renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
+let last=performance.now(),simAcc=0;function loop(now){const frameDt=Math.min(.05,(now-last)/1000);last=now;simAcc=Math.min(.5,simAcc+frameDt);const fixed=1/120;let steps=0;while(simAcc>=fixed&&steps<8){dtForAI=fixed;actions();update(fixed);defensiveLineAndPress();goalkeeperBrain();simAcc-=fixed;steps++}runAutomaticSubstitution();updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;if(!renderPaused)renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
