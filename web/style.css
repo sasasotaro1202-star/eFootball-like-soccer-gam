@@ -222,3 +222,15 @@ body{overscroll-behavior:none}
 .eventPlayers:has(.generatedCardReference){display:flex;align-items:center;justify-content:center;min-width:46%;height:100%;}
 @media(max-width:720px){.generatedCardReference{width:min(58vw,340px);max-height:34vh;border-radius:16px;transform:none}.eventPlayers:has(.generatedCardReference){min-width:42%;}}
 @media(prefers-reduced-motion:reduce){.generatedCardReference{transform:none}}
+
+/* Match controls: original console-style touch layout, optimized for iPhone Safari */
+#actionPad{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:min(190px,40vw);height:170px;pointer-events:none;touch-action:none}
+.matchAction{position:absolute;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#f4fbf8;background:rgba(3,10,14,.82);box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.14);font-size:8px;font-weight:1000;letter-spacing:.08em;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.matchAction:active{transform:scale(.92);filter:brightness(1.25)}
+.matchAction.shoot{right:0;bottom:42px;width:72px;height:72px;background:linear-gradient(145deg,#6f1d2c,#16080d);border-color:#ff8298}
+.matchAction.pass{right:76px;bottom:4px;background:linear-gradient(145deg,#173d63,#07111d);border-color:#71b7ff}
+.matchAction.through{right:72px;top:0;background:linear-gradient(145deg,#174d43,#071712);border-color:#70e3bd}
+.matchAction.switch{right:0;top:0;width:48px;height:48px;background:rgba(15,24,29,.9);font-size:7px}
+.matchAction.dash{right:0;bottom:0;width:52px;height:52px;background:linear-gradient(145deg,#6b5a1e,#171207);border-color:#f0d66b}
+@media(max-width:560px){#actionPad{width:174px;height:154px}.matchAction.shoot{width:64px;height:64px;right:0;bottom:34px}.matchAction.pass{right:70px;bottom:0}.matchAction.through{right:67px;top:0}.matchAction.switch{width:44px;height:44px}.matchAction.dash{width:48px;height:48px;bottom:0}}
+@media(max-height:560px){#actionPad{height:132px}.matchAction{width:48px;height:48px}.matchAction.shoot{width:58px;height:58px;bottom:26px}.matchAction.pass{right:62px}.matchAction.through{right:58px}}
