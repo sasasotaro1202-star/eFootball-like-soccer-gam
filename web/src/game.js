@@ -39,7 +39,23 @@ function recolorRiggedModel(model,team){
  const shirt=team===blue?0x2f78d0:team===red?0xd93445:0xf0f0f0,shorts=team===blue?0x174f9d:team===red?0x8f1728:0x333333;
  model.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=(m?.name||o.name||"").toLowerCase(),mm=m.clone();if(/shirt|jersey|top|upper|torso|clothes/.test(n))mm.color?.setHex(shirt);else if(/short|pants|trouser/.test(n))mm.color?.setHex(shorts);return mm});if(o.material.length===1)o.material=o.material[0]});
 }
-function fitRiggedModel(model){const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());if(size.y>0)model.scale.multiplyScalar(3.45/size.y);const fitted=new THREE.Box3().setFromObject(model);model.position.y-=fitted.min.y}
+function fitRiggedModel(model){
+ const box=new THREE.Box3().setFromObject(model),size=box.getSize(new THREE.Vector3());
+ if(size.y>0)model.scale.multiplyScalar(3.45/size.y);
+ model.updateMatrixWorld(true);
+ const fitted=new THREE.Box3().setFromObject(model);
+ // The GLB's scene/root transform can place the skinned feet above the local origin.
+ // Normalize the visual model so its lowest point is exactly on the pitch.
+ model.position.y-=fitted.min.y;
+ model.updateMatrixWorld(true);
+}
+function keepRiggedFeetOnPitch(group){
+ const model=group.userData.riggedModel;
+ if(!model)return;
+ model.updateMatrixWorld(true);
+ const box=new THREE.Box3().setFromObject(model);
+ if(Number.isFinite(box.min.y))model.position.y-=box.min.y;
+}
 async function attachRiggedVisual(g,team){
  try{
   const source=await loadRiggedSource(),model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
@@ -156,7 +172,7 @@ function animatePlayers(dt){
    const speed=Math.hypot(dx,dz)/Math.max(dt,.001);
    a.userData.walkPhase+=Math.min(speed*.018,1.2);
    const swing=Math.min(speed/10,1)*.55;
-   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);
+   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);\n   keepRiggedFeetOnPitch(a);
    if(a.userData.legL&&a.userData.legR){
      a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
      a.userData.legR.rotation.x=-Math.sin(a.userData.walkPhase)*swing;
