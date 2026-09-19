@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "scripts": {
-    "web:check": "node --check web/src/game.js",
+    "web:check": "node --check web/src/game-final.js",
     "cap:sync": "npx cap sync ios",
     "cap:open": "npx cap open ios"
   },
