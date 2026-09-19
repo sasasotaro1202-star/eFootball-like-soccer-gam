@@ -459,7 +459,7 @@ function update(dt){
  camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+5,0,t.z);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
- state.actions={}
+ const sprintHeld=!!state.actions?.sprint;state.actions={sprint:sprintHeld}
 }
 const radarCanvas=document.querySelector("#radar"),radarCtx=radarCanvas?.getContext("2d"),staminaFill=document.querySelector("#staminaFill"),playerLabel=document.querySelector("#playerLabel"),playerRole=document.querySelector("#playerRole"),playerNo=document.querySelector("#playerNo");
 function updateRadar(){
