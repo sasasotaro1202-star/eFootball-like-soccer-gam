@@ -781,8 +781,6 @@ const advancedState={
   firstTouchLock:0,
   lastKick:0
 };
-// Backward-compatible name used by the enhanced input layer.
-const enhancedState=advancedState;
 function showMatchEvent(text,duration=1100){
   msg.textContent=text;
   setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},duration);
