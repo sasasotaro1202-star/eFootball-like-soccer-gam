@@ -44,54 +44,82 @@ function wallet(){$("#gp").textContent=money(state.gp);$("#gp2").textContent=mon
 function screen(n){Object.values(screens).forEach(x=>x.classList.remove("active"));screens[n].classList.add("active");document.body.classList.toggle("inMatch",n==="match");}
 function getProgress(p){const x=state.progress[p.id]||{};return{level:Math.max(1,Math.min(x.level||1,x.maxLevel||30)),maxLevel:Math.max(30,x.maxLevel||30),xp:Math.max(0,x.xp||0),breakthrough:Math.max(0,Math.min(x.breakthrough||0,5)),points:Math.max(0,x.points||0),positions:x.positions||[p.position]}}
 function playerStats(p){
- const o=Number(p.overall)||80,pos=p.position,x=getProgress(p),boost=Math.min(8,x.level-1+x.breakthrough*2);
- const s={offAwareness:o,ballControl:o,dribbling:o,tightPossession:o,lowPass:o,loftedPass:o,finishing:o,heading:o,setPiece:o,curl:o,speed:o,acceleration:o,kickingPower:o,jumping:o,physicalContact:o,balance:o,stamina:o,gkAwareness:o,gkCatching:o,gkParrying:o,gkReflexes:o,gkReach:o};
- const role={
-   FW:{offAwareness:4,finishing:5,speed:2,acceleration:2,dribbling:2,kickingPower:2},
-   MF:{ballControl:4,dribbling:3,tightPossession:4,lowPass:5,loftedPass:4,setPiece:2,stamina:2},
-   DF:{physicalContact:4,heading:3,defAwareness:5,lowPass:2,stamina:2,balance:2},
-   GK:{gkAwareness:7,gkCatching:7,gkParrying:7,gkReflexes:7,gkReach:6,heading:-15,finishing:-20,dribbling:-10,speed:-6}
+ const o=Number(p.overall)||80,pos=p.position,x=getProgress(p),boost=Math.min(8,(x.level-1)*0.55+x.breakthrough*1.4);
+ const s={offAwareness:52,ballControl:52,dribbling:52,tightPossession:50,lowPass:50,loftedPass:48,finishing:48,heading:48,setPiece:45,curl:48,speed:50,acceleration:50,kickingPower:50,jumping:48,physicalContact:50,balance:50,stamina:50,defAwareness:48,gkAwareness:45,gkCatching:45,gkParrying:45,gkReflexes:45,gkReach:45};
+ const profiles={
+  FW:{offAwareness:o+2,finishing:o+2,ballControl:o-1,dribbling:o, tightPossession:o-1,lowPass:o-5,loftedPass:o-8,heading:o-2,setPiece:o-5,curl:o-2,speed:o,acceleration:o, kickingPower:o, jumping:o-2,physicalContact:o-3,balance:o-1,stamina:o-3,defAwareness:45},
+  MF:{offAwareness:o-1,ballControl:o+1,dribbling:o, tightPossession:o+1,lowPass:o+3,loftedPass:o+1,finishing:o-4,heading:o-7,setPiece:o-2,curl:o-2,speed:o-3,acceleration:o-3,kickingPower:o-4,jumping:o-7,physicalContact:o-5,balance:o,stamina:o,defAwareness:o-4},
+  DF:{offAwareness:o-10,ballControl:o-6,dribbling:o-8,tightPossession:o-7,lowPass:o-2,loftedPass:o-3,finishing:o-15,heading:o+1,setPiece:o-5,curl:o-7,speed:o-3,acceleration:o-3,kickingPower:o-3,jumping:o,physicalContact:o+2,balance:o-1,stamina:o,defAwareness:o+3},
+  GK:{offAwareness:40,ballControl:48,dribbling:40,tightPossession:42,lowPass:o-4,loftedPass:o-2,finishing:35,heading:35,setPiece:30,curl:30,speed:o-8,acceleration:o-8,kickingPower:o-4,jumping:o+2,physicalContact:o, balance:o-1,stamina:o-1,defAwareness:o+1,gkAwareness:o+3,gkCatching:o+3,gkParrying:o+3,gkReflexes:o+3,gkReach:o+2}
  }[pos]||{};
- Object.keys(role).forEach(k=>{if(k in s)s[k]+=role[k]});
- const style={
-   "Lionel Messi":{dribbling:7,tightPossession:8,ballControl:7,lowPass:6,finishing:5,curl:5,setPiece:6,acceleration:4},
-   "Cristiano Ronaldo":{finishing:8,heading:6,jumping:6,physicalContact:5,speed:4,kickingPower:6,offAwareness:7},
-   "Pelé":{finishing:7,dribbling:6,ballControl:6,heading:4,speed:4,kickingPower:5},
-   "Diego Maradona":{dribbling:8,tightPossession:9,ballControl:8,lowPass:6,setPiece:7,curl:6,balance:5},
-   "Johan Cruyff":{offAwareness:6,ballControl:6,dribbling:6,lowPass:7,finishing:5,speed:5,stamina:4},
-   "Franz Beckenbauer":{lowPass:6,loftedPass:6,physicalContact:5,heading:5,offAwareness:2},
-   "Zinedine Zidane":{ballControl:7,tightPossession:7,lowPass:7,loftedPass:6,heading:4,setPiece:5,physicalContact:3},
-   "Ronaldo Nazário":{finishing:8,speed:7,acceleration:8,dribbling:7,physicalContact:5,kickingPower:5},
-   Ronaldinho:{dribbling:8,tightPossession:8,ballControl:8,lowPass:6,setPiece:7,curl:6,acceleration:4},
-   Neymar:{dribbling:8,tightPossession:8,ballControl:8,lowPass:6,setPiece:6,finishing:4,acceleration:5},
-   "Kylian Mbappé":{speed:9,acceleration:9,finishing:6,offAwareness:6,dribbling:5},
-   "Robert Lewandowski":{finishing:9,heading:7,offAwareness:8,physicalContact:5,kickingPower:5},
-   Xavi:{ballControl:7,lowPass:9,loftedPass:7,tightPossession:7,stamina:4},
-   "Andrés Iniesta":{ballControl:8,dribbling:7,tightPossession:8,lowPass:8,acceleration:4,balance:5},
-   "Luka Modrić":{lowPass:8,loftedPass:8,ballControl:7,tightPossession:6,stamina:6,curl:4},
-   "Kevin De Bruyne":{lowPass:9,loftedPass:8,kickingPower:6,offAwareness:5,setPiece:5,stamina:5},
-   "Erling Haaland":{finishing:9,offAwareness:8,physicalContact:8,speed:7,acceleration:6,heading:7,kickingPower:6},
-   "Thierry Henry":{speed:7,acceleration:7,finishing:7,dribbling:6,offAwareness:7,kickingPower:5},
-   "Paolo Maldini":{physicalContact:7,heading:6,stamina:7,balance:5,lowPass:5,offAwareness:2},
-   "Gianluigi Buffon":{gkAwareness:9,gkCatching:8,gkParrying:8,gkReflexes:8,gkReach:8},
-   "Manuel Neuer":{gkAwareness:9,gkCatching:7,gkParrying:7,gkReflexes:8,gkReach:8,speed:3,lowPass:4},
-   "Sergio Ramos":{physicalContact:7,heading:7,stamina:6,offAwareness:4,kickingPower:5},
-   "Virgil van Dijk":{physicalContact:9,heading:8,defAwareness:8,speed:5,stamina:6},
-   "Luis Suárez":{finishing:8,offAwareness:8,physicalContact:5,balance:5,dribbling:5},
-   "Karim Benzema":{finishing:7,offAwareness:7,ballControl:6,lowPass:6,heading:5},
-   "Roberto Carlos":{speed:7,kickingPower:9,lowPass:6,stamina:7,physicalContact:5},
-   Cafu:{speed:7,stamina:8,lowPass:6,defAwareness:6,balance:5},
-   Garrincha:{dribbling:8,ballControl:8,acceleration:7,tightPossession:7},
-   "Michel Platini":{finishing:6,lowPass:8,setPiece:8,curl:7,offAwareness:6},
-   "Marco van Basten":{finishing:9,heading:8,offAwareness:8,ballControl:6,kickingPower:5},
-   "Ruud Gullit":{physicalContact:7,speed:6,stamina:7,finishing:5,heading:6,ballControl:5},
-   "Franco Baresi":{defAwareness:9,physicalContact:7,heading:6,lowPass:6,balance:5},
-   "Fabio Cannavaro":{defAwareness:9,physicalContact:6,heading:6,balance:7,jumping:6},
-   "Lev Yashin":{gkAwareness:9,gkCatching:8,gkParrying:9,gkReflexes:9,gkReach:8}
- }[p.name]||{};
- Object.keys(style).forEach(k=>{if(k in s)s[k]+=style[k]});
- const cardBoost=(rarityRank(p.cardType||p.rarity)-1)*1+(p.cardType==="BIG_TIME"?1:0);
- Object.keys(s).forEach(k=>s[k]=clampStat(s[k]+boost+cardBoost));
+ Object.assign(s,profiles);
+
+ // Achievement-aware player profile: ratings are anchored to documented career strengths,
+ // not a flat "overall everywhere" shortcut. Each profile is deliberately compact and
+ // represents durable traits rather than one-season form.
+ const achievementProfiles={
+  "Lionel Messi":{dribbling:8,tightPossession:9,ballControl:8,lowPass:6,finishing:7,curl:7,setPiece:7,acceleration:6,offAwareness:8},
+  "Cristiano Ronaldo":{finishing:9,heading:8,jumping:7,offAwareness:9,speed:7,acceleration:7,kickingPower:8,physicalContact:6},
+  "Pelé":{finishing:9,dribbling:7,ballControl:7,offAwareness:9,speed:7,heading:7,balance:6,kickingPower:7},
+  "Diego Maradona":{dribbling:9,tightPossession:9,ballControl:9,lowPass:7,finishing:7,setPiece:8,curl:8,balance:7,acceleration:7},
+  "Johan Cruyff":{offAwareness:8,ballControl:8,dribbling:7,lowPass:8,finishing:7,speed:7,stamina:6},
+  "Franz Beckenbauer":{defAwareness:9,lowPass:8,loftedPass:8,ballControl:7,physicalContact:6,heading:7,offAwareness:5},
+  "Zinedine Zidane":{ballControl:9,tightPossession:8,lowPass:9,loftedPass:8,finishing:6,heading:6,setPiece:7,physicalContact:5},
+  "Ronaldo Nazário":{finishing:9,speed:9,acceleration:9,dribbling:8,physicalContact:7,kickingPower:8,offAwareness:8},
+  "Ronaldinho":{dribbling:9,tightPossession:9,ballControl:9,lowPass:7,setPiece:8,curl:8,acceleration:7},
+  "Neymar":{dribbling:9,tightPossession:9,ballControl:9,lowPass:7,finishing:7,setPiece:8,curl:8,acceleration:8},
+  "Kylian Mbappé":{speed:10,acceleration:10,finishing:8,offAwareness:8,dribbling:8,balance:6},
+  "Robert Lewandowski":{finishing:10,offAwareness:9,heading:9,physicalContact:7,kickingPower:8,balance:6},
+  "Xavi":{lowPass:10,loftedPass:9,ballControl:9,tightPossession:8,stamina:7,offAwareness:5},
+  "Andrés Iniesta":{ballControl:10,dribbling:9,tightPossession:10,lowPass:9,acceleration:7,balance:8},
+  "Luka Modrić":{lowPass:9,loftedPass:9,ballControl:9,tightPossession:8,stamina:8,curl:7,offAwareness:6},
+  "Kevin De Bruyne":{lowPass:10,loftedPass:10,kickingPower:8,offAwareness:7,setPiece:8,curl:8,stamina:7},
+  "Mohamed Salah":{speed:8,acceleration:9,finishing:8,offAwareness:8,dribbling:8,balance:7},
+  "Erling Haaland":{finishing:10,offAwareness:9,physicalContact:9,speed:8,acceleration:7,heading:9,kickingPower:9},
+  "Thierry Henry":{speed:9,acceleration:9,finishing:8,dribbling:8,offAwareness:9,kickingPower:8},
+  "David Beckham":{lowPass:8,loftedPass:10,setPiece:10,curl:10,kickingPower:9,stamina:7},
+  "Wayne Rooney":{finishing:8,offAwareness:8,kickingPower:9,lowPass:7,physicalContact:7,stamina:8},
+  "Steven Gerrard":{lowPass:9,loftedPass:9,kickingPower:9,stamina:9,physicalContact:7,offAwareness:7},
+  "Frank Lampard":{offAwareness:9,finishing:8,lowPass:8,stamina:9,kickingPower:8},
+  "Andrea Pirlo":{lowPass:10,loftedPass:10,setPiece:10,curl:9,ballControl:9},
+  "Paolo Maldini":{defAwareness:10,physicalContact:8,heading:8,speed:7,balance:8,stamina:9,lowPass:7},
+  "Gianluigi Buffon":{gkAwareness:10,gkCatching:9,gkParrying:9,gkReflexes:10,gkReach:9,physicalContact:6},
+  "Iker Casillas":{gkAwareness:9,gkCatching:9,gkParrying:9,gkReflexes:10,gkReach:8,acceleration:4},
+  "Manuel Neuer":{gkAwareness:10,gkCatching:8,gkParrying:8,gkReflexes:9,gkReach:9,speed:6,lowPass:7},
+  "Sergio Ramos":{defAwareness:9,physicalContact:9,heading:9,kickingPower:8,offAwareness:6},
+  "Carles Puyol":{defAwareness:10,physicalContact:9,heading:8,stamina:9,balance:8},
+  "Virgil van Dijk":{defAwareness:10,physicalContact:10,heading:9,speed:8,stamina:8,balance:7},
+  "Luis Suárez":{finishing:10,offAwareness:9,physicalContact:7,balance:8,dribbling:8,kickingPower:8},
+  "Karim Benzema":{finishing:9,offAwareness:9,ballControl:8,lowPass:8,heading:7,physicalContact:6},
+  "Roberto Carlos":{speed:9,kickingPower:10,lowPass:8,stamina:9,physicalContact:7},
+  "Cafu":{speed:9,stamina:10,lowPass:8,defAwareness:8,balance:8},
+  "Garrincha":{dribbling:10,ballControl:9,acceleration:9,tightPossession:9,balance:8},
+  "Michel Platini":{finishing:8,lowPass:10,setPiece:10,curl:9,offAwareness:9},
+  "Marco van Basten":{finishing:10,heading:9,offAwareness:9,ballControl:8,kickingPower:9},
+  "Ruud Gullit":{physicalContact:9,speed:8,stamina:10,finishing:8,heading:8,ballControl:8},
+  "Dennis Bergkamp":{ballControl:10,tightPossession:9,finishing:8,lowPass:9,offAwareness:8},
+  "Patrick Vieira":{physicalContact:10,stamina:10,defAwareness:8,lowPass:7,speed:7},
+  "Didier Drogba":{finishing:9,heading:10,physicalContact:10,kickingPower:9,offAwareness:9},
+  "Samuel Eto'o":{speed:10,acceleration:10,finishing:9,offAwareness:9,stamina:8},
+  "Yaya Touré":{physicalContact:9,speed:8,stamina:9,lowPass:8,finishing:7,kickingPower:8},
+  "Sadio Mané":{speed:9,acceleration:9,finishing:8,dribbling:8,stamina:9},
+  "Kevin Keegan":{finishing:8,speed:8,offAwareness:9,stamina:9},
+  "Kenny Dalglish":{finishing:9,ballControl:9,lowPass:8,offAwareness:9},
+  "George Weah":{speed:9,acceleration:9,finishing:9,physicalContact:8},
+  "Lev Yashin":{gkAwareness:10,gkCatching:9,gkParrying:10,gkReflexes:10,gkReach:9},
+  "Ferenc Puskás":{finishing:10,kickingPower:10,offAwareness:9,lowPass:8,curl:9},
+  "Eusébio":{speed:10,acceleration:10,finishing:10,kickingPower:9,offAwareness:9},
+  "Gerd Müller":{finishing:10,offAwareness:10,heading:9,physicalContact:7},
+  "Franco Baresi":{defAwareness:10,physicalContact:8,lowPass:9,balance:9,heading:8},
+  "Fabio Cannavaro":{defAwareness:10,physicalContact:8,heading:9,balance:9,jumping:9},
+  "Arjen Robben":{speed:9,acceleration:10,dribbling:9,finishing:8,curl:9},
+  "Franck Ribéry":{speed:9,acceleration:9,dribbling:9,tightPossession:9,lowPass:7}
+ };
+ const profile=achievementProfiles[p.name]||{};
+ Object.keys(profile).forEach(k=>{s[k]=(s[k]??50)+profile[k]});
+ // Card rarity is a controlled edition boost, not a substitute for the player's historical ability.
+ const cardBoost={STANDARD:0,HIGHLIGHT:1,SHOWTIME:2,EPIC:2,LEGEND:2,BIG_TIME:3}[String(p.cardType||p.rarity||"STANDARD").toUpperCase()]||0;
+ Object.keys(s).forEach(k=>s[k]=clampStat((Number(s[k])||50)+boost+cardBoost));
  return s
 }
 function clampStat(v){return Math.max(45,Math.min(99,Math.round(v)))}
