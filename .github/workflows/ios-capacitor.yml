@@ -32,11 +32,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate 2,000-player historical pool
+        run: node scripts/build-player-pool.mjs
+
       - name: Validate the exact game bundle used by iPhone
         run: |
           node --check web/src/game-hardreset.js
           node --check scripts/prepare-ios.mjs
+          grep -q 'src/home.js' web/index.html
           grep -q 'game-hardreset.js' web/index.html
+          node -e "import('./web/src/player-pool.generated.js').then(m=>{if(m.PLAYER_POOL.length<2000)throw new Error('player pool < 2000');console.log('player pool',m.PLAYER_POOL.length)})"
           grep -q 'id="stick"' web/index.html
           if grep -q 'id="actions"' web/index.html; then exit 1; fi
           if grep -q 'data-action=' web/index.html; then exit 1; fi
