@@ -1,3 +1,4 @@
+import {createGamePlayerProfile} from "./playerProfiles.js";
 import * as THREE from "three";
 
 const root=document.querySelector("#game"),scoreEl=document.querySelector("#score"),clockEl=document.querySelector("#clock"),msg=document.querySelector("#message");
@@ -18,7 +19,8 @@ mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);
 const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
 for(const x of[-54.2,54.2]){const g=new THREE.Group(),pm=M(0xffffff,.35);g.add(cyl(.16,3.1,pm,-7,1.55,0),cyl(.16,3.1,pm,7,1.55,0),box(.16,.16,14,pm,0,3.1,0));g.position.x=x;scene.add(g)}
 
-function makePlayer(team,number,controlled=false){
+function makePlayer(team,number,controlled=false,role="MID",profileOverrides={}){
+
  const g=new THREE.Group(),body=cyl(.58,1.5,team,0,2.02,0);
  g.add(body,cyl(.38,.76,skin,0,3.2,0),cyl(.4,.24,hair,0,3.65,0));
  g.add(box(.22,1,.22,team,-.76,2.08,0),box(.22,1,.22,team,.76,2.08,0));
@@ -27,17 +29,17 @@ function makePlayer(team,number,controlled=false){
  g.userData.legL=legL;g.userData.legR=legR;
  g.add(box(.32,.18,.62,white,-.28,.14,-.18),box(.32,.18,.62,white,.28,.14,-.18));
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
- g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0};scene.add(g);return g;
+ g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0};scene.add(g);return g;
 }
-const player=makePlayer(blue,10,true);
-const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i]));
-const foes=Array.from({length:11},(_,i)=>makePlayer(red,[1,2,3,4,5,6,7,8,9,10,11][i]));
+const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
+const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
+const foes=Array.from({length:11},(_,i)=>makePlayer(red,[1,2,3,4,5,6,7,8,9,10,11][i],false,i<4?"DEF":i<8?"MID":"FWD"));
 const homePos=[[-44,0],[-36,-22],[-36,22],[-18,-25],[-18,-9],[-18,9],[-18,25],[4,-25],[7,-8],[7,8],[4,25]];
 const awayPos=[[44,0],[36,-22],[36,22],[18,-25],[18,-9],[18,9],[18,25],[-4,-25],[-7,-8],[-7,8],[-4,25]];
 mates.forEach((p,i)=>{p.position.set(...homePos[i],0);p.userData.homeX=homePos[i][0];p.userData.homeZ=homePos[i][1]});
 foes.forEach((p,i)=>{p.position.set(...awayPos[i],0);p.userData.homeX=awayPos[i][0];p.userData.homeZ=awayPos[i][1]});
 player.position.set(-40,0,0);player.userData.homeX=-40;player.userData.homeZ=0;
-const gks=[makePlayer(white,1),makePlayer(white,1)];gks[0].scale.setScalar(.94);gks[1].scale.setScalar(.94);
+const gks=[makePlayer(white,1,false,"GK"),makePlayer(white,1,false,"GK")];gks[0].scale.setScalar(.94);gks[1].scale.setScalar(.94);
 const ball=new THREE.Mesh(new THREE.SphereGeometry(.48,16,12),ballMat);ball.castShadow=true;ball.position.set(0,.48,0);ball.userData={vx:0,vz:0,owner:null};scene.add(ball);
 
 function allHome(){return [player,...mates]}
@@ -60,13 +62,14 @@ function kickTo(tx,tz,power){
  const p=controlled(),dx=ball.position.x-p.position.x,dz=ball.position.z-p.position.z;
  if(Math.hypot(dx,dz)>3.1||performance.now()<state.kickLock)return;
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
- ball.userData.owner=null;ball.userData.vx=x/l*power;ball.userData.vz=z/l*power;state.kickLock=performance.now()+260
+ ball.userData.owner=null;const passScale=p.userData.profile.passing/80;
+ ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260
 }
 function actions(){
  const a=state.actions,p=controlled();
  if(a.switch){selectPlayer(state.selected+1);state.actions.switch=false}
  if(a.pass){const t=nearestMate();kickTo(t.position.x,t.position.z,22);state.actions.pass=false}
- if(a.shoot){kickTo(53,-p.position.z*.35,32);state.actions.shoot=false}
+ if(a.shoot){kickTo(53,-p.position.z*.35,32*(p.userData.profile.shooting/80));state.actions.shoot=false}
  if(a.tackle&&performance.now()>state.tackleLock){
    state.tackleLock=performance.now()+650;
    let target=foes.reduce((b,x)=>dist(x,p)<dist(b,p)?x:b,foes[0]);
@@ -91,11 +94,19 @@ function animatePlayers(dt){
 function update(dt){
  if(state.over)return;
  state.time=Math.max(0,state.time-dt);
- const p=controlled(),sprint=state.actions.sprint,s=(sprint?14:9.2)*(p.userData.stamina>0?1:.65);
+ const p=controlled(),sprint=state.actions.sprint,pace=p.userData.profile.pace/90,s=(sprint?14:9.2)*(.82+.28*pace)*(p.userData.stamina>0?1:.65);
  if(sprint)p.userData.stamina=Math.max(0,p.userData.stamina-20*dt);else p.userData.stamina=Math.min(100,p.userData.stamina+8*dt);
  move(p,p.position.x+state.joy.x,p.position.z+state.joy.y,s,dt);p.position.x=THREE.MathUtils.clamp(p.position.x,-51,51);p.position.z=THREE.MathUtils.clamp(p.position.z,-32,32);
  mates.forEach((m,i)=>{const q=homePos[i],tx=q[0]+(ball.position.x-q[0])*.18,tz=q[1]+(ball.position.z-q[1])*.18;move(m,tx,tz,5.0,dt)});
- foes.forEach((f,i)=>{const chase=i===0||dist(f,ball)<15,tx=chase?ball.position.x:f.userData.homeX,tz=chase?ball.position.z:f.userData.homeZ;move(f,tx,tz,5.6,dt)});
+ foes.forEach((f,i)=>{
+   const chase=i===0||dist(f,ball)<15,tx=chase?ball.position.x:f.userData.homeX,tz=chase?ball.position.z:f.userData.homeZ;
+   move(f,tx,tz,5.0*(.82+.28*f.userData.profile.pace/80),dt);
+   if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-24&&Math.abs(f.position.z)<18&&performance.now()>f.userData.aiKick){
+     f.userData.aiKick=performance.now()+1200;
+     const dx=-53-ball.position.x,dz=-ball.position.z*.35,l=Math.hypot(dx,dz)||1;
+     ball.userData.owner=null;ball.userData.vx=dx/l*24*(f.userData.profile.shooting/80);ball.userData.vz=dz/l*24*(f.userData.profile.shooting/80);
+   }
+ });
  const owner=ball.userData.owner;
  if(owner){
    ball.position.x=owner.position.x+Math.sin(owner.rotation.y)*.9;ball.position.z=owner.position.z+Math.cos(owner.rotation.y)*.9;ball.position.y=.5;
