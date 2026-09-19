@@ -190,3 +190,30 @@ body{overscroll-behavior:none}
 .cardVisual-legend .photoBadge{background:linear-gradient(135deg,rgba(58,70,88,.95),rgba(190,205,225,.78));color:#081018}
 .cardVisual-big_time .photoBadge{background:linear-gradient(135deg,rgba(70,25,10,.96),rgba(255,183,40,.95));color:#180d04}
 .cardVisual-highlight .photoBadge{background:linear-gradient(135deg,rgba(20,88,125,.95),rgba(50,170,230,.88))}
+
+/* Premium original player-card finish: dynamic photo + foil treatment */
+.realPhoto{position:absolute;inset:0;z-index:2;overflow:hidden;border-radius:13px}
+.realPhoto img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 24%;filter:saturate(1.08) contrast(1.06);transform:scale(1.035)}
+.realPhotoLoaded:after{content:"REAL PHOTO";position:absolute;left:7px;bottom:7px;padding:3px 5px;border-radius:4px;background:rgba(0,0,0,.68);border:1px solid rgba(255,255,255,.2);font-size:5px;font-weight:1000;letter-spacing:.12em;color:#fff}
+.playerCardItem.rarityCard{isolation:isolate;background:linear-gradient(145deg,#111b22,#05090d)!important;border-radius:18px!important;border:1px solid rgba(255,255,255,.18)!important;box-shadow:0 14px 34px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.1)}
+.playerCardItem.rarityCard:after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:18px;background:linear-gradient(125deg,rgba(255,255,255,.18),transparent 18%,transparent 65%,rgba(255,255,255,.08));mix-blend-mode:screen}
+.playerCardItem .cardPortrait{left:7%;right:7%;top:30px;height:122px!important;border-radius:14px!important;border:1px solid rgba(255,255,255,.15);background:#0b1116!important}
+.playerCardItem .cardRating{z-index:7;text-shadow:0 2px 8px #000}
+.playerCardItem .cardRating b{font-size:27px}
+.playerCardItem .rarity{z-index:7;font-size:7px;letter-spacing:.2em}
+.playerCardItem .cardLevel{z-index:7}
+.playerCardItem>strong,.playerCardItem>span:not(.rarity),.playerCardItem>small,.playerCardItem>.cardMeta,.playerCardItem>.cardMiniStats,.playerCardItem>.xpBar{position:relative;z-index:7}
+.cardVisual-standard{background:linear-gradient(145deg,#26343c,#071016)!important}
+.cardVisual-highlight{background:linear-gradient(145deg,#0e5270,#07131b 64%,#143c53)!important}
+.cardVisual-showtime{background:linear-gradient(145deg,#3d245f,#071019 58%,#126d83)!important}
+.cardVisual-epic{background:linear-gradient(145deg,#60351e,#120c09 58%,#8a5b22)!important}
+.cardVisual-legend{background:linear-gradient(145deg,#26384e,#080d13 58%,#b89c57)!important}
+.cardVisual-big_time{background:linear-gradient(145deg,#171717,#070707 58%,#b47a1b)!important}
+.cardVisual-showtime:before,.cardVisual-epic:before,.cardVisual-legend:before,.cardVisual-big_time:before{content:"";position:absolute;inset:-50%;z-index:0;background:conic-gradient(from 35deg,transparent 0 15%,rgba(255,255,255,.16) 20%,transparent 28% 58%,rgba(255,220,120,.14) 64%,transparent 72%);animation:foilSweep 5s linear infinite;pointer-events:none}
+.cardVisual-big_time .cardPortrait{border-color:rgba(255,213,87,.75);box-shadow:0 0 30px rgba(255,183,45,.2),inset 0 0 0 1px rgba(255,238,167,.5)}
+.cardVisual-epic .cardPortrait{border-color:rgba(255,177,80,.65)}
+.cardVisual-legend .cardPortrait{border-color:rgba(210,224,240,.72)}
+.cardVisual-showtime .cardPortrait{border-color:rgba(104,219,255,.7)}
+.cardVisual-big_time .photoBadge,.cardVisual-epic .photoBadge,.cardVisual-legend .photoBadge,.cardVisual-showtime .photoBadge{z-index:8;font-weight:1000;box-shadow:0 3px 10px #0008}
+@keyframes foilSweep{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.cardVisual-showtime:before,.cardVisual-epic:before,.cardVisual-legend:before,.cardVisual-big_time:before{animation:none}}
