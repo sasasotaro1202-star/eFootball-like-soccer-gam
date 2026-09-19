@@ -2,11 +2,55 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#07131b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>FOOTBALL</title><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./style.css?v=20260920-ui-05"></head><body><main id="app">
-<section id="homeScreen" class="screen active"><div class="homeBg"></div><header class="homeHeader"><div><div class="brand">FOOTBALL</div><div class="season">SEASON • WORLD LEGENDS</div></div><div class="currency"><span>GP</span><b id="gp">10000</b><span>◆</span><b id="coins">100</b></div></header>
-<div class="hero"><div class="heroCopy"><span class="eyebrow">LIVE MATCH</span><h1>BUILD YOUR<br>LEGACY</h1><p>Collect legendary footballers, build your squad and play fast touch-and-flick matches.</p><button id="playNow" class="primary">PLAY MATCH</button></div><div class="heroCard"><div class="cardGlow"></div><div class="cardTier">EPIC</div><div class="cardName">LIONEL<br>MESSI</div><div class="cardPos">AMF • 98</div></div></div>
-<div class="homeQuickNav"><button class="homeQuick active" data-nav="home">HOME</button><button class="homeQuick" data-nav="squad">SQUAD</button><button class="homeQuick" data-nav="collection">PLAYERS</button><button class="homeQuick" data-nav="gacha">GACHA</button><button class="homeQuick" data-nav="training">TRAINING</button><button class="homeQuick" id="quickPlay">MATCH</button></div><div class="homeGrid"><button class="tile" data-nav="gacha"><span class="tileIcon">✦</span><b>GACHA</b><small>LEGENDS • SPECIAL</small></button><button class="tile" data-nav="squad"><span class="tileIcon">◈</span><b>SQUAD</b><small>FORMATION • PLAYERS</small></button><button class="tile" data-nav="collection"><span class="tileIcon">▦</span><b>COLLECTION</b><small><span id="ownedCount">0</span> PLAYERS</small></button><button class="tile" data-nav="training"><span class="tileIcon">↗</span><b>TRAINING</b><small>LEVEL • SKILLS</small></button></div>
-<nav class="bottomNav"><button class="navBtn active" data-nav="home"><b>HOME</b><small>⌂</small></button><button class="navBtn" data-nav="squad"><b>SQUAD</b><small>◈</small></button><button class="navBtn" data-nav="gacha"><b>GACHA</b><small>✦</small></button><button class="navBtn" data-nav="collection"><b>PLAYERS</b><small>▦</small></button></nav></section>
-<div id="gachaStage" class="gachaStage"><div class="stageOrb"><b>✦</b></div><div class="stageLabel">PLAYER SIGNING</div><div class="stageName" id="stageName">LIONEL MESSI</div><div class="stageRarity" id="stageRarity">LEGEND</div><div class="gachaResult" id="gachaResult"></div></div><section id="panelScreen" class="screen panelScreen"><header class="panelHeader"><button id="panelBack">‹</button><div><div id="panelTitle">GACHA</div><small id="panelSubtitle">LEGENDARY PLAYER DRAW</small></div><div class="currency mini"><span>GP</span><b id="gp2">10000</b></div></header><div id="panelBody"></div></section>
+<section id="homeScreen" class="screen active">
+  <div class="homeBg"></div>
+  <header class="homeHeader">
+    <div class="brandBlock"><div class="brand">FOOTBALL</div><div class="season">DREAM TEAM • SEASON 01</div></div>
+    <div class="topCurrency"><div><small>GP</small><b id="gp">10000</b></div><div><small>◆</small><b id="coins">100</b></div><button class="profileDot" aria-label="Profile">●</button></div>
+  </header>
+  <nav class="topTabs" aria-label="Main menu">
+    <button class="topTab active" data-nav="home">HOME</button>
+    <button class="topTab" data-nav="missions">MISSIONS</button>
+    <button class="topTab" data-nav="shop">SHOP</button>
+    <button class="topTab" data-nav="extras">EXTRAS</button>
+  </nav>
+
+  <div class="homeContent">
+    <section class="eventCarousel" aria-label="Featured events">
+      <article class="eventSlide eventA">
+        <div class="eventCopy"><span>SEASON CAMPAIGN</span><h1>WORLD<br>LEGENDS</h1><p>Build your Dream Team with original player cards and take them straight into 3D matches.</p><button id="playNow" class="primary">PLAY MATCH</button></div>
+        <div class="eventPlayers"><div class="eventFigure f1">10</div><div class="eventFigure f2">9</div><div class="eventFigure f3">7</div></div>
+        <div class="eventBadge">LIMITED<br><b>01</b></div>
+      </article>
+      <div class="eventDots"><i class="on"></i><i></i><i></i></div>
+    </section>
+
+    <section class="homeActions">
+      <button class="actionCard match" id="quickPlay"><span class="actionIcon">⚽</span><b>MATCH</b><small>PLAY NOW</small></button>
+      <button class="actionCard" data-nav="squad"><span class="actionIcon">◇</span><b>GAME PLAN</b><small>FORMATION • XI</small></button>
+      <button class="actionCard" data-nav="collection"><span class="actionIcon">♙</span><b>MY TEAM</b><small><span id="ownedCount">0</span> PLAYERS</small></button>
+      <button class="actionCard contract" data-nav="gacha"><span class="actionIcon">✦</span><b>CONTRACT</b><small>SPECIAL LIST</small></button>
+      <button class="actionCard" data-nav="training"><span class="actionIcon">↗</span><b>PLAYER DEVELOPMENT</b><small>TRAINING</small></button>
+      <button class="actionCard" id="dailyGame"><span class="actionIcon">◎</span><b>DAILY GAME</b><small>FREE REWARD</small></button>
+    </section>
+
+    <section class="homeLower">
+      <div class="homeSectionHead"><b>YOUR DREAM TEAM</b><button data-nav="collection">VIEW ALL</button></div>
+      <div class="homeMiniRow">
+        <button class="miniFeature" data-nav="squad"><span>4-3-3</span><b>WORLD XI</b><small>POSSESSION</small></button>
+        <button class="miniFeature" data-nav="gacha"><span>EPIC</span><b>SPECIAL LIST</b><small>NEW PLAYERS</small></button>
+        <button class="miniFeature" data-nav="training"><span>LV UP</span><b>DEVELOPMENT</b><small>+500 GP DAILY</small></button>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottomNav">
+    <button class="navBtn active" data-nav="home"><b>HOME</b><small>⌂</small></button>
+    <button class="navBtn" data-nav="squad"><b>GAME PLAN</b><small>◇</small></button>
+    <button class="navBtn" data-nav="gacha"><b>CONTRACT</b><small>✦</small></button>
+    <button class="navBtn" data-nav="collection"><b>MY TEAM</b><small>♙</small></button>
+  </nav>
+</section><div id="gachaStage" class="gachaStage"><div class="stageOrb"><b>✦</b></div><div class="stageLabel">PLAYER SIGNING</div><div class="stageName" id="stageName">LIONEL MESSI</div><div class="stageRarity" id="stageRarity">LEGEND</div><div class="gachaResult" id="gachaResult"></div></div><section id="panelScreen" class="screen panelScreen"><header class="panelHeader"><button id="panelBack">‹</button><div><div id="panelTitle">GACHA</div><small id="panelSubtitle">LEGENDARY PLAYER DRAW</small></div><div class="currency mini"><span>GP</span><b id="gp2">10000</b></div></header><div id="panelBody"></div></section>
 <section id="matchScreen" class="screen matchScreen"><div id="game" aria-label="3D soccer game"></div><div id="boot">FOOTBALL<br><small>3D MATCH ENGINE</small></div>
 <header id="matchbar"><div class="teamBadge home">H</div><div class="teamName">LEGENDS</div><div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">00:00</span></div><div class="teamName away">CLASSICS</div><div class="teamBadge away">A</div></header>
 <div id="topTools"><div class="pill"><span class="dot"></span><span id="matchState">LIVE</span></div></div><div id="playerCard"><div class="playerCardTop"><span id="playerRole">FW</span><span id="playerNo">#10</span></div><div id="playerLabel">PLAYER 10</div><div class="stamina"><span id="staminaFill"></span></div></div>
