@@ -12,14 +12,32 @@
 <main id="app">
 <div id="game" aria-label="3D soccer game"></div>
 <div id="boot" aria-live="polite">3D SOCCER<br><small>Loading match...</small></div>
-<div id="hud"><span id="score">0 - 0</span><span id="clock">03:00</span></div>
-<div id="controls">
-<div id="stick"><div id="knob"></div></div>
-<div id="actions">
-<button data-action="pass">PASS</button><button data-action="shoot">SHOOT</button>
-<button data-action="tackle">TACKLE</button><button data-action="switch">SWITCH</button>
-<button data-action="sprint">SPRINT</button>
+<header id="matchbar">
+ <div class="teamBadge home">H</div>
+ <div class="teamName">HOME</div>
+ <div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">03:00</span></div>
+ <div class="teamName away">AWAY</div>
+ <div class="teamBadge away">A</div>
+</header>
+<div id="topTools">
+ <div class="pill"><span class="dot live"></span><span id="matchState">LIVE</span></div>
+ <div class="pill">3D MATCH</div>
 </div>
+<div id="radarWrap" aria-label="mini map"><canvas id="radar" width="180" height="112"></canvas></div>
+<div id="playerCard">
+ <div class="playerCardTop"><span id="playerRole">MID</span><span id="playerNo">#1</span></div>
+ <div id="playerLabel">PLAYER 01</div>
+ <div class="stamina"><span id="staminaFill"></span></div>
+</div>
+<div id="controls">
+ <div id="stick" aria-label="Move"><div class="stickRing"></div><div id="knob"></div><span class="stickLabel">MOVE</span></div>
+ <div id="actions">
+  <button data-action="pass"><span class="actionIcon">↗</span><span>PASS</span></button>
+  <button data-action="shoot" class="primary"><span class="actionIcon">◉</span><span>SHOOT</span></button>
+  <button data-action="tackle"><span class="actionIcon">◆</span><span>TACKLE</span></button>
+  <button data-action="switch"><span class="actionIcon">↻</span><span>SWITCH</span></button>
+  <button data-action="sprint" class="sprint"><span class="actionIcon">»</span><span>SPRINT</span></button>
+ </div>
 </div>
 <div id="message"></div>
 <canvas id="fallback" aria-label="fallback soccer match"></canvas>
