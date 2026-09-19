@@ -25,3 +25,6 @@ No Base44 dependency is used.
 - Desktop fallback: WASD/arrow keys, Shift sprint, J pass, K shoot.
 
 The project is clean-room and does not ship proprietary eFootball assets, code, branding, or player likenesses.
+
+
+Automated Xcode-project generation is validated by CI.
