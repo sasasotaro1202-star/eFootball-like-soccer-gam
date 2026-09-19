@@ -260,3 +260,21 @@ body{overscroll-behavior:none}
 .gachaStage .miniResult.revealCard span{z-index:3}
 .gachaStage .gachaPrompt{cursor:pointer;border:1px solid #ffffff18;border-radius:18px;background:#06100dcc}
 @media(max-width:560px){.gachaStage .miniResult.revealCard{width:76px;height:124px}.gachaStage .miniResult.revealCard .revealPortrait{inset:0 0 34px}}
+
+/* Gacha presentation variants: original, lightweight, iPhone-friendly */
+.gachaStage.pattern-flash::before,.gachaStage.pattern-burst::before,.gachaStage.pattern-rain::before,.gachaStage.pattern-spotlight::before,.gachaStage.pattern-galaxy::before,.gachaStage.pattern-orbit::before,.gachaStage.pattern-scan::before{content:"";position:absolute;inset:8%;border-radius:50%;pointer-events:none;opacity:.75}
+.gachaStage.pattern-flash::before{background:radial-gradient(circle,rgba(255,255,255,.9) 0 3%,transparent 18%);animation:gachaFlash .7s ease-out infinite}
+.gachaStage.pattern-burst::before{background:conic-gradient(from 0deg,transparent 0 8%,rgba(255,220,120,.55) 9% 11%,transparent 12% 20%);animation:gachaSpin 1.4s linear infinite}
+.gachaStage.pattern-rain::before{background:repeating-linear-gradient(120deg,transparent 0 18px,rgba(110,190,255,.25) 20px 22px,transparent 24px 38px);animation:gachaRain .9s linear infinite}
+.gachaStage.pattern-spotlight::before{background:radial-gradient(ellipse at 50% 15%,rgba(255,255,255,.8),transparent 35%);animation:gachaSpot .9s ease-in-out infinite alternate}
+.gachaStage.pattern-galaxy::before{background:radial-gradient(circle at 30% 35%,rgba(150,120,255,.7) 0 1%,transparent 2%),radial-gradient(circle at 70% 60%,rgba(100,210,255,.65) 0 1%,transparent 2%);background-size:55px 55px,75px 75px;animation:gachaDrift 2s linear infinite}
+.gachaStage.pattern-orbit::before{border:2px solid rgba(255,255,255,.3);box-shadow:0 0 45px rgba(100,180,255,.35);animation:gachaSpin 1.8s linear infinite}
+.gachaStage.pattern-scan::before{background:linear-gradient(transparent 45%,rgba(255,255,255,.45) 50%,transparent 55%);animation:gachaScan .8s linear infinite}
+.gachaStage.pattern-burst .stageOrb,.gachaStage.pattern-galaxy .stageOrb{box-shadow:0 0 70px rgba(255,210,100,.55),0 0 140px rgba(100,180,255,.25)}
+.gachaStage.pattern-spotlight .stageOrb{box-shadow:0 0 90px rgba(255,255,255,.75)}
+@keyframes gachaFlash{0%,100%{transform:scale(.7);opacity:.1}50%{transform:scale(1.35);opacity:.9}}
+@keyframes gachaSpin{to{transform:rotate(360deg)}}
+@keyframes gachaRain{to{transform:translate3d(45px,80px,0)}}
+@keyframes gachaSpot{from{transform:scale(.85);opacity:.25}to{transform:scale(1.15);opacity:.9}}
+@keyframes gachaDrift{to{transform:rotate(12deg) scale(1.08)}}
+@keyframes gachaScan{0%{transform:translateY(-20%)}100%{transform:translateY(20%)}}
