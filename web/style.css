@@ -171,3 +171,22 @@ body{overscroll-behavior:none}
 .rateHead{display:flex;justify-content:space-between;align-items:end;margin-bottom:9px}.rateHead b{font-size:11px;letter-spacing:.12em}.rateHead small{font-size:7px;color:#71847f}
 .rateGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.rateGrid div{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border:1px solid #ffffff0d;border-radius:8px;background:#ffffff05}.rateGrid span{font-size:7px;color:#9db0aa}.rateGrid b{font-size:9px;color:#e5f1ed}
 @media(max-width:520px){.rateGrid{grid-template-columns:repeat(2,1fr)}}
+
+
+/* Player portrait/card differentiation: original face-photo style, no external paid assets. */
+.facePortrait.photoRealism{display:block;width:100%;height:100%;filter:saturate(1.04) contrast(1.05);transform:scale(1.01)}
+.cardPortrait{position:relative;overflow:hidden}
+.cardPortrait .photoBadge{position:absolute;z-index:4;top:7px;left:7px;padding:3px 6px;border-radius:5px;background:rgba(5,10,15,.78);border:1px solid rgba(255,255,255,.22);font-size:7px;font-weight:900;letter-spacing:.08em;color:#fff;backdrop-filter:blur(5px)}
+.rarityCard .portraitGlow{position:absolute;inset:-12%;z-index:1;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 58%);opacity:.6}
+.rarityCard .facePortrait{position:relative;z-index:2}
+.cardVisual-standard .portraitGlow{opacity:.12}
+.cardVisual-highlight .cardPortrait{box-shadow:inset 0 0 0 2px rgba(90,190,255,.7),0 8px 22px rgba(40,150,255,.16)}
+.cardVisual-showtime .cardPortrait{box-shadow:inset 0 0 0 2px rgba(255,255,255,.82),0 8px 26px rgba(120,210,255,.28)}
+.cardVisual-epic .cardPortrait{box-shadow:inset 0 0 0 2px rgba(255,205,95,.9),0 8px 30px rgba(255,180,45,.24)}
+.cardVisual-legend .cardPortrait{box-shadow:inset 0 0 0 2px rgba(205,215,230,.9),0 8px 30px rgba(190,210,235,.24)}
+.cardVisual-big_time .cardPortrait{box-shadow:inset 0 0 0 2px rgba(255,225,120,1),0 10px 36px rgba(255,180,40,.34)}
+.cardVisual-showtime .photoBadge{background:linear-gradient(135deg,rgba(24,115,180,.92),rgba(74,34,170,.92))}
+.cardVisual-epic .photoBadge{background:linear-gradient(135deg,rgba(125,77,12,.95),rgba(255,192,52,.82))}
+.cardVisual-legend .photoBadge{background:linear-gradient(135deg,rgba(58,70,88,.95),rgba(190,205,225,.78));color:#081018}
+.cardVisual-big_time .photoBadge{background:linear-gradient(135deg,rgba(70,25,10,.96),rgba(255,183,40,.95));color:#180d04}
+.cardVisual-highlight .photoBadge{background:linear-gradient(135deg,rgba(20,88,125,.95),rgba(50,170,230,.88))}
