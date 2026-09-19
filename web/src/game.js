@@ -49,6 +49,13 @@ window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
 renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
+let renderPaused=false;
+renderer.domElement.addEventListener("webglcontextlost",e=>{
+  e.preventDefault();
+  renderPaused=true;
+  window.__activateFallback?.("WebGL context lost — recovering");
+});
+renderer.domElement.addEventListener("webglcontextrestored",()=>{window.location.reload()});
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 scene.add(new THREE.HemisphereLight(0xdceeff,0x153d20,2.2));
@@ -668,4 +675,4 @@ update=function(dt){
   updateChargeUI();
 };
 
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;if(!renderPaused)renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
