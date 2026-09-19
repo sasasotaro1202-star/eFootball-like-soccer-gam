@@ -20,16 +20,43 @@ const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshB
 for(const x of[-54.2,54.2]){const g=new THREE.Group(),pm=M(0xffffff,.35);g.add(cyl(.16,3.1,pm,-7,1.55,0),cyl(.16,3.1,pm,7,1.55,0),box(.16,.16,14,pm,0,3.1,0));g.position.x=x;scene.add(g)}
 
 function makePlayer(team,number,controlled=false,role="MID",profileOverrides={}){
-
- const g=new THREE.Group(),body=cyl(.58,1.5,team,0,2.02,0);
- g.add(body,cyl(.38,.76,skin,0,3.2,0),cyl(.4,.24,hair,0,3.65,0));
- g.add(box(.22,1,.22,team,-.76,2.08,0),box(.22,1,.22,team,.76,2.08,0));
- const legL=box(.28,1.15,.3,black,-.28,.72,0),legR=box(.28,1.15,.3,black,.28,.72,0);
- g.add(legL,legR);
- g.userData.legL=legL;g.userData.legR=legR;
- g.add(box(.32,.18,.62,white,-.28,.14,-.18),box(.32,.18,.62,white,.28,.14,-.18));
- const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:.75,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
- g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0};scene.add(g);return g;
+ const g=new THREE.Group();
+ const palette=team===blue
+   ? {shirt:0x2f78d0,shorts:0x174f9d,socks:0xf4f7ff,accent:0xdbe8ff}
+   : team===red
+   ? {shirt:0xd93445,shorts:0x8f1728,socks:0xf7f7f7,accent:0xffd6d9}
+   : {shirt:0xf0f0f0,shorts:0x333333,socks:0xf0f0f0,accent:0xffc800};
+ const variants=[
+   {skin:0xf0bd8a,hair:0x241a16,scale:1.00,shoulder:1.00},
+   {skin:0xc98b63,hair:0x111111,scale:.97,shoulder:.94},
+   {skin:0x8d5a3b,hair:0x21150f,scale:1.03,shoulder:1.06},
+   {skin:0xf3c9a5,hair:0x6b3f22,scale:.94,shoulder:.92},
+   {skin:0xb66b45,hair:0x3a2419,scale:1.06,shoulder:1.08}
+ ];
+ const v=variants[(number+role.length+(team===red?2:0))%variants.length];
+ const skinMat=M(v.skin),hairMat=M(v.hair),shirtMat=M(palette.shirt),shortMat=M(palette.shorts),sockMat=M(palette.socks),bootMat=M(0x101318),accentMat=M(palette.accent);
+ const torso=new THREE.Mesh(new THREE.CapsuleGeometry(.56*v.shoulder,.82*v.scale,6,10),shirtMat);
+ torso.position.y=2.18;torso.scale.z=.68;torso.castShadow=true;
+ const neck=cyl(.16,.22,skinMat,0,2.86,0);
+ const head=new THREE.Mesh(new THREE.SphereGeometry(.38*v.scale,14,10),skinMat);head.position.y=3.25;head.castShadow=true;
+ const hair=new THREE.Mesh(new THREE.SphereGeometry(.405*v.scale,14,8),hairMat);hair.scale.set(1,.58,1);hair.position.y=3.48;hair.castShadow=true;
+ const shorts=box(.92*v.shoulder,.42,.62,shortMat,0,1.48,0);
+ const armL=cyl(.13,.88,skinMat,-.69*v.shoulder,2.12,0),armR=cyl(.13,.88,skinMat,.69*v.shoulder,2.12,0);
+ armL.rotation.z=-.18;armR.rotation.z=.18;
+ const sleeveL=cyl(.17,.34,shirtMat,-.62*v.shoulder,2.42,0),sleeveR=cyl(.17,.34,shirtMat,.62*v.shoulder,2.42,0);
+ const legL=new THREE.Group(),legR=new THREE.Group();
+ const thighL=cyl(.20,.72,shortMat,-.24*v.shoulder,1.02,0),thighR=cyl(.20,.72,shortMat,.24*v.shoulder,1.02,0);
+ const shinL=cyl(.17,.72,sockMat,-.24*v.shoulder,.45,0),shinR=cyl(.17,.72,sockMat,.24*v.shoulder,.45,0);
+ const bootL=box(.31,.18,.58,bootMat,-.24*v.shoulder,.09,-.18),bootR=box(.31,.18,.58,bootMat,.24*v.shoulder,.09,-.18);
+ const stripeL=box(.025,.12,.64,accentMat,-.24*v.shoulder,1.02,.315),stripeR=box(.025,.12,.64,accentMat,.24*v.shoulder,.45,.315);
+ const badge=box(.18,.22,.035,accentMat,0,2.32,-.39);
+ g.add(torso,neck,head,hair,shorts,armL,armR,sleeveL,sleeveR,thighL,thighR,shinL,shinR,bootL,bootR,stripeL,stripeR,badge);
+ g.userData.legL=thighL;g.userData.legR=thighR;g.userData.armL=armL;g.userData.armR=armR;
+ const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:controlled?.9:.25,side:THREE.DoubleSide}));
+ ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
+ g.scale.setScalar(v.scale);
+ g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0};
+ scene.add(g);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
