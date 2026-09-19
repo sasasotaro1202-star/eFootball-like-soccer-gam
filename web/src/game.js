@@ -338,7 +338,7 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  g.children.forEach(ch=>{if(ch!==ring&&ch!==numberFront&&ch!==numberBack)ch.userData.legacyVisual=true});
  // Persistent shirt numbers stay visible even when the rigged body replaces the procedural body.
  numberFront.renderOrder=4;numberBack.renderOrder=4;
- scene.add(g);attachRiggedVisual(g,team,variantIndex,number);return g;
+ scene.add(g);if(ENABLE_RIGGED_GLTF)attachRiggedVisual(g,team,variantIndex,number);return g;
 }
 const player=makePlayer(blue,10,true,"FWD",{pace:91,shooting:88,dribbling:90});
 const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11][i],false,i<3?"DEF":i<7?"MID":"FWD"));
@@ -631,15 +631,17 @@ animatePlayers(dt);updateRadar();updatePlayerCard();
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
 }
 function updateBroadcastCamera(dt){
-  // Endline broadcast camera: the pitch length runs along X, so the camera
-  // sits beyond the goal line instead of looking across the touchline.
-  const aspect=THREE.MathUtils.clamp(camera.aspect,.7,2.4);
-  const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-6,6);
-  const targetZ=THREE.MathUtils.clamp(ball.position.z*.10,-4,4);
-  const desired=new THREE.Vector3(96,52,targetZ);
-  const alpha=1-Math.pow(.0002,Math.min(.05,dt));
+  // Final broadcast baseline: the pitch runs left/right on X, so the camera
+  // must sit above the Z axis. This avoids the previous edge-on/underside view.
+  const aspect=THREE.MathUtils.clamp(camera.aspect,.75,2.5);
+  const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-7,7);
+  const targetZ=THREE.MathUtils.clamp(ball.position.z*.06,-3.5,3.5);
+  const distance=aspect>=1.15?112:124;
+  const height=aspect>=1.15?76:84;
+  const desired=new THREE.Vector3(targetX,height,distance);
+  const alpha=1-Math.pow(.00005,Math.min(.05,dt));
   camera.position.lerp(desired,alpha);
-  camera.fov=landscapeOrPortraitFov(aspect);
+  camera.fov=aspect>=1.15?50:46;
   camera.near=.1;
   camera.far=500;
   camera.updateProjectionMatrix();
