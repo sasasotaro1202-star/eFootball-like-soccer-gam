@@ -48,9 +48,10 @@
 </main>
 <script>
 window.__gameModuleLoaded=false;
-window.__threeBootFailed=false;
+window.__threeBootFailed=false;window.__threeRendererReady=false;window.__lastGameError="";
 window.__activateFallback=function(reason){
   window.__threeBootFailed=true;
+  window.__lastGameError=String(reason||"WebGL unavailable");
   var cv=document.getElementById("fallback"),ctx=cv&&cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,2);
   if(!cv||!ctx)return;
   function resize(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cv.style.width="100%";cv.style.height="100%";ctx.setTransform(dpr,0,0,dpr,0,0)}
@@ -71,7 +72,26 @@ window.__activateFallback=function(reason){
   if(!cv.__fallbackResizeBound){addEventListener("resize",function(){resize();draw()});cv.__fallbackResizeBound=true}
   var boot=document.getElementById("boot");if(boot){boot.classList.remove("ready");boot.innerHTML="3D FALLBACK<br><small>"+String(reason||"WebGL unavailable").slice(0,90)+"</small>"}
 };
-window.addEventListener("error",function(e){window.__activateFallback(e&&e.message||"WebGL unavailable")});
+window.addEventListener("error",function(e){
+  var reason=String(e&&e.message||"runtime error");
+  window.__lastGameError=reason;
+  if(window.__threeRendererReady){
+    var boot=document.getElementById("boot");
+    if(boot){boot.classList.remove("ready");boot.innerHTML="3D RUNTIME ERROR<br><small>"+reason.slice(0,140)+"</small>";}
+    return;
+  }
+  window.__activateFallback(reason);
+});
+window.addEventListener("unhandledrejection",function(e){
+  var reason=String(e&&e.reason&&e.reason.message||e&&e.reason||"promise rejection");
+  window.__lastGameError=reason;
+  if(window.__threeRendererReady){
+    var boot=document.getElementById("boot");
+    if(boot){boot.classList.remove("ready");boot.innerHTML="3D RUNTIME ERROR<br><small>"+reason.slice(0,140)+"</small>";}
+    return;
+  }
+  window.__activateFallback(reason);
+});
 </script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"}}
