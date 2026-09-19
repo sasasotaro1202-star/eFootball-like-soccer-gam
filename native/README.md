@@ -1,8 +1,12 @@
 # iPhone native build
 
-This project keeps the Three.js game in `web/` and wraps that same build with Capacitor for iPhone.
+Base44 is not used. The game remains a single Three.js codebase in `web/`; Capacitor wraps the same files for iPhone.
 
-## Local Mac build
+## Verification
+
+The `iPhone Native Build Check` GitHub Actions workflow runs on macOS, installs dependencies, generates the iOS project, syncs the web assets, and performs an unsigned iOS Simulator Xcode build.
+
+## On your Mac
 
 ```bash
 npm install
@@ -11,10 +15,10 @@ npx cap sync ios
 npx cap open ios
 ```
 
-Then select an iPhone in Xcode and Run.
+In Xcode, select your physical iPhone, enable automatic signing, select your Apple Account/team, and Run.
 
-No Base44 is used.
+The browser build remains the fast test path. The iPhone app uses the same gameplay files.
 
-## Important
+## Controls
 
-The browser/GitHub Pages build remains the fast test build. The Capacitor target is the native iPhone shell around the same local web assets, so gameplay code is shared rather than duplicated.
+Only the left movement stick is visible. The right half of the field has invisible touch/flick input for pass/shoot; there is no visible action-button cluster.
