@@ -480,19 +480,27 @@ function updateHUD() {
 }
 
 function updateBroadcastCamera(dt) {
-  const aspect = THREE.MathUtils.clamp(camera.aspect, 0.75, 2.5);
-  const portrait = aspect < 1.05;
-  const targetX = clamp(ball.position.x * 0.06, -5, 5);
-  const targetZ = clamp(ball.position.z * 0.05, -3, 3);
-  const desired = new THREE.Vector3(
-    targetX,
-    portrait ? 92 : 82,
-    portrait ? 116 : 104
+  // eFootball-style behind-player camera: elevated, forward-facing, and locked to the
+  // selected player. The previous camera looked from the goal end of the X/Z plane,
+  // which made mobile portrait/landscape captures appear like a view from below the pitch.
+  const p = home[state.selected] || home[9];
+  const forwardX = 1; // Home attacks toward +X.
+  const target = new THREE.Vector3(
+    p ? p.position.x + forwardX * 11 : 11,
+    1.2,
+    p ? p.position.z : 0
   );
-  const blend = 1 - Math.pow(0.00002, Math.min(0.05, dt));
+  const desired = new THREE.Vector3(
+    p ? p.position.x - forwardX * 16 : -16,
+    10.5,
+    p ? p.position.z + 4.5 : 4.5
+  );
+  const blend = 1 - Math.pow(0.00001, Math.min(0.05, dt));
   camera.position.lerp(desired, blend);
-  camera.fov = portrait ? 47 : 49;
-  camera.lookAt(targetX, 0, targetZ);
+  camera.fov = camera.aspect < 1.05 ? 54 : 50;
+  camera.near = 0.05;
+  camera.far = 320;
+  camera.lookAt(target);
   camera.updateProjectionMatrix();
 }
 
