@@ -49,3 +49,7 @@ button:active{transform:scale(.95);filter:brightness(1.18)}
 
 #actions button[data-action="shield"]{background:linear-gradient(145deg,rgba(70,55,28,.9),rgba(22,18,9,.78))}
 #actions button[data-action="shield"]:active{box-shadow:0 0 0 2px #f2d06b66,0 8px 20px #0005}
+
+#touchGuide{position:absolute;left:50%;top:calc(max(10px,env(safe-area-inset-top)) + 92px);transform:translateX(-50%);z-index:9;padding:7px 11px;border:1px solid #ffffff1f;border-radius:999px;background:#06100c99;backdrop-filter:blur(10px);color:#ffffffaa;font-size:8px;letter-spacing:.04em;white-space:nowrap;pointer-events:none;transition:opacity .4s ease}
+@media (max-width:520px){#touchGuide{max-width:88vw;overflow:hidden;text-overflow:ellipsis}}
+@media (min-width:760px){#touchGuide{opacity:.55}}
