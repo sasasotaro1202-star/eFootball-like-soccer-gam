@@ -44,7 +44,8 @@ jobs:
             ["core AI kick function",/function kickTo\(tx,tz,power\)/],
             ["input-only enhancement",/actions=runEnhancedActions;/],
             ["team routing",/owner\.userData\.team|p\.userData\.team|t\.userData\.team/],
-            ["context loss recovery",/webglcontextlost.*__activateFallback/s]
+            ["context loss recovery",/webglcontextlost.*__activateFallback/s],
+            ["sprint hold preservation",/const sprintHeld=!!state\.actions\?\.sprint;state\.actions=\{sprint:sprintHeld\}/]
           ];
           for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
           if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
