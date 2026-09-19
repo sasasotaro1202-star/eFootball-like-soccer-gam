@@ -19,11 +19,31 @@ var score_away := 0
 var elapsed := 0.0
 var message := "KICK OFF"
 var message_time := 2.0
+var game_over := false
 
 func _ready():
 	queue_redraw()
 
+func _input(event):
+	if game_over:
+		if event is InputEventKey and event.pressed and event.keycode == KEY_R:
+			_restart_match()
+		return
+	if not event is InputEventKey or not event.pressed or event.echo:
+		return
+	if player.distance_to(ball) >= 52:
+		return
+	if event.keycode == KEY_K:
+		var target := Vector2(FIELD.end.x + 80, 360)
+		ball_velocity = (target - ball).normalized() * 900.0
+	elif event.keycode == KEY_J:
+		var target := _nearest_teammate()
+		ball_velocity = (target - ball).normalized() * 620.0
+
 func _process(delta):
+	if game_over:
+		queue_redraw()
+		return
 	elapsed += delta
 	message_time = max(0.0, message_time - delta)
 	_update_player(delta)
@@ -31,24 +51,26 @@ func _process(delta):
 	_update_ball(delta)
 	_check_goal()
 	if elapsed >= MATCH_LENGTH:
-		message = "FULL TIME  %d - %d" % [score_home, score_away]
+		game_over = true
+		message = "FULL TIME  %d - %d   (R to restart)" % [score_home, score_away]
 		message_time = 999.0
 	queue_redraw()
 
 func _update_player(delta):
-	var input_vec := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	var speed := SPRINT_SPEED if Input.is_action_pressed("sprint") else PLAYER_SPEED
+	var input_vec := Vector2.ZERO
+	if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
+		input_vec.x -= 1.0
+	if Input.is_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT):
+		input_vec.x += 1.0
+	if Input.is_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP):
+		input_vec.y -= 1.0
+	if Input.is_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN):
+		input_vec.y += 1.0
+	var speed := SPRINT_SPEED if Input.is_key_pressed(KEY_SHIFT) else PLAYER_SPEED
 	if input_vec.length() > 0.01:
 		player += input_vec.normalized() * speed * delta
 	player.x = clamp(player.x, FIELD.position.x + 20, FIELD.end.x - 20)
 	player.y = clamp(player.y, FIELD.position.y + 20, FIELD.end.y - 20)
-	if player.distance_to(ball) < 48:
-		if Input.is_action_just_pressed("shoot"):
-			var target := Vector2(FIELD.end.x + 80, 360)
-			ball_velocity = (target - ball).normalized() * 900.0
-		elif Input.is_action_just_pressed("pass"):
-			var target := _nearest_teammate()
-			ball_velocity = (target - ball).normalized() * 620.0
 
 func _update_ai(delta):
 	for i in range(teammates.size()):
@@ -71,9 +93,9 @@ func _update_ai(delta):
 	if ball.x > 760 and opponents[4].distance_to(ball) < 55:
 		ball_velocity = (Vector2(FIELD.position.x - 50, 360) - ball).normalized() * 760.0
 
-func _update_ball(_delta):
-	ball += ball_velocity * _delta
-	ball_velocity *= pow(BALL_FRICTION, _delta * 60.0)
+func _update_ball(delta):
+	ball += ball_velocity * delta
+	ball_velocity *= pow(BALL_FRICTION, delta * 60.0)
 
 	if ball.y < FIELD.position.y + BALL_RADIUS or ball.y > FIELD.end.y - BALL_RADIUS:
 		ball_velocity.y *= -0.82
@@ -108,6 +130,17 @@ func _reset_after_goal(text: String):
 	ball = Vector2(640,360)
 	ball_velocity = Vector2.ZERO
 	player = Vector2(300,360)
+
+func _restart_match():
+	player = Vector2(300,360)
+	ball = Vector2(640,360)
+	ball_velocity = Vector2.ZERO
+	score_home = 0
+	score_away = 0
+	elapsed = 0.0
+	message = "KICK OFF"
+	message_time = 2.0
+	game_over = false
 
 func _nearest_teammate() -> Vector2:
 	var best := teammates[0]
@@ -149,6 +182,6 @@ func _draw():
 	draw_circle(ball, BALL_RADIUS, Color("#222222"), false, 2)
 
 	draw_string(ThemeDB.fallback_font, Vector2(555,42), "%d  -  %d" % [score_home, score_away], HORIZONTAL_ALIGNMENT_LEFT, -1, 32, Color.WHITE)
-	draw_string(ThemeDB.fallback_font, Vector2(90,42), "WASD / Arrows  Move   SHIFT  Sprint   J  Pass   K  Shoot", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
+	draw_string(ThemeDB.fallback_font, Vector2(90,42), "WASD/Arrows Move   SHIFT Sprint   J Pass   K Shoot", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color.WHITE)
 	if message_time > 0:
-		draw_string(ThemeDB.fallback_font, Vector2(500,680), message, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
+		draw_string(ThemeDB.fallback_font, Vector2(430,680), message, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color.WHITE)
