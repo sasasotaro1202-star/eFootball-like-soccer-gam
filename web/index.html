@@ -48,7 +48,7 @@
 </main>
 <script>
 window.__gameModuleLoaded=false;
-window.__threeBootFailed=false;window.__threeRendererReady=false;window.__lastGameError="";
+window.__threeBootFailed=false;window.__threeRendererReady=false;window.__lastGameError="";window.__lastGameStack="";
 window.__activateFallback=function(reason){
   window.__threeBootFailed=true;
   window.__lastGameError=String(reason||"WebGL unavailable");
@@ -74,7 +74,7 @@ window.__activateFallback=function(reason){
 };
 window.addEventListener("error",function(e){
   var reason=String(e&&e.message||"runtime error");
-  window.__lastGameError=reason;
+  window.__lastGameError=reason;window.__lastGameStack=String(e&&e.error&&e.error.stack||"");
   if(window.__threeRendererReady){
     var boot=document.getElementById("boot");
     if(boot){boot.classList.remove("ready");boot.innerHTML="3D RUNTIME ERROR<br><small>"+reason.slice(0,140)+"</small>";}
