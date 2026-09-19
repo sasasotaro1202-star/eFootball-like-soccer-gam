@@ -209,7 +209,8 @@ function animatePlayers(dt){
    const speed=Math.hypot(dx,dz)/Math.max(dt,.001);
    a.userData.walkPhase+=Math.min(speed*.018,1.2);
    const swing=Math.min(speed/10,1)*.55;
-   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);\n   keepRiggedFeetOnPitch(a);
+   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);
+   keepRiggedFeetOnPitch(a);
    if(a.userData.legL&&a.userData.legR){
      a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
      a.userData.legR.rotation.x=-Math.sin(a.userData.walkPhase)*swing;
@@ -235,13 +236,15 @@ function update(dt){
    // The previous condition let the AI fire immediately from its kickoff half,
    // causing repeated automatic goals.
    if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-30&&Math.abs(f.position.z)<16&&f.userData.aiPossessionSince>0&&performance.now()-f.userData.aiPossessionSince>900&&performance.now()>f.userData.aiKick){
-     f.userData.aiKick=performance.now()+3500;\n     f.userData.aiPossessionSince=0;
+     f.userData.aiKick=performance.now()+3500;
+     f.userData.aiPossessionSince=0;
      const dx=-53-ball.position.x,dz=-ball.position.z*.35,l=Math.hypot(dx,dz)||1;
      ball.userData.owner=null;ball.userData.vx=dx/l*24*(f.userData.profile.shooting/80);ball.userData.vz=dz/l*24*(f.userData.profile.shooting/80);
    }
  });
  const owner=ball.userData.owner;
- if(owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){\n   owner.userData.aiPossessionSince=0;
+ if(owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
+   owner.userData.aiPossessionSince=0;
    owner.userData.aiKick=performance.now()+900;
    const matesAway=foes.filter(x=>x!==owner&&x.position.x<owner.position.x+20);
    const target=matesAway.sort((a,b)=>Math.abs(a.position.z-ball.position.z)-Math.abs(b.position.z-ball.position.z))[0];
