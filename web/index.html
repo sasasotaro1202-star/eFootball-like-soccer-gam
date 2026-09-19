@@ -54,9 +54,9 @@ window.__activateFallback=function(reason){
   window.__lastGameError=String(reason||"WebGL unavailable");
   var cv=document.getElementById("fallback"),ctx=cv&&cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,2);
   if(!cv||!ctx)return;
-  function resize(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cv.style.width="100%";cv.style.height="100%";ctx.setTransform(dpr,0,0,dpr,0,0)}
+  function resize(){var app=document.getElementById("app"),w=app?.clientWidth||innerWidth,h=app?.clientHeight||innerHeight;w=Math.min(Math.max(1,w),2400);h=Math.min(Math.max(1,h),2400);cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+"px";cv.style.height=h+"px";ctx.setTransform(dpr,0,0,dpr,0,0)}
   function draw(){
-    var w=innerWidth,h=innerHeight;ctx.clearRect(0,0,w,h);
+    var app=document.getElementById("app"),w=app?.clientWidth||innerWidth,h=app?.clientHeight||innerHeight;ctx.clearRect(0,0,w,h);
     ctx.fillStyle="#0b301b";ctx.fillRect(0,0,w,h);
     var m=Math.min(w*.05,h*.08),pw=w-2*m,ph=Math.min(h*.72,pw*.64),x=m,y=(h-ph)/2;
     ctx.fillStyle="#176b38";ctx.fillRect(x,y,pw,ph);ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.strokeRect(x,y,pw,ph);
@@ -96,6 +96,6 @@ window.addEventListener("unhandledrejection",function(e){
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"}}
 </script>
-<script type="module" src="./src/game.js?v=3d-3c554e9"></script>
+<script type="module" src="./src/game.js?v=3d-b858bc9"></script>
 </body>
 </html>
