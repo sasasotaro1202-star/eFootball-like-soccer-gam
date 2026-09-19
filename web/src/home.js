@@ -149,7 +149,7 @@ function pickPlayer(){
 function renderGacha(kind="epic"){
  activeBanner=kind;const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind),featured=pool.slice(0,8),rates=b.rates;
  const rateRows=Object.entries(rates).map(([k,v])=>'<div><span>'+rarityLabel(k)+'</span><b>'+v+'%</b></div>').join('');
- const guarantee=kind==="bigtime"?"BIG TIME 10%":kind==="legend"?"LEGEND 14.5% / BIG TIME 1.5%":"10連：10回目は EPIC以上を確定";
+ const guarantee=kind==="bigtime"?"10連：BIG TIME確定":kind==="legend"?"10連：LEGEND以上確定":kind==="epic"?"10連：EPIC以上確定":kind==="showtime"?"10連：SHOWTIME確定":"10連：このリストの上位レア確定";
  $("#panelBody").innerHTML='<div class="gachaTabs">'+GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title.split(" • ")[0]+'</button>').join('')+'</div>'+
  '<div class="gachaHero premiumGacha"><div><span class="eyebrow">SPECIAL PLAYER LIST</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>排出率 合計100%</span><span>'+guarantee+'</span><span>重複はGP</span></div></div><div class="gachaOrb">✦</div></div>'+
  '<div class="gachaRatePanel"><div class="rateHead"><b>排出率</b><small>このリストの1回抽選</small></div><div class="rateGrid">'+rateRows+'</div></div>'+
@@ -217,7 +217,7 @@ function draw(n,unitCost=100,free=false){
  if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
  state.coins-=cost;const meta=gachaMeta(),results=[];
  for(let i=0;i<n;i++){let p=pickPlayer();const next=meta.pulls+i+1;
-   if(next%10===0){const pool=bannerPool(activeBanner),guaranteed=pool.filter(x=>["EPIC","LEGEND","BIG_TIME"].includes(String(x.cardType).toUpperCase()));if(guaranteed.length)p=guaranteed[Math.floor(Math.random()*guaranteed.length)]}
+   if(next%10===0){const pool=bannerPool(activeBanner),minimum=activeBanner==="bigtime"?"BIG_TIME":activeBanner==="legend"?"LEGEND":activeBanner==="epic"?"EPIC":activeBanner==="showtime"?"SHOWTIME":"HIGHLIGHT",rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4},guaranteed=pool.filter(x=>(rank[String(x.cardType).toUpperCase()]||0)>=(rank[minimum]||2));if(guaranteed.length)p=guaranteed[Math.floor(Math.random()*guaranteed.length)]}
    results.push(p);if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
  }
  const best=results.reduce((a,b)=>{const rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};return(rank[String(b.cardType||b.rarity).toUpperCase()]||0)>(rank[String(a.cardType||a.rarity).toUpperCase()]||0)?b:a},results[0]);
