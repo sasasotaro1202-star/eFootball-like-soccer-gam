@@ -20,8 +20,8 @@ jobs:
           node --check web/src/game.js
           grep -q 'new THREE.WebGLRenderer' web/src/game.js
           grep -q 'buildPitch' web/src/game.js
-          grep -q 'updateCamera' web/src/game.js
-          grep -q 'rightFlick' web/src/game.js
+          grep -q 'updateBroadcastCamera' web/src/game.js
+          grep -q 'passOrShoot' web/src/game.js
           grep -q 'pointerdown' web/src/game.js
           grep -q 'id="stick"' web/index.html
           if grep -q 'id="actions"' web/index.html; then exit 1; fi
