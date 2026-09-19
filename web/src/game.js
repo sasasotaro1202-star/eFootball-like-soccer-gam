@@ -92,15 +92,14 @@ const rimA=new THREE.DirectionalLight(0x6fa8ff,0.75);rimA.position.set(42,28,-34
 const rimB=new THREE.DirectionalLight(0xff8b72,0.42);rimB.position.set(-38,20,-42);scene.add(rimB);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
 function buildPresentationWorld(){
-  // Clean presentation baseline. Only the pitch, markings and a neutral
-  // surrounding floor are created here; stadium/goal meshes are deliberately
-  // excluded until the broadcast framing is visually validated.
+  // Clean broadcast presentation: pitch + safe procedural stadium only.
+  // No roof or oversized meshes are used in the camera volume.
   const arenaFloor=new THREE.Mesh(
-    new THREE.PlaneGeometry(360,300),
-    new THREE.MeshBasicMaterial({color:0x06170d,side:THREE.DoubleSide})
+    new THREE.PlaneGeometry(320,260),
+    new THREE.MeshBasicMaterial({color:0x06130c,side:THREE.DoubleSide})
   );
   arenaFloor.rotation.x=-Math.PI/2;
-  arenaFloor.position.y=-.24;
+  arenaFloor.position.y=-.3;
   scene.add(arenaFloor);
 
   const pitch=new THREE.Mesh(
@@ -130,27 +129,59 @@ function buildPresentationWorld(){
     o.rotation.y=Math.atan2(x2-x1,z2-z1);
     scene.add(o);
   };
-  mark(-53,-34,53,-34); mark(-53,34,53,34);
-  mark(-53,-34,-53,34); mark(53,-34,53,34);
+  mark(-53,-34,53,-34);mark(-53,34,53,34);
+  mark(-53,-34,-53,34);mark(53,-34,53,34);
   mark(0,-34,0,34);
-  mark(-53,-20,-37,-20); mark(-53,20,-37,20);
-  mark(37,-20,53,-20); mark(37,20,53,20);
-  mark(-37,-20,-37,20); mark(37,-20,37,20);
-  mark(-53,-9,-44,-9); mark(-53,9,-44,9);
-  mark(44,-9,53,-9); mark(44,9,53,9);
-
-  const centerCircle=new THREE.Mesh(
-    new THREE.RingGeometry(8.92,9.08,96),
-    lineMat
-  );
-  centerCircle.rotation.x=-Math.PI/2;
-  centerCircle.position.y=.067;
-  scene.add(centerCircle);
-
+  mark(-53,-20,-37,-20);mark(-53,20,-37,20);
+  mark(37,-20,53,-20);mark(37,20,53,20);
+  mark(-37,-20,-37,20);mark(37,-20,37,20);
+  mark(-53,-9,-44,-9);mark(-53,9,-44,9);
+  mark(44,-9,53,-9);mark(44,9,53,9);
+  const centerCircle=new THREE.Mesh(new THREE.RingGeometry(8.92,9.08,96),lineMat);
+  centerCircle.rotation.x=-Math.PI/2;centerCircle.position.y=.067;scene.add(centerCircle);
   const centerSpot=new THREE.Mesh(new THREE.CircleGeometry(.24,24),lineMat);
-  centerSpot.rotation.x=-Math.PI/2;
-  centerSpot.position.y=.068;
-  scene.add(centerSpot);
+  centerSpot.rotation.x=-Math.PI/2;centerSpot.position.y=.068;scene.add(centerSpot);
+
+  // Low, stepped stands. They stay outside the pitch and below the camera horizon.
+  const standMat=M(0x18232b,.9),seatMat=M(0x2b3941,.88),boardMat=new THREE.MeshBasicMaterial({color:0x123b78});
+  for(const z of [-41,41]){
+    for(let row=0;row<3;row++){
+      const stand=new THREE.Mesh(new THREE.BoxGeometry(150,3.2+row*1.4,5.5),standMat);
+      stand.position.set(0,1.4+row*1.5,z);
+      stand.castShadow=true;scene.add(stand);
+      for(let i=0;i<24;i++){
+        const seat=new THREE.Mesh(new THREE.BoxGeometry(3.8,.35,1.2),seatMat);
+        seat.position.set(-46+i*4,4.0+row*1.35,z+(z>0?-2.9:2.9));
+        scene.add(seat);
+      }
+    }
+    const board=new THREE.Mesh(new THREE.BoxGeometry(108,1.05,.18),boardMat);
+    board.position.set(0,.72,z>0?-35.15:35.15);
+    scene.add(board);
+  }
+  for(const x of [-62,62]){
+    for(let row=0;row<2;row++){
+      const stand=new THREE.Mesh(new THREE.BoxGeometry(5.5,4.5+row*1.6,82),standMat);
+      stand.position.set(x,2.1+row*1.7,0);
+      stand.castShadow=true;scene.add(stand);
+    }
+    const board=new THREE.Mesh(new THREE.BoxGeometry(.18,1.05,68),boardMat);
+    board.position.set(x>0?56.15:-56.15,.72,0);scene.add(board);
+  }
+
+  // Simple goals: only thin frame geometry, no large net planes.
+  const goalMat=new THREE.MeshStandardMaterial({color:0xf4f6f5,roughness:.45});
+  for(const x of [-53.7,53.7]){
+    const dir=x<0?1:-1;
+    for(const z of [-7,7]){
+      const post=new THREE.Mesh(new THREE.CylinderGeometry(.11,.11,4.4,12),goalMat);
+      post.position.set(x,2.2,z);scene.add(post);
+    }
+    const bar=new THREE.Mesh(new THREE.BoxGeometry(.18,.18,14),goalMat);
+    bar.position.set(x,4.4,0);scene.add(bar);
+    const depth=new THREE.Mesh(new THREE.BoxGeometry(3.2,.12,14),goalMat);
+    depth.position.set(x+dir*1.6,.06,0);scene.add(depth);
+  }
 }
 buildPresentationWorld();
 
@@ -631,19 +662,16 @@ animatePlayers(dt);updateRadar();updatePlayerCard();
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
 }
 function updateBroadcastCamera(dt){
-  // Final broadcast baseline: the pitch runs left/right on X, so the camera
-  // must sit above the Z axis. This avoids the previous edge-on/underside view.
   const aspect=THREE.MathUtils.clamp(camera.aspect,.75,2.5);
-  const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-7,7);
-  const targetZ=THREE.MathUtils.clamp(ball.position.z*.06,-3.5,3.5);
-  const distance=aspect>=1.15?112:124;
-  const height=aspect>=1.15?76:84;
+  const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-6,6);
+  const targetZ=THREE.MathUtils.clamp(ball.position.z*.04,-2.5,2.5);
+  const distance=aspect>=1.15?108:126;
+  const height=aspect>=1.15?78:88;
   const desired=new THREE.Vector3(targetX,height,distance);
-  const alpha=1-Math.pow(.00005,Math.min(.05,dt));
+  const alpha=1-Math.pow(.00008,Math.min(.05,dt));
   camera.position.lerp(desired,alpha);
   camera.fov=aspect>=1.15?50:46;
-  camera.near=.1;
-  camera.far=500;
+  camera.near=.1;camera.far=500;
   camera.updateProjectionMatrix();
   camera.lookAt(targetX,0,targetZ);
 }
