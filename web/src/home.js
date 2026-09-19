@@ -1,7 +1,34 @@
 import { PLAYER_POOL } from "./player-pool.generated.js";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./supabase-config.js";
+const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=s=>document.querySelector(s), screens={home:$("#homeScreen"),panel:$("#panelScreen"),match:$("#matchScreen")};
 const state={gp:+localStorage.getItem("football_gp")||10000,coins:+localStorage.getItem("football_coins")||100,owned:JSON.parse(localStorage.getItem("football_owned")||"[]")};
-const save=()=>{localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned))};
+let cloudUser=null;
+const localSave=()=>{localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned))};
+const cloudSave=async()=>{if(!cloudUser)return;const {error}=await supabase.from("game_saves").upsert({user_id:cloudUser.id,gp:state.gp,coins:state.coins,owned_player_ids:state.owned});if(error)console.warn("Supabase save skipped",error.message)};
+const save=()=>{localSave();void cloudSave()};
+async function initCloudSave(){
+  try{
+    let {data:{session}}=await supabase.auth.getSession();
+    if(!session){
+      const r=await supabase.auth.signInAnonymously();
+      session=r.data?.session||null;
+    }
+    cloudUser=session?.user||null;
+    if(!cloudUser)return;
+    const {data,error}=await supabase.from("game_saves").select("gp,coins,owned_player_ids").eq("user_id",cloudUser.id).maybeSingle();
+    if(error){console.warn("Supabase load skipped",error.message);return}
+    if(data){
+      state.gp=Number.isFinite(data.gp)?data.gp:state.gp;
+      state.coins=Number.isFinite(data.coins)?data.coins:state.coins;
+      state.owned=Array.isArray(data.owned_player_ids)?data.owned_player_ids:state.owned;
+      localSave();wallet();
+    }else{
+      await cloudSave();
+    }
+  }catch(e){console.warn("Supabase unavailable; local save remains active",e?.message||e)}
+}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])), money=n=>Math.max(0,Math.floor(n)).toLocaleString("ja-JP");
 function wallet(){$("#gp").textContent=money(state.gp);$("#gp2").textContent=money(state.gp);$("#coins").textContent=money(state.coins);$("#ownedCount").textContent=state.owned.length}
 function screen(n){Object.values(screens).forEach(x=>x.classList.remove("active"));screens[n].classList.add("active");document.body.classList.toggle("inMatch",n==="match");}
