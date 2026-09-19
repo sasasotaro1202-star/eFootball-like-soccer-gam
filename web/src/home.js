@@ -167,10 +167,16 @@ const GACHA_FREE_KEY="football_gacha_free";
 const gachaMeta=()=>{const p=JSON.parse(localStorage.getItem(GACHA_PITY_KEY)||"{}");return{pulls:Math.max(0,Number(p.pulls)||0),lastRarity:String(p.lastRarity||"").toUpperCase()}};
 function setGachaMeta(p){localStorage.setItem(GACHA_PITY_KEY,JSON.stringify(p))}
 function ensureGachaStage(){
-  const stage=$("#gachaStage");if(!stage)return null;
-  if(!stage.querySelector("#gachaSkip")){const b=document.createElement("button");b.id="gachaSkip";b.className="gachaSkip";b.textContent="SKIP";stage.appendChild(b);b.onclick=()=>finishGachaPresentation(true)}
+  const stage=$("#gachaStage"); if(!stage)return null;
+  if(!stage.querySelector("#gachaSkip")){
+    const b=document.createElement("button");
+    b.id="gachaSkip"; b.className="gachaSkip"; b.type="button"; b.textContent="SKIP";
+    b.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation();finishGachaPresentation(true)});
+    stage.appendChild(b);
+  }
   return stage;
 }
+
 let gachaPresentation={results:[],revealed:false,timers:[]};
 function clearGachaTimers(){gachaPresentation.timers.forEach(clearTimeout);gachaPresentation.timers=[]}
 function finishGachaPresentation(skip=false){
@@ -189,30 +195,40 @@ function finishGachaPresentation(skip=false){
   gachaPresentation.timers.push(setTimeout(()=>{stage.onclick=null;stage.classList.remove("show","complete");panel("gacha")},ms));
 }
 function showSigning(results){
-  const stage=ensureGachaStage();if(!stage)return;
-  clearGachaTimers();gachaPresentation={results,revealed:false,timers:[]};
-  const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);
+  const stage=ensureGachaStage(); if(!stage){showMessage("ガチャ演出画面を初期化できません");return;}
+  clearGachaTimers();
+  gachaPresentation={results:results||[],revealed:false,timers:[]};
   $("#stageName").textContent="PLAYER SIGNING";
-  $("#stageRarity").textContent=results.length===10?"10 PLAYERS • TAP TO REVEAL":"TAP TO REVEAL";
-  $("#gachaResult").innerHTML=`<div class="gachaPrompt"><span class="promptRing">✦</span><b>${results.length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>カードをタップして開封</small></div>`;
-  stage.classList.remove("complete");stage.classList.add("show","charging");
-  gachaPresentation.timers.push(setTimeout(()=>{
-    stage.classList.remove("charging");stage.classList.add("revealing");
-    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;if(e.target.closest(".gachaResult,.stageOrb,.stageName,.stageRarity,.gachaPrompt"))revealGacha()};
-  },850));
+  $("#stageRarity").textContent=(results||[]).length===10?"10 PLAYERS • TAP TO OPEN":"TAP TO OPEN";
+  $("#gachaResult").innerHTML=`<button type="button" class="gachaPrompt" id="gachaOpenButton"><span class="promptRing">✦</span><b>${(results||[]).length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>ここをタップして開封</small></button>`;
+  stage.classList.remove("complete","revealing");
+  stage.classList.add("show","charging");
+  // Open immediately on either the prompt, orb, or any safe area of the stage.
+  const open=()=>{stage.classList.remove("charging");stage.classList.add("revealing");revealGacha()};
+  const prompt=$("#gachaOpenButton");
+  if(prompt)prompt.addEventListener("click",(ev)=>{ev.preventDefault();ev.stopPropagation();open()},{once:true});
+  stage.onclick=(ev)=>{
+    if(ev.target.closest("#gachaSkip"))return;
+    if(ev.target.closest("#gachaOpenButton,.stageOrb,.stageName,.stageRarity"))open();
+  };
+  gachaPresentation.timers.push(setTimeout(()=>stage.classList.remove("charging"),500));
 }
+
 function revealGacha(){
- if(gachaPresentation.revealed)return;
- gachaPresentation.revealed=true;clearGachaTimers();
- const stage=ensureGachaStage(),results=gachaPresentation.results;
- const order=[...results].sort((a,b)=>rarityRank(b.cardType||b.rarity)-rarityRank(a.cardType||a.rarity));
- $("#gachaResult").innerHTML=order.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><div class="revealPortrait">${portraitSvg(x,true)}</div><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></button>`).join("");
- const top=order[0]||results[0];
- $("#stageName").textContent=top?.name||"PLAYER";
- $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
- stage.onclick=null;stage.classList.remove("charging");stage.classList.add("complete");
- gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?4500:3200));
+  if(gachaPresentation.revealed)return;
+  gachaPresentation.revealed=true; clearGachaTimers();
+  const stage=ensureGachaStage(),results=gachaPresentation.results||[];
+  if(!stage||!results.length){if(stage)stage.classList.remove("show");return;}
+  const order=[...results].sort((a,b)=>rarityRank(b.cardType||b.rarity)-rarityRank(a.cardType||a.rarity));
+  $("#gachaResult").innerHTML=order.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><div class="revealPortrait">${portraitSvg(x,true)}</div><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></button>`).join("");
+  const top=order[0];
+  $("#stageName").textContent=top?.name||"PLAYER";
+  $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
+  stage.onclick=(ev)=>{if(ev.target.closest("#gachaSkip"))return;const card=ev.target.closest(".revealCard");if(card)showPlayerDetail(card.dataset.playerId)};
+  stage.classList.remove("charging","revealing");stage.classList.add("complete");
+  gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?6000:4500));
 }
+
 function draw(n,unitCost=100,free=false){
  const cost=free?0:(n===10?unitCost*9:unitCost);
  if(!free&&state.coins<cost){showMessage("コインが足りません");return}
