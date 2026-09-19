@@ -10,25 +10,19 @@
 </head>
 <body>
 <main id="app">
-  <div id="game" aria-label="3D soccer game"></div>
-  <div id="hud"><span id="score">0 - 0</span><span id="clock">03:00</span></div>
-  <div id="controls">
-    <div id="stick"><div id="knob"></div></div>
-    <div id="actions">
-      <button data-action="pass">PASS</button>
-      <button data-action="shoot">SHOOT</button>
-      <button data-action="sprint">SPRINT</button>
-    </div>
-  </div>
-  <div id="message"></div>
+<div id="game" aria-label="3D soccer game"></div>
+<div id="hud"><span id="score">0 - 0</span><span id="clock">03:00</span></div>
+<div id="controls">
+<div id="stick"><div id="knob"></div></div>
+<div id="actions">
+<button data-action="pass">PASS</button><button data-action="shoot">SHOOT</button>
+<button data-action="tackle">TACKLE</button><button data-action="switch">SWITCH</button>
+<button data-action="sprint">SPRINT</button>
+</div>
+</div>
+<div id="message"></div>
 </main>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"
-  }
-}
-</script>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js"}}</script>
 <script type="module" src="./src/game.js"></script>
 </body>
 </html>
