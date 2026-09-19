@@ -190,7 +190,7 @@ function selectBestDefender(){
 function reset(text="KICK OFF"){
  ball.position.set(-1.2,.48,0);ball.userData.vx=ball.userData.vz=0;ball.userData.owner=player;
  player.position.set(-1.2,0,0);mates.forEach((p,i)=>p.position.set(...homePos[i],0));foes.forEach((p,i)=>p.position.set(...awayPos[i],0));
- gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);state.firstKickoff=true;msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
+ gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);state.firstKickoff=true;state.aiEnabled=false;msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
 }
 function dist(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
 function move(a,x,z,s,dt){const dx=x-a.position.x,dz=z-a.position.z,d=Math.hypot(dx,dz);if(d>.08){const q=Math.min(d,s*dt);a.position.x+=dx/d*q;a.position.z+=dz/d*q;a.rotation.y=Math.atan2(dx,dz)}}
@@ -201,7 +201,7 @@ function kickTo(tx,tz,power){
  const p=controlled(),dx=ball.position.x-p.position.x,dz=ball.position.z-p.position.z;
  if(Math.hypot(dx,dz)>3.1||performance.now()<state.kickLock)return;
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
- ball.userData.owner=null;state.firstKickoff=false;const passScale=p.userData.profile.passing/80;
+ ball.userData.owner=null;state.firstKickoff=false;state.aiEnabled=true;const passScale=p.userData.profile.passing/80;
  ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
 }
 function actions(){
@@ -249,7 +249,7 @@ function update(dt){
    // Only the actual attacking side may shoot toward the user's goal.
    // The previous condition let the AI fire immediately from its kickoff half,
    // causing repeated automatic goals.
-   if(!kickoffLocked&&f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-30&&Math.abs(f.position.z)<16&&f.userData.aiPossessionSince>0&&performance.now()-f.userData.aiPossessionSince>900&&performance.now()>f.userData.aiKick){
+   if(state.aiEnabled&&!kickoffLocked&&f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-30&&Math.abs(f.position.z)<16&&f.userData.aiPossessionSince>0&&performance.now()-f.userData.aiPossessionSince>900&&performance.now()>f.userData.aiKick){
      f.userData.aiKick=performance.now()+3500;
      f.userData.aiPossessionSince=0;
      const dx=-53-ball.position.x,dz=-ball.position.z*.35,l=Math.hypot(dx,dz)||1;
@@ -259,7 +259,7 @@ function update(dt){
  const owner=ball.userData.owner;
  // AI is forbidden to shoot/pass during the opening kickoff until the user has moved or kicked the ball.
  const kickoffLocked=state.firstKickoff && (owner===player || (ball.userData.vx===0&&ball.userData.vz===0));
- if(!kickoffLocked && owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
+ if(state.aiEnabled&&!kickoffLocked && owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
    owner.userData.aiPossessionSince=0;
    owner.userData.aiKick=performance.now()+900;
    const matesAway=foes.filter(x=>x!==owner&&x.position.x<owner.position.x+20);
