@@ -194,14 +194,17 @@ function update(dt){
  foes.forEach((f,i)=>{
    const chase=i===0||dist(f,ball)<15,tx=chase?ball.position.x:f.userData.homeX,tz=chase?ball.position.z:f.userData.homeZ;
    move(f,tx,tz,5.0*(.82+.28*f.userData.profile.pace/80),dt);
-   if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-24&&Math.abs(f.position.z)<18&&performance.now()>f.userData.aiKick){
-     f.userData.aiKick=performance.now()+1200;
+   // Only the actual attacking side may shoot toward the user's goal.
+   // The previous condition let the AI fire immediately from its kickoff half,
+   // causing repeated automatic goals.
+   if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x>24&&Math.abs(f.position.z)<18&&performance.now()>f.userData.aiKick){
+     f.userData.aiKick=performance.now()+2200;
      const dx=-53-ball.position.x,dz=-ball.position.z*.35,l=Math.hypot(dx,dz)||1;
      ball.userData.owner=null;ball.userData.vx=dx/l*24*(f.userData.profile.shooting/80);ball.userData.vz=dz/l*24*(f.userData.profile.shooting/80);
    }
  });
  const owner=ball.userData.owner;
- if(owner && owner.team===red && performance.now()>owner.userData.aiKick){
+ if(owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
    owner.userData.aiKick=performance.now()+900;
    const matesAway=foes.filter(x=>x!==owner&&x.position.x<owner.position.x+20);
    const target=matesAway.sort((a,b)=>Math.abs(a.position.z-ball.position.z)-Math.abs(b.position.z-ball.position.z))[0];
