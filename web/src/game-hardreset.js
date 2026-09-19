@@ -793,7 +793,8 @@ function gameLoop(now) {
   if (!state.paused) {
     state.time += dt;
     moveControlled(dt);
-    teamAI(dt);\n  aiStep(dt);
+    teamAI(dt);
+    aiStep(dt);
     physics(dt);
     touchBall();
     updateBroadcastCamera(dt);
