@@ -44,15 +44,38 @@ function wallet(){$("#gp").textContent=money(state.gp);$("#gp2").textContent=mon
 function screen(n){Object.values(screens).forEach(x=>x.classList.remove("active"));screens[n].classList.add("active");document.body.classList.toggle("inMatch",n==="match");}
 function getProgress(p){const x=state.progress[p.id]||{};return{level:Math.max(1,Math.min(x.level||1,x.maxLevel||30)),maxLevel:Math.max(30,x.maxLevel||30),xp:Math.max(0,x.xp||0),breakthrough:Math.max(0,Math.min(x.breakthrough||0,5)),points:Math.max(0,x.points||0),positions:x.positions||[p.position]}}
 function playerStats(p){
- const o=Number(p.overall)||60,pos=p.position,x=getProgress(p),boost=Math.min(6,(x.level-1)*0.32+x.breakthrough*0.9);
- const s={offAwareness:38,ballControl:38,dribbling:37,tightPossession:35,lowPass:36,loftedPass:34,finishing:34,heading:34,setPiece:32,curl:34,speed:38,acceleration:37,kickingPower:36,jumping:34,physicalContact:36,balance:36,stamina:38,defAwareness:34,gkAwareness:32,gkCatching:32,gkParrying:32,gkReflexes:32,gkReach:32};
- const P={FW:{offAwareness:o+1,finishing:o+1,ballControl:o-2,dribbling:o-1,tightPossession:o-3,lowPass:o-10,loftedPass:o-13,heading:o-5,setPiece:o-10,curl:o-6,speed:o-1,acceleration:o-1,kickingPower:o,jumping:o-5,physicalContact:o-8,balance:o-4,stamina:o-6,defAwareness:35},MF:{offAwareness:o-5,ballControl:o-1,dribbling:o-2,tightPossession:o-1,lowPass:o+1,loftedPass:o-1,finishing:o-13,heading:o-15,setPiece:o-9,curl:o-8,speed:o-7,acceleration:o-7,kickingPower:o-9,jumping:o-15,physicalContact:o-10,balance:o-3,stamina:o-3,defAwareness:o-8},DF:{offAwareness:o-16,ballControl:o-10,dribbling:o-13,tightPossession:o-13,lowPass:o-3,loftedPass:o-5,finishing:o-25,heading:o-2,setPiece:o-12,curl:o-14,speed:o-7,acceleration:o-7,kickingPower:o-7,jumping:o-4,physicalContact:o+1,balance:o-6,stamina:o-2,defAwareness:o+2},GK:{offAwareness:30,ballControl:35,dribbling:28,tightPossession:30,lowPass:o-12,loftedPass:o-8,finishing:25,heading:25,setPiece:22,curl:22,speed:o-16,acceleration:o-16,kickingPower:o-10,jumping:o-1,physicalContact:o-7,balance:o-8,stamina:o-8,defAwareness:o-2,gkAwareness:o+1,gkCatching:o+1,gkParrying:o+1,gkReflexes:o+1,gkReach:o}}[pos]||{};
- Object.assign(s,P);
- const A={"Lionel Messi":{dribbling:5,tightPossession:6,ballControl:5,lowPass:4,finishing:5,curl:5,setPiece:5,acceleration:4,offAwareness:5},"Cristiano Ronaldo":{finishing:6,heading:5,jumping:4,offAwareness:6,speed:4,acceleration:4,kickingPower:5,physicalContact:3},"Pelé":{finishing:6,dribbling:4,ballControl:4,offAwareness:6,speed:4,heading:4,kickingPower:4},"Diego Maradona":{dribbling:6,tightPossession:6,ballControl:6,lowPass:4,finishing:4,setPiece:5,curl:5,balance:4,acceleration:4},"Ronaldo Nazário":{finishing:6,speed:6,acceleration:6,dribbling:5,physicalContact:4,kickingPower:5,offAwareness:5},"Kylian Mbappé":{speed:7,acceleration:7,finishing:5,offAwareness:5,dribbling:5},"Robert Lewandowski":{finishing:7,offAwareness:6,heading:6,physicalContact:4,kickingPower:5},"Xavi":{lowPass:7,loftedPass:6,ballControl:6,tightPossession:5,stamina:4},"Andrés Iniesta":{ballControl:7,dribbling:6,tightPossession:7,lowPass:6,acceleration:4,balance:5},"Luka Modrić":{lowPass:6,loftedPass:6,ballControl:6,tightPossession:5,stamina:5},"Kevin De Bruyne":{lowPass:7,loftedPass:7,kickingPower:5,offAwareness:4,setPiece:5,curl:5},"Erling Haaland":{finishing:7,offAwareness:6,physicalContact:6,speed:5,heading:6,kickingPower:6},"Paolo Maldini":{defAwareness:7,physicalContact:5,heading:5,speed:4,balance:5,stamina:6},"Virgil van Dijk":{defAwareness:7,physicalContact:7,heading:6,speed:5,stamina:5},"Gianluigi Buffon":{gkAwareness:7,gkCatching:6,gkParrying:6,gkReflexes:7,gkReach:6},"Manuel Neuer":{gkAwareness:7,gkCatching:5,gkParrying:5,gkReflexes:6,gkReach:6,lowPass:4}};
- Object.keys(A[p.name]||{}).forEach(k=>{s[k]=(s[k]??35)+A[p.name][k]});
- const cb={STANDARD:0,HIGHLIGHT:1,SHOWTIME:1,EPIC:1,LEGEND:1,BIG_TIME:2}[String(p.cardType||p.rarity||"STANDARD").toUpperCase()]||0;
- Object.keys(s).forEach(k=>s[k]=clampStat((Number(s[k])||35)+boost+cb));
- return s
+ const o=Math.max(58,Math.min(99,Number(p.overall)||60)),pos=String(p.position||"MF").toUpperCase(),x=getProgress(p);
+ const boost=Math.min(8,(x.level-1)*0.42+x.breakthrough*1.1);
+ const s={offAwareness:48,ballControl:48,dribbling:46,tightPossession:45,lowPass:46,loftedPass:43,finishing:42,heading:42,setPiece:40,curl:42,speed:45,acceleration:44,kickingPower:44,jumping:42,physicalContact:43,balance:44,stamina:45,defAwareness:40,gkAwareness:38,gkCatching:38,gkParrying:38,gkReflexes:38,gkReach:38};
+ const role={
+  FW:{offAwareness:o+2,ballControl:o-1,dribbling:o, tightPossession:o-2,lowPass:o-8,loftedPass:o-12,finishing:o+4,heading:o-3,setPiece:o-8,curl:o-5,speed:o+1,acceleration:o+1,kickingPower:o+1,jumping:o-3,physicalContact:o-6,balance:o-2,stamina:o-4,defAwareness:35},
+  MF:{offAwareness:o-3,ballControl:o+1,dribbling:o, tightPossession:o+1,lowPass:o+4,loftedPass:o+2,finishing:o-9,heading:o-12,setPiece:o-5,curl:o-4,speed:o-5,acceleration:o-5,kickingPower:o-5,jumping:o-10,physicalContact:o-7,balance:o+1,stamina:o+1,defAwareness:o-4},
+  DF:{offAwareness:o-12,ballControl:o-7,dribbling:o-10,tightPossession:o-10,lowPass:o,loftedPass:o-2,finishing:o-25,heading:o+1,setPiece:o-9,curl:o-12,speed:o-4,acceleration:o-4,kickingPower:o-4,jumping:o+1,physicalContact:o+4,balance:o-3,stamina:o+2,defAwareness:o+6},
+  GK:{offAwareness:30,ballControl:o-6,dribbling:28,tightPossession:28,lowPass:o-7,loftedPass:o-3,finishing:22,heading:22,setPiece:20,curl:20,speed:o-13,acceleration:o-13,kickingPower:o-5,jumping:o+1,physicalContact:o-4,balance:o-4,stamina:o-5,defAwareness:o+5,gkAwareness:o+7,gkCatching:o+5,gkParrying:o+5,gkReflexes:o+7,gkReach:o+5}
+ }[pos]||{};
+ Object.assign(s,role);
+ const A={
+  "Lionel Messi":{dribbling:7,tightPossession:8,ballControl:7,lowPass:6,finishing:6,curl:7,setPiece:7,acceleration:5,offAwareness:7,balance:5},
+  "Cristiano Ronaldo":{finishing:8,heading:7,jumping:6,offAwareness:8,speed:5,acceleration:5,kickingPower:7,physicalContact:5},
+  "Pelé":{finishing:8,dribbling:6,ballControl:6,offAwareness:8,speed:5,heading:6,kickingPower:6},
+  "Diego Maradona":{dribbling:8,tightPossession:8,ballControl:8,lowPass:6,finishing:6,setPiece:7,curl:7,balance:6,acceleration:5},
+  "Ronaldo Nazário":{finishing:8,speed:7,acceleration:8,dribbling:7,physicalContact:5,kickingPower:7,offAwareness:7},
+  "Kylian Mbappé":{speed:9,acceleration:9,finishing:7,offAwareness:7,dribbling:7},
+  "Robert Lewandowski":{finishing:9,offAwareness:8,heading:8,physicalContact:6,kickingPower:7},
+  "Xavi":{lowPass:9,loftedPass:8,ballControl:8,tightPossession:7,stamina:6},
+  "Andrés Iniesta":{ballControl:9,dribbling:8,tightPossession:9,lowPass:8,acceleration:5,balance:7},
+  "Luka Modrić":{lowPass:8,loftedPass:8,ballControl:8,tightPossession:7,stamina:7},
+  "Kevin De Bruyne":{lowPass:9,loftedPass:9,kickingPower:7,offAwareness:6,setPiece:7,curl:7},
+  "Erling Haaland":{finishing:9,offAwareness:8,physicalContact:8,speed:6,heading:8,kickingPower:8},
+  "Paolo Maldini":{defAwareness:9,physicalContact:7,heading:7,speed:6,balance:7,stamina:8},
+  "Virgil van Dijk":{defAwareness:9,physicalContact:9,heading:8,speed:7,stamina:7},
+  "Gianluigi Buffon":{gkAwareness:9,gkCatching:8,gkParrying:8,gkReflexes:9,gkReach:8},
+  "Manuel Neuer":{gkAwareness:9,gkCatching:7,gkParrying:7,gkReflexes:8,gkReach:8,lowPass:6}
+ };
+ Object.keys(A[p.name]||{}).forEach(k=>{s[k]=(s[k]??40)+A[p.name][k]});
+ const cb={STANDARD:0,HIGHLIGHT:2,SHOWTIME:3,EPIC:4,LEGEND:5,BIG_TIME:7}[String(p.cardType||p.rarity||"STANDARD").toUpperCase()]||0;
+ Object.keys(s).forEach(k=>s[k]=clampStat((Number(s[k])||40)+boost+cb));
+ return s;
 }
 function clampStat(v){return Math.max(45,Math.min(99,Math.round(v)))}
 function playerArchetype(p){return p.position==="FW"?"Goal Poacher":p.position==="MF"?"Creative Playmaker":p.position==="DF"?"Build Up":"Offensive Goalkeeper"}
@@ -113,10 +136,13 @@ function bannerPool(id){
  return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD");
 }
 function pickPlayer(){
- const b=GACHA_BANNERS.find(x=>x.id===activeBanner)||GACHA_BANNERS[0],pool=bannerPool(activeBanner),rates=b.rates||{},r=Math.random();
- const tiers=Object.entries(rates),available=tiers.filter(([k])=>pool.some(p=>String(p.cardType||p.rarity).toUpperCase()===k));
- let a=0,tier=available[available.length-1]?.[0]||"STANDARD";for(const [k,w] of available){a+=Number(w)/available.reduce((s,x)=>s+Number(x[1]),0);if(r<a){tier=k;break}}
- const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return same[Math.floor(Math.random()*same.length)]||pool[Math.floor(Math.random()*pool.length)]||CARD_POOL[0]
+ const b=GACHA_BANNERS.find(x=>x.id===activeBanner)||GACHA_BANNERS[0],pool=bannerPool(activeBanner);
+ if(!pool.length)return CARD_POOL[0];
+ const weights={BIG_TIME:1.2,EPIC:2.2,LEGEND:2.2,SHOWTIME:3.2,HIGHLIGHT:7,STANDARD:84.2};
+ const weighted=pool.map(p=>({p,w:weights[String(p.cardType||p.rarity).toUpperCase()]||1}));
+ const total=weighted.reduce((s,x)=>s+x.w,0);let r=Math.random()*total;
+ for(const x of weighted){r-=x.w;if(r<=0)return x.p}
+ return weighted[weighted.length-1].p;
 }
 function renderGacha(kind="special"){
  activeBanner=kind;
@@ -165,30 +191,27 @@ function finishGachaPresentation(skip=false){
 function showSigning(results){
   const stage=ensureGachaStage();if(!stage)return;
   clearGachaTimers();gachaPresentation={results,revealed:false,timers:[]};
-  const best=results.reduce((a,b)=>({overall:Math.max(Number(a?.overall)||0,Number(b?.overall)||0),rarity:(String(a?.rarity||"").length>String(b?.rarity||"").length?a?.rarity:b?.rarity)}),{});
+  const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);
   $("#stageName").textContent="PLAYER SIGNING";
   $("#stageRarity").textContent=results.length===10?"10 PLAYERS • TAP TO REVEAL":"TAP TO REVEAL";
   $("#gachaResult").innerHTML=`<div class="gachaPrompt"><span class="promptRing">✦</span><b>${results.length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>カードをタップして開封</small></div>`;
   stage.classList.remove("complete");stage.classList.add("show","charging");
   gachaPresentation.timers.push(setTimeout(()=>{
     stage.classList.remove("charging");stage.classList.add("revealing");
-    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;if(e.target.closest(".gachaResult,.stageOrb,.stageName,.stageRarity"))revealGacha()};
+    stage.onclick=(e)=>{if(e.target.closest("#gachaSkip"))return;if(e.target.closest(".gachaResult,.stageOrb,.stageName,.stageRarity,.gachaPrompt"))revealGacha()};
   },850));
 }
 function revealGacha(){
-  if(gachaPresentation.revealed)return;
-  gachaPresentation.revealed=true;clearGachaTimers();
-  const stage=ensureGachaStage(),results=gachaPresentation.results;
-  const order=[...results].sort((a,b)=>{
-    const rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};
-    return (rank[String(b.rarity).toUpperCase()]||0)-(rank[String(a.rarity).toUpperCase()]||0);
-  });
-  $("#gachaResult").innerHTML=order.map((x,i)=>`<div class="miniResult revealCard rarity-${String(x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${x.id}"><span>${i+1}</span><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></div>`).join("");
-  const top=order[0]||results[0];
-  $("#stageName").textContent=top?.name||"PLAYER";
-  $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
-  stage.onclick=null;stage.classList.remove("charging");stage.classList.add("complete");
-  gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?3200:2500));
+ if(gachaPresentation.revealed)return;
+ gachaPresentation.revealed=true;clearGachaTimers();
+ const stage=ensureGachaStage(),results=gachaPresentation.results;
+ const order=[...results].sort((a,b)=>rarityRank(b.cardType||b.rarity)-rarityRank(a.cardType||a.rarity));
+ $("#gachaResult").innerHTML=order.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><div class="revealPortrait">${portraitSvg(x,true)}</div><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></button>`).join("");
+ const top=order[0]||results[0];
+ $("#stageName").textContent=top?.name||"PLAYER";
+ $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
+ stage.onclick=null;stage.classList.remove("charging");stage.classList.add("complete");
+ gachaPresentation.timers.push(setTimeout(()=>finishGachaPresentation(false),results.length===10?4500:3200));
 }
 function draw(n,unitCost=100,free=false){
  const cost=free?0:(n===10?unitCost*9:unitCost);
