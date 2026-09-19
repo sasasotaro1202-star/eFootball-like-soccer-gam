@@ -71,7 +71,7 @@ jobs:
             ["sharp touch",/function sharpTouch\(/],
             ["sharp touch acceleration",/sharpTouchUntil/],
             ["broadcast camera",/function updateBroadcastCamera\(/],
-  ["presentation world",/function buildPresentationWorld\(/],
+            ["presentation world",/function buildPresentationWorld\(/],
             ["touch guide",/TOUCH &amp; FLICK/]
           ];
           for(const [name,re] of required){ const target=name==="touch guide"?h:s; if(!re.test(target)) throw new Error("Missing gameplay invariant: "+name); }
