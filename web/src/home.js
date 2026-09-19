@@ -1,7 +1,4 @@
 import { PLAYER_POOL } from "./player-pool.generated.js";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from "./supabase-config.js";
-const supabase=createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY);
 const $=s=>document.querySelector(s), screens={home:$("#homeScreen"),panel:$("#panelScreen"),match:$("#matchScreen")};
 // Robust UI binding: event delegation keeps navigation working even after panel DOM is rebuilt.
 document.addEventListener("click",(e)=>{
@@ -20,6 +17,8 @@ const cloudSave=async()=>{if(!cloudUser)return;const {error}=await supabase.from
 const save=()=>{localSave();void cloudSave()};
 async function initCloudSave(){
   try{
+    const [{ createClient }, config] = await Promise.all([import("https://esm.sh/@supabase/supabase-js@2"), import("./supabase-config.js")]);
+    const supabase=createClient(config.SUPABASE_URL,config.SUPABASE_PUBLISHABLE_KEY);
     let {data:{session}}=await supabase.auth.getSession();
     if(!session){
       const r=await supabase.auth.signInAnonymously();
