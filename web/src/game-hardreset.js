@@ -428,6 +428,8 @@ function touchBall() {
   }
 }
 
+function showGoalFX(team, scorer){const fx=$("#goalFx");if(!fx)return;$("#goalFxText").textContent=team===HOME?"GOAL":"GOAL";$("#goalFxPlayer").textContent=scorer?.userData?.name||"MATCH GOAL";fx.classList.remove("show");void fx.offsetWidth;fx.classList.add("show");setTimeout(()=>fx.classList.remove("show"),1400)}
+
 function physics(dt) {
   if (ball.userData.owner) return;
 
@@ -458,10 +460,12 @@ function physics(dt) {
     if (goal) {
       const now = performance.now();
       if (now - state.lastGoalAt > 1200) {
-        if (ball.position.x > 0) state.score[HOME]++;
-        else state.score[AWAY]++;
+        const scoringTeam = ball.position.x > 0 ? HOME : AWAY;
+        state.score[scoringTeam]++;
         state.lastGoalAt = now;
+        const scorer = scoringTeam === HOME ? home[state.selected] : away.slice().sort((a,b)=>dist(a,ball)-dist(b,ball))[0];
         updateScore();
+        showGoalFX(scoringTeam, scorer);
         showMessage("GOAL", 1300);
         resetPositions(ball.position.x > 0 ? AWAY : HOME);
       }
