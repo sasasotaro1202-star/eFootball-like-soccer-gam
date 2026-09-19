@@ -125,20 +125,27 @@ function panel(kind){
  const target=CARD_POOL.find(p=>state.owned.includes(p.id))||CARD_POOL[0],tx=getProgress(target);$("#panelBody").innerHTML=`<div class="trainingHero"><span class="eyebrow">PLAYER DEVELOPMENT</span><h2>TRAINING<br>CENTER</h2><p>Level Training • Player Progression • Position Training • Limit Break</p><div class="trainingPlayer"><div class="trainingPortrait">${portraitSvg(target)}</div><div><b>${esc(target.name)}</b><small>${esc(playerArchetype(target))} • OVR ${target.overall}</small></div></div><div class="trainingStat"><span>LEVEL</span><b>${tx.level}/${tx.maxLevel}</b></div><div class="trainingStat"><span>PROGRESSION POINTS</span><b>${tx.points}</b></div><div class="trainingStat"><span>LIMIT BREAK</span><b>${tx.breakthrough}/5</b></div><div class="trainingPositions">${positionMap(target).map(q=>`<span>${q}</span>`).join("")}</div></div><div class="trainingActions"><button class="primary" id="levelTrain">LEVEL +1</button><button class="primary" id="limitBreak">BREAKTHROUGH</button></div><button class="primary wide" id="trainingReward">CLAIM DAILY +500 GP</button>`;$("#levelTrain").onclick=()=>{const x=getProgress(target);if(x.level<x.maxLevel){x.level++;x.points+=3;x.xp=0;state.progress[target.id]=x;save();panel("training")}};$("#limitBreak").onclick=()=>{const x=getProgress(target);if(x.breakthrough<5&&state.gp>=1000){state.gp-=1000;x.breakthrough++;x.maxLevel=Math.min(40,x.maxLevel+2);state.progress[target.id]=x;save();wallet();panel("training")}};$("#trainingReward").onclick=()=>{state.gp+=500;save();wallet();panel("training")}
 }
 const GACHA_BANNERS=[
- {id:"special",title:"SPECIAL PLAYER LIST",sub:"今週の注目選手・テーマ選手を獲得",kind:"special",cost:100,deal:"CHANCE DEAL",featured:"HEADLINER"},
- {id:"epic",title:"EPIC",sub:"Defining Season / 歴史的シーズンを再現",kind:"epic",cost:100,deal:"CHANCE DEAL",featured:"EPIC"},
- {id:"legendary",title:"LEGENDARY",sub:"特定シーズンの卓越した実績を持つ選手",kind:"legendary",cost:100,deal:"CHANCE DEAL",featured:"LEGENDARY"},
- {id:"highlight",title:"HIGHLIGHT",sub:"今季の特筆すべきパフォーマンス",kind:"highlight",cost:100,deal:"CHANCE DEAL",featured:"HIGHLIGHT"},
- {id:"trending",title:"TRENDING",sub:"特定の試合・週の印象的なパフォーマンス",kind:"trending",cost:100,deal:"CHANCE DEAL",featured:"TRENDING"},
- {id:"featured",title:"FEATURED",sub:"今季の注目選手を厳選",kind:"featured",cost:100,deal:"CHANCE DEAL",featured:"FEATURED"},
- {id:"standard",title:"STANDARD PLAYER LIST",sub:"GPで好きな選手を選択して獲得",kind:"standard",cost:0,deal:"GP SIGNING",featured:"STANDARD"},
- {id:"chance",title:"CHANCE DEAL",sub:"契約アイテムを使ってリストからランダム獲得",kind:"chance",cost:0,deal:"CHANCE DEAL",featured:"STANDARD"},
- {id:"nominating",title:"NOMINATING CONTRACT",sub:"対象リストから好きな選手を1人選択",kind:"nominating",cost:0,deal:"SELECT",featured:"SPECIAL"},
- {id:"selection",title:"SELECTION CONTRACT",sub:"専用Player Listから好きな選手を選択",kind:"selection",cost:0,deal:"SELECT",featured:"SPECIAL"},
- {id:"packs",title:"PACKS",sub:"選手・監督・ユニフォーム等をまとめて獲得",kind:"packs",cost:0,deal:"PACK",featured:"PACK"}
+ {id:"special",title:"SPECIAL PLAYER LIST",sub:"1つのPlayer Listに複数のカードタイプを収録",kind:"special",cost:100,deal:"CHANCE DEAL",featured:"HEADLINER"},
+ {id:"standard",title:"STANDARD PLAYER LIST",sub:"GPで対象選手を直接選択して獲得",kind:"standard",cost:0,deal:"GP SIGNING",featured:"STANDARD"},
+ {id:"chance",title:"CHANCE DEAL",sub:"対象Player Listからランダムで1選手を獲得",kind:"chance",cost:0,deal:"CHANCE DEAL",featured:"MIXED"},
+ {id:"nominating",title:"NOMINATING CONTRACT",sub:"対象リストから好きな選手を1人選択",kind:"nominating",cost:0,deal:"SELECT",featured:"MIXED"},
+ {id:"selection",title:"SELECTION CONTRACT",sub:"専用Player Listから好きな選手を選択",kind:"selection",cost:0,deal:"SELECT",featured:"MIXED"},
+ {id:"packs",title:"PACKS",sub:"固定内容の選手・アイテムパック",kind:"packs",cost:0,deal:"PACK",featured:"PACK"}
 ];
 let activeBanner="special";
-function bannerPool(id){ const typeMap={special:["HIGHLIGHT","SHOWTIME","EPIC"],epic:["EPIC"],legendary:["LEGEND"],highlight:["HIGHLIGHT"],trending:["SHOWTIME"],featured:["HIGHLIGHT"],standard:["STANDARD"],chance:["STANDARD","HIGHLIGHT","SHOWTIME","EPIC","LEGEND"],nominating:["HIGHLIGHT","SHOWTIME","EPIC"],selection:["HIGHLIGHT","SHOWTIME","EPIC","LEGEND"],packs:["STANDARD","HIGHLIGHT"]}; const types=typeMap[id]||["STANDARD"]; const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase())); return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD") }
+function bannerPool(id){
+ const typeMap={
+  special:["STANDARD","FEATURED","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"],
+  chance:["STANDARD","FEATURED","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"],
+  standard:["STANDARD"],
+  nominating:["FEATURED","HIGHLIGHT","SHOWTIME","EPIC","LEGEND"],
+  selection:["HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"],
+  packs:["STANDARD","FEATURED","HIGHLIGHT"]
+ };
+ const types=typeMap[id]||typeMap.special;
+ const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));
+ return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD");
+}
 function pickPlayer(){
  const b=GACHA_BANNERS.find(x=>x.id===activeBanner)||GACHA_BANNERS[0],pool=bannerPool(activeBanner),rates=b.rates||{},r=Math.random();
  const tiers=Object.entries(rates),available=tiers.filter(([k])=>pool.some(p=>String(p.cardType||p.rarity).toUpperCase()===k));
@@ -146,14 +153,20 @@ function pickPlayer(){
  const same=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);return same[Math.floor(Math.random()*same.length)]||pool[Math.floor(Math.random()*pool.length)]||CARD_POOL[0]
 }
 function renderGacha(kind="special"){
- activeBanner=kind; const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0], pool=bannerPool(kind);
- const showRates=!["standard","nominating","selection","packs"].includes(kind);
- const rateRows=showRates?'<div class="rateNotice">このPlayer List内の排出率はゲーム内NOTICEで確認できます。10連対象リストではヘッドライナー保証を表示します。</div>':"";
- const tabs=GACHA_BANNERS.slice(0,6).map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
- $("#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div><div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>PLAYER LIST</span></div></div><div class="gachaOrb">✦</div></div>'+rateRows+
+ activeBanner=kind;
+ const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
+ const mixed=kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection";
+ const typeOrder=["BIG_TIME","EPIC","LEGEND","SHOWTIME","HIGHLIGHT","FEATURED","STANDARD"];
+ const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
+ const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
+ const composition=mixed?'<div class="listComposition"><b>PLAYER LIST CONTENTS</b>'+counts.map(x=>'<span>'+x[0]+' <strong>'+x[1]+'</strong></span>').join("")+'</div>':"";
+ const notice=kind==="special"?'<div class="rateNotice">この1つのSPECIAL PLAYER LISTから、STANDARD〜BIG TIMEまで複数タイプを抽選。10連には対象リストのヘッドライナー保証を設定。</div>':"";
+ $( "#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
+ '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>PLAYER LIST</span></div></div><div class="gachaOrb">✦</div></div>'+
+ notice+composition+
  '<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'">SIGN ×1<small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'">SIGN ×10<small>'+ (b.cost?b.cost*10+" COINS":"10 CONTRACTS") +'</small></button></div>'+
  '<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">PLAYER LIST</button><button class="subGacha" data-rates="1">NOTICE / RATES</button></div>'+
- '<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,8).map(card).join('')+'</div>';
+ '<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,12).map(card).join("")+'</div>';
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
@@ -231,7 +244,7 @@ document.addEventListener("click",e=>{
  if(b.dataset?.banner){e.preventDefault();e.stopPropagation();renderGacha(b.dataset.banner);return}
  if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
  if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return}
- if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("STANDARD 65% • HIGHLIGHT 30% • SHOWTIME 2.5% • EPIC 1.5% • LEGEND 0.8% • BIG TIME 0.2%");return}
+ if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("SPECIAL PLAYER LIST：STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME を同一リストに収録");return}
  if(b.dataset?.box){e.preventDefault();e.stopPropagation();showMessage("BOX DRAW: 準備中");return}
  if(b.id==="quickPlay"||b.id==="playNow"||b.id==="squadPlay"){e.preventDefault();e.stopPropagation();start();return}
  if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return}
