@@ -525,9 +525,15 @@ function update(dt){
    }
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
- const blendX=p.position.x*.62+ball.position.x*.38,blendZ=p.position.z*.62+ball.position.z*.38;
- const t=new THREE.Vector3(blendX,0,blendZ),want=new THREE.Vector3(t.x-15,20,t.z+19);
- camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+5,0,t.z);
+ const dir=p.userData.team===blue?1:-1;
+ const blendX=p.position.x*.58+ball.position.x*.42,blendZ=p.position.z*.58+ball.position.z*.42;
+ const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.22,-7,7);
+ const t=new THREE.Vector3(blendX,0,blendZ);
+ const want=new THREE.Vector3(t.x-dir*14+sideOffset*.16,10.8,t.z+sideOffset+dir*2.5);
+ camera.fov=49;
+ camera.position.lerp(want,1-Math.pow(.0008,dt));
+ const lookX=blendX+dir*5,lookZ=blendZ+sideOffset*.18;
+ camera.lookAt(lookX,1.15,lookZ);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
@@ -548,28 +554,111 @@ function updatePlayerCard(){
 }
 function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45))}
 addEventListener("resize",resize);resize();
-const stick=document.querySelector("#stick"),knob=document.querySelector("#knob");let pid=null;
-function joy(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),max=r.width*.34,l=Math.hypot(x,y)||1,k=Math.min(1,max/l);state.joy={x:x/l*k,y:y/l*k};knob.style.transform=`translate(${x*k}px,${y*k}px)`}
-stick.addEventListener("pointerdown",e=>{pid=e.pointerId;stick.setPointerCapture(pid);joy(e)});stick.addEventListener("pointermove",e=>{if(e.pointerId===pid)joy(e)});
-function stop(){pid=null;state.joy={x:0,y:0};knob.style.transform=""}stick.addEventListener("pointerup",stop);stick.addEventListener("pointercancel",stop);
-const chargeUI=new Map(),heldActions=new Map();
-document.querySelectorAll("[data-action]").forEach(b=>{
- const a=b.dataset.action,bar=b.querySelector(".charge");
- const isCharged=["pass","shoot","through","lob"].includes(a);
- const press=e=>{e.preventDefault();resumeAudio();
-   if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset();return}
-   if(isCharged){heldActions.set(a,performance.now());state.actions[a]=false}
-   else state.actions[a]=true;
- };
- const release=e=>{
-   if(isCharged){
-     const started=heldActions.get(a);heldActions.delete(a);
-     if(started!=null){const power=THREE.MathUtils.clamp((performance.now()-started)/850,0,1);state.actions[a]=true;state.chargePower=power;state.chargeAction=a}
-   }else state.actions[a]=false;
- };
- b.addEventListener("pointerdown",press,{passive:false});b.addEventListener("pointerup",release);b.addEventListener("pointercancel",release);b.addEventListener("pointerleave",release);
- chargeUI.set(a,bar);
-});
+const stick=document.querySelector("#stick"),knob=document.querySelector("#knob");
+let pid=null;
+function joyFromPoint(x,y){
+ const r=stick.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+ const dx=x-cx,dy=y-cy,max=r.width*.34,l=Math.hypot(dx,dy)||1,k=Math.min(1,max/l);
+ state.joy={x:dx/l*k,y:dy/l*k};
+ knob.style.transform=`translate(${dx*k}px,${dy*k}px)`;
+ return {x:state.joy.x,y:state.joy.y,magnitude:k};
+}
+stick.addEventListener("pointerdown",e=>{pid=e.pointerId;stick.setPointerCapture(pid);joyFromPoint(e.clientX,e.clientY)});
+stick.addEventListener("pointermove",e=>{if(e.pointerId===pid)joyFromPoint(e.clientX,e.clientY)});
+function stopJoy(){pid=null;state.joy={x:0,y:0};knob.style.transform=""}
+stick.addEventListener("pointerup",stopJoy);stick.addEventListener("pointercancel",stopJoy);
+
+const touchControl={
+ leftId:null,rightId:null,leftStart:null,rightStart:null,leftAt:0,rightAt:0,
+ lastLeftTap:0,lastRightTap:0
+};
+const gameSurface=document.querySelector("#game");
+function isLeftSide(x){return x<innerWidth*.50}
+function isRightSide(x){return x>=innerWidth*.50}
+function directionFrom(dx,dy){
+ const l=Math.hypot(dx,dy)||1;return {x:dx/l,z:dy/l,mag:Math.min(1,l/95)};
+}
+function setGestureJoy(x,y){
+ const v=directionFrom(x,y);
+ state.joy={x:v.x*v.mag,y:v.z*v.mag};
+}
+function nearestActionFlick(dx,dy){
+ const ax=Math.abs(dx),ay=Math.abs(dy);
+ if(Math.hypot(dx,dy)<34)return "tap";
+ if(ay>ax*1.15)return dy<0?"through":"lob";
+ return "shoot";
+}
+function performTouchFlickAction(kind,dx,dy){
+ const p=controlled();
+ if(!p)return;
+ const v=directionFrom(dx,dy);
+ if(kind==="shoot"){
+   state.joy={x:v.x,y:v.z};
+   state.chargePower=THREE.MathUtils.clamp(v.mag,.25,1);
+   state.actions.shoot=true;
+ }else if(kind==="through"){
+   state.joy={x:v.x,y:v.z};
+   state.chargePower=THREE.MathUtils.clamp(v.mag,.25,1);
+   state.actions.through=true;
+ }else if(kind==="lob"){
+   state.joy={x:v.x,y:v.z};
+   state.chargePower=THREE.MathUtils.clamp(v.mag,.25,1);
+   state.actions.lob=true;
+ }else{
+   state.actions.pass=true;
+   state.chargePower=.52;
+ }
+}
+function sharpTouch(){
+ const p=controlled();if(!p||ball.userData.owner!==p)return;
+ const v=Math.hypot(state.joy.x,state.joy.y)>0.2?directionFrom(state.joy.x*120,state.joy.y*120):{x:Math.sin(p.rotation.y),z:Math.cos(p.rotation.y),mag:1};
+ p.userData.sharpTouchUntil=performance.now()+360;
+ p.userData.sharpTouchDir={x:v.x,z:v.z};
+ p.userData.stamina=Math.max(0,p.userData.stamina-2.2);
+}
+function handleFieldPointerDown(e){
+ resumeAudio();
+ const x=e.clientX,y=e.clientY;
+ if(isLeftSide(x)){
+   touchControl.leftId=e.pointerId;touchControl.leftStart={x,y};touchControl.leftAt=performance.now();
+   if(performance.now()-touchControl.lastLeftTap<280)sharpTouch();
+   touchControl.lastLeftTap=performance.now();
+ }else{
+   touchControl.rightId=e.pointerId;touchControl.rightStart={x,y};touchControl.rightAt=performance.now();
+ }
+ gameSurface.setPointerCapture?.(e.pointerId);
+}
+function handleFieldPointerMove(e){
+ if(e.pointerId===touchControl.leftId&&touchControl.leftStart){
+   setGestureJoy(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
+   const mag=Math.hypot(e.clientX-touchControl.leftStart.x,e.clientY-touchControl.leftStart.y);
+   state.actions.sprint=mag>105;
+ }
+}
+function handleFieldPointerUp(e){
+ if(e.pointerId===touchControl.leftId){
+   const st=touchControl.leftStart||{x:e.clientX,y:e.clientY};
+   const dx=e.clientX-st.x,dy=e.clientY-st.y,mag=Math.hypot(dx,dy);
+   if(mag<24)sharpTouch();
+   touchControl.leftId=null;touchControl.leftStart=null;state.joy={x:0,y:0};state.actions.sprint=false;
+ }else if(e.pointerId===touchControl.rightId){
+   const st=touchControl.rightStart||{x:e.clientX,y:e.clientY};
+   const dx=e.clientX-st.x,dy=e.clientY-st.y;
+   const kind=nearestActionFlick(dx,dy);
+   performTouchFlickAction(kind,dx,dy);
+   touchControl.rightId=null;touchControl.rightStart=null;
+ }
+}
+gameSurface.addEventListener("pointerdown",handleFieldPointerDown,{passive:false});
+gameSurface.addEventListener("pointermove",handleFieldPointerMove,{passive:false});
+gameSurface.addEventListener("pointerup",handleFieldPointerUp,{passive:false});
+gameSurface.addEventListener("pointercancel",handleFieldPointerUp,{passive:false});
+function updateTouchControlHint(){
+ const has=document.getElementById("touchHint");
+ if(!has)return;
+ const p=controlled(),attacking=ball.userData.owner?.userData?.team===p?.userData?.team;
+ has.textContent=attacking?"左ドラッグ=ドリブル / 右フリック=シュート・スルー・ロブ":"左ドラッグ=移動 / 右タップ=プレス";
+}
 function updateChargeUI(){
  const now=performance.now();
  for(const [a,started] of heldActions){const p=THREE.MathUtils.clamp((now-started)/850,0,1);const bar=chargeUI.get(a);if(bar)bar.style.width=(p*100)+"%"}
