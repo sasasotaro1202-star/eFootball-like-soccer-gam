@@ -150,3 +150,18 @@ body{overscroll-behavior:none}
 @keyframes rarityFlash{0%{opacity:.2;letter-spacing:.05em}45%{opacity:1;letter-spacing:.38em}100%{letter-spacing:.3em}}
 @media(max-width:560px){.gachaResult{max-width:94vw;gap:5px}.miniResult{width:66px;height:92px;padding:7px}.gachaSkip{font-size:7px;padding:8px 11px}}
 @media(prefers-reduced-motion:reduce){.gachaStage:before,.stageOrb,.promptRing,.revealCard{animation:none!important}.revealCard{opacity:1;transform:none}}
+
+/* Card rarity / star system */
+.rarityCard{position:relative;overflow:hidden}
+.rarityCard.rarity-standard{border-color:rgba(255,255,255,.16)}
+.rarityCard.rarity-highlight{border-color:rgba(65,210,255,.65);box-shadow:0 0 22px rgba(65,210,255,.12)}
+.rarityCard.rarity-showtime{border-color:rgba(255,225,88,.75);box-shadow:0 0 26px rgba(255,225,88,.18)}
+.rarityCard.rarity-epic{border-color:rgba(191,102,255,.8);box-shadow:0 0 28px rgba(191,102,255,.18)}
+.rarityCard.rarity-legend{border-color:rgba(255,176,67,.85);box-shadow:0 0 30px rgba(255,176,67,.2)}
+.rarityCard.rarity-big_time{border-color:rgba(255,255,255,.95);box-shadow:0 0 34px rgba(255,255,255,.22)}
+.photoPortrait svg{width:100%;height:100%;display:block;object-fit:contain}
+.cardPortrait.photoPortrait{padding:4px;background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(0,0,0,.25))}
+.cardPortrait>i{font-style:normal;letter-spacing:1px;font-size:10px;white-space:nowrap}
+.cardMiniStats{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:7px}
+.cardMiniStats b{font-size:9px;text-align:center;padding:3px 2px;border-radius:4px;background:rgba(255,255,255,.06)}
+.rarity-showtime .rarity,.rarity-epic .rarity,.rarity-legend .rarity,.rarity-big_time .rarity{font-weight:900}
