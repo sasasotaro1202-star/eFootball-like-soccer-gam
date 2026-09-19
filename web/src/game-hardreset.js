@@ -17,6 +17,9 @@ const message = $("#message");
 const FIELD = { w: 105, d: 68, goalW: 14.64 };
 const HOME = 0;
 const AWAY = 1;
+const savedOwnedIds = JSON.parse(localStorage.getItem("football_owned") || "[]");
+const ownedSet = new Set(savedOwnedIds);
+const homePool = [...PLAYER_POOL.filter(p => ownedSet.has(p.id)), ...PLAYER_POOL.filter(p => !ownedSet.has(p.id))];
 
 const state = {
   time: 0,
@@ -92,7 +95,7 @@ function makePlayer(team, index, role) {
 
   g.userData = {
     team, index, role, number: index + 1,
-    name: PLAYER_POOL[(team * 11 + index) % PLAYER_POOL.length]?.name || `PLAYER ${index + 1}`,
+    name: (team === HOME ? homePool[index % homePool.length] : PLAYER_POOL[(11 + index) % PLAYER_POOL.length])?.name || `PLAYER ${index + 1}`,
     speed: role === "GK" ? 4.0 : 5.0 + Math.random() * 0.7,
     stamina: 100,
     homeX: 0, homeZ: 0,
