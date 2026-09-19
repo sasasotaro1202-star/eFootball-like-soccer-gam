@@ -46,3 +46,6 @@ button:active{transform:scale(.95);filter:brightness(1.18)}
 #actions button.primary .charge{background:linear-gradient(90deg,#7cb5ff,#fff);box-shadow:0 0 8px #7cb5ff}
 #actions button[data-action="through"],#actions button[data-action="lob"]{background:linear-gradient(145deg,rgba(26,61,70,.9),rgba(8,19,25,.78))}
 @media (max-width:420px){#actions{grid-template-columns:repeat(2,clamp(68px,18vw,82px));gap:7px}button{min-height:56px}}
+
+#actions button[data-action="shield"]{background:linear-gradient(145deg,rgba(70,55,28,.9),rgba(22,18,9,.78))}
+#actions button[data-action="shield"]:active{box-shadow:0 0 0 2px #f2d06b66,0 8px 20px #0005}
