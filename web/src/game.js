@@ -104,7 +104,7 @@ function makePlayer(team,number,controlled=false,role="MID",profileOverrides={})
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.9,32),new THREE.MeshBasicMaterial({color:controlled?0xffdf3f:0xffffff,transparent:true,opacity:controlled?.9:.25,side:THREE.DoubleSide}));
  ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(v.scale);
- g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0};
+ g.userData={number,homeX:0,homeZ:0,stamina:100,controlled,team,walkPhase:Math.random()*Math.PI*2,lastX:0,lastZ:0,profile:createGamePlayerProfile(role,profileOverrides),aiKick:0,aiPossessionSince:0};
  g.children.forEach(ch=>{if(ch!==ring)ch.userData.legacyVisual=true});
  scene.add(g);attachRiggedVisual(g,team);return g;
 }
@@ -197,14 +197,14 @@ function update(dt){
    // Only the actual attacking side may shoot toward the user's goal.
    // The previous condition let the AI fire immediately from its kickoff half,
    // causing repeated automatic goals.
-   if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x>24&&Math.abs(f.position.z)<18&&performance.now()>f.userData.aiKick){
-     f.userData.aiKick=performance.now()+2200;
+   if(f.userData.profile.shooting>75&&ball.userData.owner===f&&f.position.x<-30&&Math.abs(f.position.z)<16&&f.userData.aiPossessionSince>0&&performance.now()-f.userData.aiPossessionSince>900&&performance.now()>f.userData.aiKick){
+     f.userData.aiKick=performance.now()+3500;\n     f.userData.aiPossessionSince=0;
      const dx=-53-ball.position.x,dz=-ball.position.z*.35,l=Math.hypot(dx,dz)||1;
      ball.userData.owner=null;ball.userData.vx=dx/l*24*(f.userData.profile.shooting/80);ball.userData.vz=dz/l*24*(f.userData.profile.shooting/80);
    }
  });
  const owner=ball.userData.owner;
- if(owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){
+ if(owner && owner.team===red && owner.position.x>0 && performance.now()>owner.userData.aiKick){\n   owner.userData.aiPossessionSince=0;
    owner.userData.aiKick=performance.now()+900;
    const matesAway=foes.filter(x=>x!==owner&&x.position.x<owner.position.x+20);
    const target=matesAway.sort((a,b)=>Math.abs(a.position.z-ball.position.z)-Math.abs(b.position.z-ball.position.z))[0];
