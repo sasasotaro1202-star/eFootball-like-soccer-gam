@@ -194,7 +194,8 @@ function finishGachaPresentation(skip=false){
   const ms=skip?350:1500;
   gachaPresentation.timers.push(setTimeout(()=>{stage.onclick=null;stage.classList.remove("show","complete");panel("gacha")},ms));
 }
-function gachaPattern(results){const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);const r=rarityRank(best?.cardType||best?.rarity);const patterns=r>=4?["burst","rain","spotlight","galaxy"][Math.floor(Math.random()*4)]:r>=3?["flash","orbit","spotlight","rain"][Math.floor(Math.random()*4)]:["flash","orbit","scan","burst"][Math.floor(Math.random()*4)];return patterns}\\nfunction showSigning(results){
+function gachaPattern(results){const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);const r=rarityRank(best?.cardType||best?.rarity);const patterns=r>=4?["burst","rain","spotlight","galaxy"][Math.floor(Math.random()*4)]:r>=3?["flash","orbit","spotlight","rain"][Math.floor(Math.random()*4)]:["flash","orbit","scan","burst"][Math.floor(Math.random()*4)];return patterns}
+function showSigning(results){
   const stage=ensureGachaStage(); if(!stage){showMessage("ガチャ演出画面を初期化できません");return;}
   clearGachaTimers();
   gachaPresentation={results:results||[],revealed:false,timers:[]};
