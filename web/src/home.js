@@ -89,7 +89,7 @@ function bannerPool(id){
 }
 function pickPlayer(){
  const pool=bannerPool(activeBanner),r=Math.random();
- const weights=activeBanner==="legend":[["BIG_TIME",.01],["LEGEND",.045],["EPIC",.055],["SHOWTIME",.06],["HIGHLIGHT",.20],["STANDARD",.63]]
+ const weights=activeBanner==="legend"?[["BIG_TIME",.01],["LEGEND",.045],["EPIC",.055],["SHOWTIME",.06],["HIGHLIGHT",.20],["STANDARD",.63]]
  :activeBanner==="epic":[["BIG_TIME",.008],["LEGEND",.032],["EPIC",.06],["SHOWTIME",.06],["HIGHLIGHT",.24],["STANDARD",.60]]
  :activeBanner==="highlight":[["BIG_TIME",.003],["LEGEND",.012],["EPIC",.025],["SHOWTIME",.05],["HIGHLIGHT",.40],["STANDARD",.51]]
  :[["BIG_TIME",.002],["LEGEND",.008],["EPIC",.015],["SHOWTIME",.025],["HIGHLIGHT",.30],["STANDARD",.65]];
