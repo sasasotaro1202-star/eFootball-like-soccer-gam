@@ -92,79 +92,68 @@ const rimA=new THREE.DirectionalLight(0x6fa8ff,0.75);rimA.position.set(42,28,-34
 const rimB=new THREE.DirectionalLight(0xff8b72,0.42);rimB.position.set(-38,20,-42);scene.add(rimB);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
 function buildPresentationWorld(){
-  // Clean broadcast world: one guaranteed floor, one centered pitch, and stadium
-  // geometry kept outside the camera's playing corridor. This avoids the old
-  // near-stand/roof occlusion that produced the white wedge and black lower half.
+  // Clean presentation baseline. Only the pitch, markings and a neutral
+  // surrounding floor are created here; stadium/goal meshes are deliberately
+  // excluded until the broadcast framing is visually validated.
   const arenaFloor=new THREE.Mesh(
-    new THREE.PlaneGeometry(320,260),
-    new THREE.MeshBasicMaterial({color:0x0b2b1a,side:THREE.DoubleSide})
+    new THREE.PlaneGeometry(360,300),
+    new THREE.MeshBasicMaterial({color:0x06170d,side:THREE.DoubleSide})
   );
-  arenaFloor.rotation.x=-Math.PI/2;arenaFloor.position.y=-.22;scene.add(arenaFloor);
+  arenaFloor.rotation.x=-Math.PI/2;
+  arenaFloor.position.y=-.24;
+  scene.add(arenaFloor);
 
-  const pitchBase=new THREE.Mesh(
-    new THREE.BoxGeometry(FIELD.w,.18,FIELD.d),
-    new THREE.MeshBasicMaterial({color:0x0d4a27})
+  const pitch=new THREE.Mesh(
+    new THREE.PlaneGeometry(FIELD.w,FIELD.d),
+    new THREE.MeshBasicMaterial({color:0x176f38,side:THREE.DoubleSide})
   );
-  pitchBase.position.y=-.08;scene.add(pitchBase);
+  pitch.rotation.x=-Math.PI/2;
+  pitch.position.y=.02;
+  scene.add(pitch);
 
-  const stripeMats=[0x176f3c,0x156838];
+  const stripeColors=[0x176f38,0x156936];
   for(let i=0;i<10;i++){
     const stripe=new THREE.Mesh(
-      new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),
-      new THREE.MeshBasicMaterial({color:stripeMats[i%2],side:THREE.DoubleSide})
+      new THREE.PlaneGeometry(FIELD.w,FIELD.d/10+.02),
+      new THREE.MeshBasicMaterial({color:stripeColors[i%2],side:THREE.DoubleSide})
     );
     stripe.rotation.x=-Math.PI/2;
-    stripe.position.set(0,.015,-FIELD.d/2+(i+.5)*FIELD.d/10);
+    stripe.position.set(0,.025,-FIELD.d/2+(i+.5)*FIELD.d/10);
     scene.add(stripe);
   }
 
-  const fieldLine=new THREE.MeshBasicMaterial({color:0xf5f8f6,side:THREE.DoubleSide});
+  const lineMat=new THREE.MeshBasicMaterial({color:0xf7faf8,side:THREE.DoubleSide});
   const mark=(x1,z1,x2,z2,w=.12)=>{
     const len=Math.hypot(x2-x1,z2-z1);
-    const o=new THREE.Mesh(new THREE.BoxGeometry(w,.035,len),fieldLine);
-    o.position.set((x1+x2)/2,.055,(z1+z2)/2);
+    const o=new THREE.Mesh(new THREE.BoxGeometry(w,.035,len),lineMat);
+    o.position.set((x1+x2)/2,.065,(z1+z2)/2);
     o.rotation.y=Math.atan2(x2-x1,z2-z1);
     scene.add(o);
   };
-  mark(-53,-34,53,-34);mark(-53,34,53,34);
-  mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);
-  mark(-53,-20,-37,-20);mark(-53,20,-37,20);mark(37,-20,53,-20);mark(37,20,53,20);
-  mark(-37,-20,-37,20);mark(37,-20,37,20);
-  mark(-53,-9,-44,-9);mark(-53,9,-44,9);mark(44,-9,53,-9);mark(44,9,53,9);
-  const circle=new THREE.Mesh(new THREE.RingGeometry(8.92,9.08,96),fieldLine);
-  circle.rotation.x=-Math.PI/2;circle.position.y=.06;scene.add(circle);
-  const spot=new THREE.Mesh(new THREE.CircleGeometry(.24,24),fieldLine);
-  spot.rotation.x=-Math.PI/2;spot.position.y=.061;scene.add(spot);
+  mark(-53,-34,53,-34); mark(-53,34,53,34);
+  mark(-53,-34,-53,34); mark(53,-34,53,34);
+  mark(0,-34,0,34);
+  mark(-53,-20,-37,-20); mark(-53,20,-37,20);
+  mark(37,-20,53,-20); mark(37,20,53,20);
+  mark(-37,-20,-37,20); mark(37,-20,37,20);
+  mark(-53,-9,-44,-9); mark(-53,9,-44,9);
+  mark(44,-9,53,-9); mark(44,9,53,9);
 
-  // Broadcast-safe goals: all white goal geometry is confined to the end lines.
-  for(const gx of[-54.15,54.15]){
-    const goal=new THREE.Group();
-    const postMat=M(0xf4f6f4,.22);
-    goal.add(cyl(.12,3.6,postMat,-7,1.8,0),cyl(.12,3.6,postMat,7,1.8,0),box(.12,.12,14,postMat,0,3.6,0));
-    goal.add(box(.08,3.1,14,postMat,0,1.58,gx<0?1.15:-1.15));
-    const netMat=new THREE.MeshBasicMaterial({color:0xdfe7e2,transparent:true,opacity:.18,wireframe:true});
-    const net=new THREE.Mesh(new THREE.BoxGeometry(14,3.1,2.3),netMat);net.position.set(0,1.58,gx<0?1.15:-1.15);goal.add(net);
-    goal.position.x=gx;scene.add(goal);
-  }
+  const centerCircle=new THREE.Mesh(
+    new THREE.RingGeometry(8.92,9.08,96),
+    lineMat
+  );
+  centerCircle.rotation.x=-Math.PI/2;
+  centerCircle.position.y=.067;
+  scene.add(centerCircle);
 
-  // Far-side and lateral stands only. The camera corridor in front of the pitch is empty.
-  const standMat=M(0x17242a,.9),seatMat=M(0x26353d,.95),roofMat=M(0x0e1519,.96),adMat=M(0x111c21,.88);
-  scene.add(box(124,5.5,9,standMat,0,2.75,45));
-  scene.add(box(124,1.0,9,roofMat,0,8.0,47));
-  for(let x=-54;x<=54;x+=6)scene.add(box(4.8,.16,1.8,seatMat,x,5.7,41.5));
-  for(let x=-53;x<=53;x+=8)scene.add(box(7,.9,.35,adMat,x,.8,36.2));
-  for(const sx of[-62,62]){
-    scene.add(box(8,5,108,standMat,sx,2.5,4));
-    scene.add(box(8,1,108,roofMat,sx,7.7,4));
-  }
-  for(const x of[-58,58]){
-    const mast=cyl(.16,19,M(0x313b43,.8),x,9,28);scene.add(mast);
-    const lamp=new THREE.PointLight(0xffefcf,8,58,2);lamp.position.set(x,18,28);scene.add(lamp);
-  }
-  // Subtle stadium edge lines keep the horizon readable without crossing the pitch.
-  const edgeMat=new THREE.MeshBasicMaterial({color:0x0f4b2b});
-  const edge=new THREE.Mesh(new THREE.BoxGeometry(120,.08,3),edgeMat);edge.position.set(0,.02,38);scene.add(edge);
+  const centerSpot=new THREE.Mesh(new THREE.CircleGeometry(.24,24),lineMat);
+  centerSpot.rotation.x=-Math.PI/2;
+  centerSpot.position.y=.068;
+  scene.add(centerSpot);
 }
+buildPresentationWorld();
+
 function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
 buildPresentationWorld();
@@ -643,19 +632,22 @@ animatePlayers(dt);updateRadar();updatePlayerCard();
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
 }
 function updateBroadcastCamera(dt){
-  // TV camera: fixed on the near touchline, with restrained ball-follow pan.
-  // This is intentionally stable on both portrait and landscape mobile viewports.
-  const aspect=THREE.MathUtils.clamp(camera.aspect,.55,2.6);
-  const landscape=aspect>=1.0;
-  const targetX=THREE.MathUtils.clamp(ball.position.x*.16,-8,8);
-  const targetZ=THREE.MathUtils.clamp(ball.position.z*.08,-2.5,2.5);
-  const desired=new THREE.Vector3(targetX,53.5,landscape?-91:-103);
-  const alpha=1-Math.pow(.00025,Math.min(.05,dt));
+  // Stable broadcast baseline: elevated three-quarter view, centered on pitch.
+  // It is intentionally independent of the stadium until the pitch framing is correct.
+  const aspect=THREE.MathUtils.clamp(camera.aspect,.7,2.4);
+  const targetX=THREE.MathUtils.clamp(ball.position.x*.10,-6,6);
+  const targetZ=THREE.MathUtils.clamp(ball.position.z*.06,-3,3);
+  const desired=new THREE.Vector3(targetX,58,86);
+  const alpha=1-Math.pow(.0002,Math.min(.05,dt));
   camera.position.lerp(desired,alpha);
-  camera.fov=landscape?43:38;
-  camera.near=.1;camera.far=500;
+  camera.fov=landscapeOrPortraitFov(aspect);
+  camera.near=.1;
+  camera.far=500;
   camera.updateProjectionMatrix();
-  camera.lookAt(targetX*.75,0.4,landscape?3.5:5.5+targetZ);
+  camera.lookAt(targetX,0,targetZ);
+}
+function landscapeOrPortraitFov(aspect){
+  return aspect>=1.0?48:43;
 }
 
 const radarCanvas=document.querySelector("#radar"),radarCtx=radarCanvas?.getContext("2d"),staminaFill=document.querySelector("#staminaFill"),playerLabel=document.querySelector("#playerLabel"),playerRole=document.querySelector("#playerRole"),playerNo=document.querySelector("#playerNo");
