@@ -1,1 +1,15 @@
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07140d;font-family:system-ui,sans-serif;touch-action:none}body{display:flex;align-items:center;justify-content:center}#app{position:relative;width:100vw;height:100dvh;overflow:hidden}canvas{display:block;width:100%;height:100%;touch-action:none}#hud{position:absolute;top:max(10px,env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:center;gap:32px;color:#fff;font-weight:800;font-size:clamp(20px,5vw,34px);pointer-events:none;text-shadow:0 2px 4px #000}#controls{position:absolute;inset:auto 0 max(12px,env(safe-area-inset-bottom)) 0;display:flex;justify-content:space-between;align-items:end;padding:12px 18px;pointer-events:none}.#stick{}#stick{width:clamp(110px,28vw,170px);height:clamp(110px,28vw,170px);border:2px solid #ffffff66;border-radius:50%;background:#ffffff18;pointer-events:auto;position:relative}.#knob{}#knob{position:absolute;width:42%;height:42%;left:29%;top:29%;border-radius:50%;background:#ffffff55}.#actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;pointer-events:auto}.#actions button{}button{min-width:82px;min-height:58px;border:1px solid #ffffff66;border-radius:18px;background:#ffffff22;color:#fff;font-weight:800;font-size:14px;backdrop-filter:blur(8px);touch-action:none}button:active{transform:scale(.96);background:#ffffff44}#message{position:absolute;bottom:28%;left:0;right:0;text-align:center;color:#fff;font-size:clamp(18px,5vw,28px);font-weight:800;text-shadow:0 2px 5px #000;pointer-events:none}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07140d;font-family:system-ui,sans-serif;touch-action:none}
+body{display:flex;align-items:center;justify-content:center}
+#app{position:relative;width:100vw;height:100dvh;overflow:hidden}
+#game{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#game canvas{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:absolute;top:max(10px,env(safe-area-inset-top));left:0;right:0;display:flex;justify-content:center;gap:32px;color:#fff;font-weight:800;font-size:clamp(20px,5vw,34px);pointer-events:none;text-shadow:0 2px 4px #000;z-index:5}
+#controls{position:absolute;inset:auto 0 max(12px,env(safe-area-inset-bottom)) 0;display:flex;justify-content:space-between;align-items:end;padding:12px 18px;pointer-events:none;z-index:6}
+#stick{width:clamp(110px,28vw,170px);height:clamp(110px,28vw,170px);border:2px solid #ffffff66;border-radius:50%;background:#ffffff18;pointer-events:auto;position:relative;backdrop-filter:blur(4px)}
+#knob{position:absolute;width:42%;height:42%;left:29%;top:29%;border-radius:50%;background:#ffffff55}
+#actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;pointer-events:auto}
+button{min-width:82px;min-height:58px;border:1px solid #ffffff66;border-radius:18px;background:#ffffff22;color:#fff;font-weight:800;font-size:14px;backdrop-filter:blur(8px);touch-action:none}
+button:active{transform:scale(.96);background:#ffffff44}
+#message{position:absolute;bottom:28%;left:0;right:0;text-align:center;color:#fff;font-size:clamp(18px,5vw,28px);font-weight:800;text-shadow:0 2px 5px #000;pointer-events:none;z-index:7}
+@media (max-width:700px){#controls{padding-left:12px;padding-right:12px}button{min-width:76px;min-height:54px}}
