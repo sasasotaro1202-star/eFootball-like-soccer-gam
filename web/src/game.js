@@ -112,9 +112,9 @@ function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
 addStadiumAtmosphere();
 function mark(x1,z1,x2,z2,w=.16){const l=Math.hypot(x2-x1,z2-z1),o=box(w,.035,l,lineMat);o.position.set((x1+x2)/2,.025,(z1+z2)/2);o.rotation.y=Math.atan2(x2-x1,z2-z1);scene.add(o)}
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(122,84),M(0x0b301b));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
-const pitch=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d,10,6),M(0x176b38));pitch.rotation.x=-Math.PI/2;pitch.position.y=.01;pitch.receiveShadow=true;scene.add(pitch);
-for(let i=0;i<10;i++){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),new THREE.MeshBasicMaterial({color:i%2?0x155f34:0x176b38}));stripe.rotation.x=-Math.PI/2;stripe.position.set(0,.016,-FIELD.d/2+(i+.5)*FIELD.d/10);scene.add(stripe)}
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(122,84),new THREE.MeshBasicMaterial({color:0x071c10}));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const pitch=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d,1,1),new THREE.MeshBasicMaterial({color:0x176b38}));pitch.rotation.x=-Math.PI/2;pitch.position.y=.02;pitch.receiveShadow=true;scene.add(pitch);
+for(let i=0;i<10;i++){const stripe=new THREE.Mesh(new THREE.PlaneGeometry(FIELD.w,FIELD.d/10),new THREE.MeshBasicMaterial({color:i%2?0x155f34:0x176b38}));stripe.rotation.x=-Math.PI/2;stripe.position.set(0,.025,-FIELD.d/2+(i+.5)*FIELD.d/10);scene.add(stripe)}
 for(const z of[-34,34])for(let x=-53;x<=53;x+=2)scene.add(cyl(.035,.18,M(0xe9f0ea),x,.06,z));
 mark(-53,-34,53,-34);mark(-53,34,53,34);mark(-53,-34,-53,34);mark(53,-34,53,34);mark(0,-34,0,34);mark(-37,-20,-37,20);mark(37,-20,37,20);
 const circle=new THREE.Mesh(new THREE.RingGeometry(8.95,9.15,64),new THREE.MeshBasicMaterial({color:0xffffff,side:THREE.DoubleSide}));circle.rotation.x=-Math.PI/2;circle.position.y=.035;scene.add(circle);
@@ -602,8 +602,8 @@ function update(dt){
    // Safe reference camera for touch devices: side-on elevated broadcast view.
    // It is intentionally independent of player/ball coordinates so camera state
    // cannot drift below/away from the pitch.
-   camera.position.set(0,42,62);
-   camera.fov=58;
+   camera.position.set(0,68,76);
+   camera.fov=52;
    camera.updateProjectionMatrix();
    camera.lookAt(0,0,0);
  }else{
