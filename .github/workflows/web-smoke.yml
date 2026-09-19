@@ -13,74 +13,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Validate web entry points
+      - name: Validate rebuilt game
         run: |
           test -f web/index.html
           test -f web/src/game.js
-          test -f web/src/playerProfiles.js
           node --check web/src/game.js
-          node --check web/src/playerProfiles.js
-          grep -q "new THREE.WebGLRenderer" web/src/game.js
-          grep -q "rendererBootError" web/src/game.js
-          grep -q "failIfMajorPerformanceCaveat" web/src/game.js
-          grep -q 'type="module"' web/index.html
-          grep -Eq 'src="./src/game.js(\\?[^"]*)?"' web/index.html
-          grep -q 'data-action="pass"' web/index.html
-          grep -q 'data-action="shoot"' web/index.html
-          grep -q 'data-action="tackle"' web/index.html
-          grep -q 'data-action="shield"' web/index.html
-          grep -q 'id="radar"' web/index.html
-          node <<'NODE'
-          const fs=require("fs");
-          const s=fs.readFileSync("web/src/game.js","utf8");
-          const h=fs.readFileSync("web/index.html","utf8");
-          const required=[
-            ["kickoff gate",/state\.firstKickoff=false;state\.userTouched=true;state\.aiEnabled=true/],
-            ["tactical AI",/function tacticalTarget\(/],
-            ["goal direction gate",/towardAway=.*towardHome/],
-            ["goal height gate",/ball\.position\.y<3\.55&&Math\.abs\(ball\.position\.z\)<7/],
-            ["rigged animation",/THREE\.AnimationMixer/],
-            ["two-legged rig",/thigh_l.*thigh_r/s],
-            ["ball possession",/function stealBall\(/],
-            ["audio",/function sfxGoal\(/],
-            ["mobile joystick y-axis",/Number\(state\.joy\.y\)/],
-            ["true lob arc",/vy=kind==="lob"\?\(6\.5\+6\.5\*charge\)/],
-            ["sprint preserved",/state\.actions\.sprint/],
-            ["core AI kick function",/function kickTo\(tx,tz,power\)/],
-            ["input-only enhancement",/actions=runEnhancedActions;/],
-            ["team routing",/owner\.userData\.team|p\.userData\.team|t\.userData\.team/],
-            ["context loss recovery",/webglcontextlost.*__activateFallback/s],
-            ["sprint hold preservation",/const sprintHeld=!!state\.actions\?\.sprint/],
-            ["shielding",/userData\.shielding/],
-            ["first touch",/function applyFirstTouch\(/],
-            ["offside",/function isOffsideAtRelease\(/],
-            ["defensive line",/function defensiveLineAndPress\(/],
-            ["goalkeeper brain",/function goalkeeperBrain\(/],
-            ["set pieces",/function stageSetPiece\(/],
-            ["throw in",/stageSetPiece\("THROW IN"/],
-            ["corner",/stageSetPiece\("CORNER"/],
-            ["goal kick",/stageSetPiece\("GOAL KICK"/],
-            ["120hz fixed step",/const fixed=1\/120/],
-            ["acceleration",/const accel=17\*agility/],
-            ["deceleration",/decel=23\*agility/],
-            ["formation",/formation:"4-3-3"/],
-            ["automatic substitutions",/function runAutomaticSubstitution\(/],
-            ["body orientation",/const desired=Math\.atan2\(nx,nz\)/],
-            ["touch flick surface",/handleFieldPointerDown/],
-            ["touch flick action",/performTouchFlickAction/],
-            ["sharp touch",/function sharpTouch\(/],
-            ["sharp touch acceleration",/sharpTouchUntil/],
-            ["broadcast camera",/function updateBroadcastCamera\(/],
-            ["presentation world",/function buildPresentationWorld\(/],
-            ["touch guide",/TOUCH &amp; FLICK/]
-          ];
-          for(const [name,re] of required){ const target=name==="touch guide"?h:s; if(!re.test(target)) throw new Error("Missing gameplay invariant: "+name); }
-          if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
-          if((s.match(/function buildPresentationWorld/g)||[]).length!==1) throw new Error("Duplicate presentation initializer");
-          if((s.match(/function kickTo\(/g)||[]).length!==1) throw new Error("Duplicate kickTo implementation");
-          if((s.match(/function stealBall\(/g)||[]).length!==1) throw new Error("Duplicate stealBall implementation");
-          if(!s.includes("ball.userData.vx=ball.userData.vz=ball.userData.vy=0")) throw new Error("Kickoff ball velocity reset missing");
-          console.log("Gameplay invariants passed.");
-          console.log("Gameplay invariants passed.");
-          NODE
+          grep -q 'new THREE.WebGLRenderer' web/src/game.js
+          grep -q 'buildPitch' web/src/game.js
+          grep -q 'updateCamera' web/src/game.js
+          grep -q 'rightFlick' web/src/game.js
+          grep -q 'pointerdown' web/src/game.js
+          grep -q 'id="stick"' web/index.html
+          if grep -q 'id="actions"' web/index.html; then exit 1; fi
+          if grep -q 'data-action=' web/index.html; then exit 1; fi
+          node -e "const fs=require('fs'); const s=fs.readFileSync('web/src/game.js','utf8'); if((s.match(/function buildPitch/g)||[]).length!==1) throw new Error('duplicate buildPitch'); if((s.match(/function updateCamera/g)||[]).length!==1) throw new Error('duplicate camera'); console.log('Rebuild invariants passed.')"
           echo "Web smoke checks passed."
