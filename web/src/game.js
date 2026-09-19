@@ -45,9 +45,11 @@ window.addEventListener("pointerdown",resumeAudio,{once:true,passive:true});
 window.addEventListener("touchstart",resumeAudio,{once:true,passive:true});
 
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:"high-performance"});
-renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
+renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;root.appendChild(renderer.domElement);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
 scene.add(new THREE.HemisphereLight(0xdceeff,0x153d20,2.2));
-const sun=new THREE.DirectionalLight(0xffffff,3);sun.position.set(-35,55,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const sun=new THREE.DirectionalLight(0xffffff,3.2);sun.position.set(-35,55,25);sun.castShadow=true;sun.shadow.mapSize.set(1024,1024);scene.add(sun);
 const M=(c,r=.72)=>new THREE.MeshStandardMaterial({color:c,roughness:r}),lineMat=new THREE.MeshBasicMaterial({color:0xffffff}),blue=M(0x287cf0),red=M(0xe33d45),white=M(0xf2f2f2),skin=M(0xf0bd8a),hair=M(0x241a16),black=M(0x151515),ballMat=M(0xffffff,.55);
 function box(w,h,d,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);o.castShadow=true;o.receiveShadow=true;return o}
 function cyl(r,h,m,x=0,y=0,z=0){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.96,h,10),m);o.position.set(x,y,z);o.castShadow=true;return o}
@@ -68,10 +70,15 @@ function jerseyNumberTexture(number,color){
 }
 const RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
 const ANIMATION_LIBRARY_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/universal-animation-library.glb";
+const RIGGED_LOAD_TIMEOUT=9000;
+function loadWithTimeout(loader,url){
+ return new Promise((resolve,reject)=>{let done=false;const timer=setTimeout(()=>{if(!done){done=true;reject(new Error("asset timeout"))}},RIGGED_LOAD_TIMEOUT);
+ loader.load(url,g=>{if(done)return;done=true;clearTimeout(timer);resolve(g)},undefined,e=>{if(done)return;done=true;clearTimeout(timer);reject(e)})});
+}
 const rigLoader=new GLTFLoader();
 let riggedSource=null,animationSource=null,rigLoadPromise=null,animationLoadPromise=null;
-function loadRiggedSource(){if(rigLoadPromise)return rigLoadPromise;rigLoadPromise=new Promise((resolve,reject)=>rigLoader.load(RIGGED_PLAYER_URL,g=>{riggedSource=g;resolve(g)},undefined,reject));return rigLoadPromise}
-function loadAnimationSource(){if(animationLoadPromise)return animationLoadPromise;animationLoadPromise=new Promise((resolve,reject)=>rigLoader.load(ANIMATION_LIBRARY_URL,g=>{animationSource=g;resolve(g)},undefined,reject));return animationLoadPromise}
+function loadRiggedSource(){if(rigLoadPromise)return rigLoadPromise;rigLoadPromise=new Promise((resolve,reject)=>loadWithTimeout(rigLoader,RIGGED_PLAYER_URL).then(g=>{riggedSource=g;resolve(g)}).catch(reject));return rigLoadPromise}
+function loadAnimationSource(){if(animationLoadPromise)return animationLoadPromise;animationLoadPromise=new Promise((resolve,reject)=>loadWithTimeout(rigLoader,ANIMATION_LIBRARY_URL).then(g=>{animationSource=g;resolve(g)}).catch(reject));return animationLoadPromise}
 function recolorRiggedModel(model,team){
  const shirt=team===blue?0x2f78d0:team===red?0xd93445:0xf0f0f0,shorts=team===blue?0x174f9d:team===red?0x8f1728:0x333333;
  model.traverse(o=>{if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const mats=Array.isArray(o.material)?o.material:[o.material];o.material=mats.map(m=>{const n=(m?.name||o.name||"").toLowerCase(),mm=m.clone();if(/shirt|jersey|top|upper|torso|clothes/.test(n))mm.color?.setHex(shirt);else if(/short|pants|trouser/.test(n))mm.color?.setHex(shorts);return mm});if(o.material.length===1)o.material=o.material[0]});
@@ -275,7 +282,7 @@ function update(dt){
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  state.actions={}
 }
-function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.7))}
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio||1,1.45))}
 addEventListener("resize",resize);resize();
 const stick=document.querySelector("#stick"),knob=document.querySelector("#knob");let pid=null;
 function joy(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),max=r.width*.34,l=Math.hypot(x,y)||1,k=Math.min(1,max/l);state.joy={x:x/l*k,y:y/l*k};knob.style.transform=`translate(${x*k}px,${y*k}px)`}
