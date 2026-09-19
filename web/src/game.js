@@ -637,13 +637,14 @@ function initRenderer() {
     stencil: false,
     failIfMajorPerformanceCaveat: false
   });
-  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.6));
-  renderer.setSize(innerWidth, innerHeight, false);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
   mount.replaceChildren(renderer.domElement);
+  renderer.domElement.style.width = "100%";
+  renderer.domElement.style.height = "100%";
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 300);
+  camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
   camera.position.set(0, 48, 69);
 
   const hemi = new THREE.HemisphereLight(0xd9f1ff, 0x10251a, 1.8);
@@ -658,8 +659,11 @@ function initRenderer() {
 
 function resize() {
   if (!renderer || !camera) return;
-  renderer.setSize(innerWidth, innerHeight, false);
-  camera.aspect = innerWidth / innerHeight;
+  const canvas = renderer.domElement;
+  const width = clamp(Math.round(canvas.clientWidth || mount.clientWidth || innerWidth || 390), 320, 2400);
+  const height = clamp(Math.round(canvas.clientHeight || mount.clientHeight || innerHeight || 390), 240, 1400);
+  renderer.setSize(width, height, false);
+  camera.aspect = width / height;
   camera.updateProjectionMatrix();
 }
 
@@ -685,6 +689,7 @@ function gameLoop(now) {
 function bootGame() {
   try {
     initRenderer();
+    resize();
     buildPitch();
     buildBall();
     placeTeams();
