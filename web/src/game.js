@@ -345,8 +345,8 @@ const mates=Array.from({length:10},(_,i)=>makePlayer(blue,[1,2,3,4,5,6,7,8,9,11]
 const foes=Array.from({length:11},(_,i)=>makePlayer(red,[1,2,3,4,5,6,7,8,9,10,11][i],false,i<4?"DEF":i<8?"MID":"FWD"));
 const homePos=[[-44,0],[-36,-22],[-36,22],[-18,-25],[-18,-9],[-18,9],[-18,25],[4,-25],[7,-8],[7,8],[4,25]];
 const awayPos=[[44,0],[36,-22],[36,22],[18,-25],[18,-9],[18,9],[18,25],[-4,-25],[-7,-8],[-7,8],[-4,25]];
-mates.forEach((p,i)=>{p.position.set(...homePos[i],0);p.userData.homeX=homePos[i][0];p.userData.homeZ=homePos[i][1]});
-foes.forEach((p,i)=>{p.position.set(...awayPos[i],0);p.userData.homeX=awayPos[i][0];p.userData.homeZ=awayPos[i][1]});
+mates.forEach((p,i)=>{p.position.set(homePos[i][0],0,homePos[i][1]);p.userData.homeX=homePos[i][0];p.userData.homeZ=homePos[i][1]});
+foes.forEach((p,i)=>{p.position.set(awayPos[i][0],0,awayPos[i][1]);p.userData.homeX=awayPos[i][0];p.userData.homeZ=awayPos[i][1]});
 player.position.set(-40,0,0);player.userData.homeX=-40;player.userData.homeZ=0;
 const gks=[makePlayer(white,1,false,"GK"),makePlayer(white,1,false,"GK")];gks[0].scale.setScalar(.94);gks[1].scale.setScalar(.94);
 // Keep the opening kickoff under direct player control. AI cannot own or shoot the ball until a real touch occurs.
@@ -382,7 +382,7 @@ function selectBestDefender(){
 function reset(text="KICK OFF"){
  ball.position.set(-1.2,.48,0);ball.userData.vx=ball.userData.vz=ball.userData.vy=0;ball.userData.owner=player;ball.userData.lastTouchTeam=blue;
  state.firstKickoff=true;state.aiEnabled=false;state.matchPhase="kickoff";state.userTouched=false;state.lastPossessionChange=performance.now();enhancedState.passTarget=null;enhancedState.firstTouchLock=0;
- player.position.set(-1.2,0,0);mates.forEach((p,i)=>p.position.set(...homePos[i],0));foes.forEach((p,i)=>p.position.set(...awayPos[i],0));
+ player.position.set(-1.2,0,0);mates.forEach((p,i)=>p.position.set(homePos[i][0],0,homePos[i][1]));foes.forEach((p,i)=>p.position.set(awayPos[i][0],0,awayPos[i][1]));
  gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);
  msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
 }
