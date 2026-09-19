@@ -102,11 +102,48 @@ function keepRiggedFeetOnPitch(group){
  model.updateMatrixWorld(true);
  const box=new THREE.Box3().setFromObject(model);
  if(Number.isFinite(box.min.y))model.position.y-=box.min.y;
+}function setupRigBones(model){
+ const bones={};
+ model.traverse(o=>{if(o.isBone)bones[o.name]=o});
+ const names=["pelvis","spine_01","spine_02","spine_03","neck_01","Head","upperarm_l","lowerarm_l","upperarm_r","lowerarm_r","thigh_l","calf_l","foot_l","thigh_r","calf_r","foot_r"];
+ if(!names.every(n=>bones[n]))return null;
+ const base={};
+ for(const n of names)base[n]=bones[n].quaternion.clone();
+ return {bones,base};
+}
+function rigOffset(rig,name,x=0,y=0,z=0){
+ const b=rig.bones[name],q=rig.base[name];if(!b||!q)return;
+ b.quaternion.copy(q).multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z)));
+}
+function animateRiggedLocomotion(a,speed,dt){
+ const rig=a.userData.rigBones;if(!rig)return;
+ const phase=a.userData.walkPhase;
+ const moving=speed>.25,run=speed>10;
+ const amp=moving?(run?.72:.48):0;
+ const swing=Math.sin(phase)*amp;
+ const opposite=-swing;
+ // Local joint presentation only: world translation stays simulation-owned.
+ rigOffset(rig,"thigh_l",swing,0,0);
+ rigOffset(rig,"thigh_r",opposite,0,0);
+ rigOffset(rig,"calf_l",Math.max(0,-swing)*.72,0,0);
+ rigOffset(rig,"calf_r",Math.max(0,-opposite)*.72,0,0);
+ rigOffset(rig,"foot_l",Math.max(0,-swing)*-.38,0,0);
+ rigOffset(rig,"foot_r",Math.max(0,-opposite)*-.38,0,0);
+ rigOffset(rig,"upperarm_l",opposite*.48,0,0);
+ rigOffset(rig,"upperarm_r",swing*.48,0,0);
+ rigOffset(rig,"lowerarm_l",opposite*.16,0,0);
+ rigOffset(rig,"lowerarm_r",swing*.16,0,0);
+ rigOffset(rig,"pelvis",0,0,moving?Math.sin(phase*2)*.035:0);
+ rigOffset(rig,"spine_02",moving?Math.sin(phase*2)*.018:0,0,0);
+ rigOffset(rig,"Head",0,moving?Math.sin(phase*2)*.012:0,0);
 }
 async function attachRiggedVisual(g,team){
  try{
   const source=await loadRiggedSource(),model=SkeletonUtils.clone(source.scene);recolorRiggedModel(model,team);fitRiggedModel(model);g.add(model);g.userData.riggedModel=model;
-  try{const anim=await loadAnimationSource();if(anim?.animations?.length){const mixer=new THREE.AnimationMixer(model),clips=anim.animations,preferred=clips.find(x=>/idle|jog|walk/i.test(x.name))||clips[0],action=mixer.clipAction(preferred);action.play();g.userData.rigMixer=mixer;g.userData.rigAction=action}}catch{}
+  const rig=setupRigBones(model);if(rig)g.userData.rigBones=rig;
+  // Root motion is intentionally disabled: simulation owns the player's world position.
+  // The imported animation library is retained as an audited asset, while locomotion is driven
+  // by deterministic local joint poses so every player visibly walks/runs instead of sliding.
   for(const ch of [...g.children])if(ch!==model&&ch.userData?.legacyVisual)g.remove(ch);
  }catch{}
 }
@@ -193,7 +230,7 @@ function reset(text="KICK OFF"){
  gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);state.firstKickoff=true;state.aiEnabled=false;msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
 }
 function dist(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
-function move(a,x,z,s,dt){const dx=x-a.position.x,dz=z-a.position.z,d=Math.hypot(dx,dz);if(d>.08){const q=Math.min(d,s*dt);a.position.x+=dx/d*q;a.position.z+=dz/d*q;a.rotation.y=Math.atan2(dx,dz)}}
+function move(a,x,z,s,dt){const dx=x-a.position.x,dz=z-a.position.z,d=Math.hypot(dx,dz);if(d>.08){const q=Math.min(d,s*dt);a.position.x+=dx/d*q;a.position.z+=dz/d*q;a.rotation.y=Math.atan2(dx,dz)+Math.PI}}
 function nearestMate(){
  return mates.reduce((b,p)=>dist(p,controlled())<dist(b,controlled())?p:b,mates[0])
 }
@@ -223,7 +260,7 @@ function animatePlayers(dt){
    const speed=Math.hypot(dx,dz)/Math.max(dt,.001);
    a.userData.walkPhase+=Math.min(speed*.018,1.2);
    const swing=Math.min(speed/10,1)*.55;
-   if(a.userData.rigMixer)a.userData.rigMixer.update(dt);
+   animateRiggedLocomotion(a,speed,dt);
    keepRiggedFeetOnPitch(a);
    if(a.userData.legL&&a.userData.legR){
      a.userData.legL.rotation.x=Math.sin(a.userData.walkPhase)*swing;
