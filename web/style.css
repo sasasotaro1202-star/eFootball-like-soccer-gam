@@ -75,3 +75,78 @@ button{border-color:rgba(255,255,255,.13);border-radius:15px;background:linear-g
  #stick{opacity:.94}
  #touchGuide{opacity:.9}
 }
+
+
+/* Touch & Flick presentation: no action-pad buttons, no virtual joystick.
+   Gameplay input is handled directly on the WebGL surface, matching the
+   two-sided gesture model of mobile touch-and-flick football controls. */
+#controls{pointer-events:none;padding:0}
+#actions{display:none!important}
+#stick{display:none!important}
+#touchGuide{display:none!important}
+
+/* Broadcast HUD: compact score strip + bottom-center radar. */
+#matchbar{
+  top:max(12px,env(safe-area-inset-top));
+  left:18px;
+  transform:none;
+  width:min(360px,46vw);
+  height:52px;
+  padding:6px 10px;
+  grid-template-columns:26px 1fr auto 1fr 26px;
+  gap:6px;
+  border-radius:12px;
+}
+#matchbar .teamBadge{width:26px;height:26px;border-radius:7px}
+#matchbar .scoreBlock #score{font-size:18px}
+#matchbar .scoreBlock #clock{font-size:8px;margin-top:3px}
+#topTools{
+  top:max(12px,env(safe-area-inset-top));
+  left:auto;
+  right:18px;
+  width:auto;
+  justify-content:flex-end;
+}
+#topTools .pill:last-child{display:none}
+#topTools .pill:first-child{padding:6px 9px}
+
+#radarWrap{
+  top:auto;
+  right:auto;
+  left:50%;
+  bottom:max(18px,env(safe-area-inset-bottom) + 18px);
+  transform:translateX(-50%);
+  width:150px;
+  height:94px;
+  padding:4px;
+  border-radius:7px;
+  background:rgba(3,8,13,.52);
+  opacity:.92;
+}
+#playerCard{
+  left:18px;
+  bottom:max(18px,env(safe-area-inset-bottom) + 18px);
+  width:305px;
+  min-height:48px;
+  padding:7px 12px;
+  border-radius:3px;
+  background:linear-gradient(90deg,rgba(2,8,13,.86),rgba(2,8,13,.55),rgba(2,8,13,0));
+  border:0;
+  border-left:3px solid var(--accent);
+  box-shadow:none;
+  backdrop-filter:blur(5px);
+}
+.playerCardTop{font-size:7px}
+#playerLabel{font-size:14px;margin-top:2px}
+.stamina{height:3px;margin-top:5px;max-width:190px}
+@media (max-width:760px){
+  #matchbar{width:min(350px,48vw);height:48px}
+  #radarWrap{width:126px;height:78px}
+  #playerCard{width:235px}
+}
+@media (max-width:520px){
+  #matchbar{left:10px;width:min(300px,66vw)}
+  #topTools{right:10px}
+  #radarWrap{width:112px;height:70px}
+  #playerCard{left:10px;width:190px}
+}
