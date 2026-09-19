@@ -1,6 +1,7 @@
 {
   "name": "football-3d-match",
   "private": true,
+  "engines": { "node": ">=22" },
   "version": "1.0.0",
   "scripts": {
     "web:check": "node --check web/src/game-final.js",
