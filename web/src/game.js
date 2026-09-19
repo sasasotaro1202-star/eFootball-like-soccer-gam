@@ -595,16 +595,17 @@ function update(dt){
  const blendX=p.position.x*.54+ball.position.x*.46,blendZ=p.position.z*.54+ball.position.z*.46;
  const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.24,-8,8);
  const danger=Math.max(0,Math.abs(ball.position.x)-35)/18;
- const height=10.2+Math.min(2.1,ballSpeed*.045)+danger*.55;
- const distance=14.4+Math.min(3.4,ballSpeed*.075);
+ const mobileView=matchMedia("(pointer:coarse)").matches&&innerWidth<=760;
+ const height=(mobileView?14.2:10.2)+Math.min(mobileView?2.8:2.1,ballSpeed*.045)+danger*.55;
+ const distance=(mobileView?20.5:14.4)+Math.min(mobileView?4.2:3.4,ballSpeed*.075);
  const t=new THREE.Vector3(blendX,0,blendZ);
- const want=new THREE.Vector3(t.x-dir*distance+sideOffset*.16,height,t.z+sideOffset+dir*2.8);
- camera.position.lerp(want,1-Math.pow(.00055,dt));
- const targetFov=47.5+Math.min(5.5,ballSpeed*.16)+danger*1.8;
+ const want=new THREE.Vector3(t.x-dir*distance+sideOffset*(mobileView?.10:.16),height,t.z+sideOffset*(mobileView?.78:1)+dir*(mobileView?3.8:2.8));
+ camera.position.lerp(want,1-Math.pow(mobileView?.0012:.00055,dt));
+ const targetFov=(mobileView?54:47.5)+Math.min(mobileView?5:5.5,ballSpeed*.16)+danger*1.8;
  camera.fov=THREE.MathUtils.lerp(camera.fov,targetFov,1-Math.pow(.0007,dt));
  camera.updateProjectionMatrix();
- const lookX=blendX+dir*(4.8+Math.min(3,ballSpeed*.06)),lookZ=blendZ+sideOffset*.18;
- camera.lookAt(lookX,1.2,lookZ);
+ const lookX=blendX+dir*(mobileView?6.5:4.8)+Math.min(3,ballSpeed*.06),lookZ=blendZ+sideOffset*(mobileView?.08:.18);
+ camera.lookAt(lookX,mobileView?.65:1.2,lookZ);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  const sprintHeld=!!state.actions?.sprint,shieldHeld=!!state.actions?.shield;state.actions={sprint:sprintHeld,shield:shieldHeld}
