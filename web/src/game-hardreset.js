@@ -378,6 +378,8 @@ function passOrShoot(mode, power = 0.8) {
 
   if (mode === "shoot") {
     target = new THREE.Vector3(53, 1.5, clamp(p.position.z, -8, 8));
+  } else if (mode === "through") {
+    target = new THREE.Vector3(clamp(p.position.x + 22, -48, 50), 0.8, clamp(p.position.z, -30, 30));
   } else {
     const candidates = home
       .filter((x) => x !== p && x.userData.role !== "GK")
@@ -389,15 +391,15 @@ function passOrShoot(mode, power = 0.8) {
   const dx = target.x - ball.position.x;
   const dz = target.z - ball.position.z;
   const len = Math.hypot(dx, dz) || 1;
-  const speed = (mode === "shoot" ? 18 : 10) * clamp(power, 0.35, 1.15);
+  const speed = (mode === "shoot" ? 18 : mode === "through" ? 13.5 : 10) * clamp(power, 0.35, 1.15);
 
   ball.userData.owner = null;
   ball.userData.lastTeam = HOME;
   ball.userData.vx = dx / len * speed;
   ball.userData.vz = dz / len * speed;
-  ball.userData.vy = mode === "shoot" ? 1.5 + power * 2.0 : 0.7 + power * 1.2;
+  ball.userData.vy = mode === "shoot" ? 1.5 + power * 2.0 : mode === "through" ? 0.55 + power * 0.9 : 0.7 + power * 1.2;
   navigator.vibrate?.(mode === "shoot" ? [20, 25, 20] : 12);
-  showMessage(mode === "shoot" ? "SHOOT" : "PASS", 450);
+  showMessage(mode === "shoot" ? "SHOOT" : mode === "through" ? "THROUGH" : "PASS", 450);
 }
 
 function touchBall() {
@@ -608,6 +610,8 @@ function rightUp(e) {
   }
   if (dy < -20 && Math.abs(dy) > Math.abs(dx) * 1.05) {
     passOrShoot("shoot", clamp(mag / 90, 0.45, 1.15));
+  } else if (dy > 20 && Math.abs(dy) > Math.abs(dx) * 1.05) {
+    passOrShoot("through", clamp(mag / 90, 0.5, 1.1));
   } else {
     passOrShoot("pass", clamp(mag / 90, 0.45, 1.1));
   }
