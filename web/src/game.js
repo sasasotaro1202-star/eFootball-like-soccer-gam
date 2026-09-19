@@ -224,26 +224,8 @@ function buildPitch() {
     scene.add(base);
   }
 
-  // Low, simple stands. Nothing crosses the camera volume.
-  for (const z of [-40, 40]) {
-    for (let row = 0; row < 3; row++) {
-      const stand = new THREE.Mesh(
-        new THREE.BoxGeometry(145, 2.4 + row * 1.2, 4.5),
-        mat(0x202a31, 0.95)
-      );
-      stand.position.set(0, 1.1 + row * 1.25, z);
-      scene.add(stand);
-    }
-  }
-
-  for (const x of [-61, 61]) {
-    const stand = new THREE.Mesh(
-      new THREE.BoxGeometry(4.5, 5.5, 82),
-      mat(0x202a31, 0.95)
-    );
-    stand.position.set(x, 2.5, 0);
-    scene.add(stand);
-  }
+  // Intentionally no stadium walls/stands in the render volume.
+  // Keeping the presentation volume empty prevents clipping artifacts on mobile GPUs.
 }
 
 function buildBall() {
@@ -498,17 +480,20 @@ function updateHUD() {
 }
 
 function updateBroadcastCamera(dt) {
-  const aspect = Math.max(0.8, camera.aspect);
-  const targetX = clamp(ball.position.x * 0.08, -4.5, 4.5);
-  const targetZ = clamp(ball.position.z * 0.12, -7, 7);
+  const aspect = THREE.MathUtils.clamp(camera.aspect, 0.75, 2.5);
+  const portrait = aspect < 1.05;
+  const targetX = clamp(ball.position.x * 0.06, -5, 5);
+  const targetZ = clamp(ball.position.z * 0.05, -3, 3);
   const desired = new THREE.Vector3(
     targetX,
-    aspect > 1.15 ? 48 : 56,
-    aspect > 1.15 ? 69 : 78
+    portrait ? 92 : 82,
+    portrait ? 116 : 104
   );
-  const blend = 1 - Math.pow(0.0005, Math.min(0.04, dt));
+  const blend = 1 - Math.pow(0.00002, Math.min(0.05, dt));
   camera.position.lerp(desired, blend);
+  camera.fov = portrait ? 47 : 49;
   camera.lookAt(targetX, 0, targetZ);
+  camera.updateProjectionMatrix();
 }
 
 function updateJoystickVisual() {
@@ -644,10 +629,10 @@ function initInput() {
 
 function initRenderer() {
   renderer = new THREE.WebGLRenderer({
-    antialias: true,
+    antialias: false,
     alpha: false,
-    powerPreference: "high-performance",
-    precision: "highp",
+    powerPreference: "default",
+    precision: "mediump",
     depth: true,
     stencil: false,
     failIfMajorPerformanceCaveat: false
@@ -711,6 +696,7 @@ function bootGame() {
     updateHUD();
 
     window.__gameReady = true;
+    window.__gameVersion = "hard-reset-20260920-03";
     window.__rendererMode = renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1";
     boot.classList.add("ready");
     setTimeout(() => boot.remove(), 500);
