@@ -3,100 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#07140d">
+<meta name="theme-color" content="#07131d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FOOTBALL">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
 <title>FOOTBALL // MATCH</title>
-<meta name="orientation" content="landscape">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <main id="app">
-<div id="game" aria-label="3D soccer game"></div>
-<div id="boot" aria-live="polite"><span>FOOTBALL</span><br><small>LOADING MATCH ENGINE</small></div>
-<header id="matchbar">
- <div class="teamBadge home">H</div>
- <div class="teamName">HOME</div>
- <div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">03:00</span></div>
- <div class="teamName away">AWAY</div>
- <div class="teamBadge away">A</div>
-</header>
-<div id="topTools">
- <div class="pill"><span class="dot live"></span><span id="matchState">LIVE</span></div>
- <div class="pill">3D MATCH</div>
-</div>
-<div id="radarWrap" aria-label="mini map"><canvas id="radar" width="180" height="112"></canvas></div>
-<div id="playerCard">
- <div class="playerCardTop"><span id="playerRole">MID</span><span id="playerNo">#1</span></div>
- <div id="playerLabel">PLAYER 01</div>
- <div class="stamina"><span id="staminaFill"></span></div>
-</div>
-<div id="controls">
- <div id="stick" aria-label="Move"><div class="stickRing"></div><div id="knob"></div><span class="stickLabel">MOVE</span></div>
- <div id="actions">
-  <button data-action="pass"><span class="actionIcon">↗</span><span>PASS</span><i class="charge"></i></button>
-  <button data-action="shoot" class="primary"><span class="actionIcon">◉</span><span>SHOOT</span><i class="charge"></i></button>
-  <button data-action="through"><span class="actionIcon">➜</span><span>THRU</span><i class="charge"></i></button>
-  <button data-action="lob"><span class="actionIcon">⌁</span><span>LOB</span><i class="charge"></i></button>
-  <button data-action="tackle"><span class="actionIcon">◆</span><span>TACKLE</span></button>
-  <button data-action="shield"><span class="actionIcon">⬢</span><span>SHIELD</span></button>
-  <button data-action="switch"><span class="actionIcon">↻</span><span>SWITCH</span></button>
-  <button data-action="sprint" class="sprint"><span class="actionIcon">»</span><span>SPRINT</span></button>
- </div>
-</div>
-<div id="message"></div>
-<div id="touchGuide" aria-hidden="true">TOUCH &amp; FLICK</div>
-<canvas id="fallback" aria-label="fallback soccer match"></canvas>
+  <div id="game" aria-label="3D soccer game"></div>
+  <div id="boot">FOOTBALL<br><small>3D MATCH ENGINE</small></div>
+
+  <header id="matchbar">
+    <div class="teamBadge home">H</div><div class="teamName">HOME</div>
+    <div class="scoreBlock"><span id="score">0 - 0</span><span id="clock">00:00</span></div>
+    <div class="teamName away">AWAY</div><div class="teamBadge away">A</div>
+  </header>
+
+  <div id="topTools"><div class="pill"><span class="dot"></span><span id="matchState">LIVE</span></div></div>
+
+  <div id="radarWrap"><canvas id="radar" width="180" height="112"></canvas></div>
+
+  <div id="playerCard">
+    <div class="playerCardTop"><span id="playerRole">FW</span><span id="playerNo">#10</span></div>
+    <div id="playerLabel">PLAYER 10</div>
+    <div class="stamina"><span id="staminaFill"></span></div>
+  </div>
+
+  <div id="controls">
+    <div id="stick" aria-label="選手移動">
+      <div class="stickRing"></div><div id="knob"></div><span class="stickLabel">MOVE</span>
+    </div>
+  </div>
+  <div id="message"></div>
 </main>
-<script>
-window.__gameModuleLoaded=false;
-window.__threeBootFailed=false;window.__threeRendererReady=false;window.__lastGameError="";window.__lastGameStack="";
-window.__activateFallback=function(reason){
-  window.__threeBootFailed=true;
-  window.__lastGameError=String(reason||"WebGL unavailable");
-  var cv=document.getElementById("fallback"),ctx=cv&&cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,2);
-  if(!cv||!ctx)return;
-  function resize(){var app=document.getElementById("app"),w=app?.clientWidth||innerWidth,h=app?.clientHeight||innerHeight;w=Math.min(Math.max(1,w),2400);h=Math.min(Math.max(1,h),2400);cv.width=w*dpr;cv.height=h*dpr;cv.style.width=w+"px";cv.style.height=h+"px";ctx.setTransform(dpr,0,0,dpr,0,0)}
-  function draw(){
-    var app=document.getElementById("app"),w=app?.clientWidth||innerWidth,h=app?.clientHeight||innerHeight;ctx.clearRect(0,0,w,h);
-    ctx.fillStyle="#0b301b";ctx.fillRect(0,0,w,h);
-    var m=Math.min(w*.05,h*.08),pw=w-2*m,ph=Math.min(h*.72,pw*.64),x=m,y=(h-ph)/2;
-    ctx.fillStyle="#176b38";ctx.fillRect(x,y,pw,ph);ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.strokeRect(x,y,pw,ph);
-    ctx.beginPath();ctx.moveTo(x+pw/2,y);ctx.lineTo(x+pw/2,y+ph);ctx.stroke();
-    ctx.beginPath();ctx.arc(x+pw/2,y+ph/2,ph*.14,0,Math.PI*2);ctx.stroke();
-    function p(px,py,c,n){ctx.fillStyle=c;ctx.beginPath();ctx.arc(x+px*pw,y+py*ph,Math.max(9,ph*.022),0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.font="bold 10px system-ui";ctx.textAlign="center";ctx.fillText(n,x+px*pw,y+py*ph+3)}
-    for(var i=0;i<11;i++){p(.08+(i%4)*.16,.14+Math.floor(i/4)*.36,i===0?"#287cf0":"#2f78d0",i+1);p(.92-(i%4)*.16,.14+Math.floor(i/4)*.36,"#d93445",i+1)}
-    p(.5,.5,"#fff","");
-    ctx.fillStyle="#fff";ctx.font="900 28px system-ui";ctx.textAlign="center";ctx.fillText("3D SOCCER",w/2,Math.max(42,y-18));
-    ctx.font="700 13px system-ui";ctx.fillText("2D fallback active",w/2,y+ph+28);
-  }
-  cv.style.display="block";cv.style.zIndex="30";resize();draw();
-  if(!cv.__fallbackResizeBound){addEventListener("resize",function(){resize();draw()});cv.__fallbackResizeBound=true}
-  var boot=document.getElementById("boot");if(boot){boot.classList.remove("ready");boot.innerHTML="3D FALLBACK<br><small>"+String(reason||"WebGL unavailable").slice(0,90)+"</small>"}
-};
-window.addEventListener("error",function(e){
-  var reason=String(e&&e.message||"runtime error");
-  window.__lastGameError=reason;window.__lastGameStack=String(e&&e.error&&e.error.stack||"");
-  if(window.__threeRendererReady){
-    var boot=document.getElementById("boot");
-    if(boot){boot.classList.remove("ready");boot.innerHTML="3D RUNTIME ERROR<br><small>"+reason.slice(0,140)+"</small>";}
-    return;
-  }
-  window.__activateFallback(reason);
-});
-window.addEventListener("unhandledrejection",function(e){
-  var reason=String(e&&e.reason&&e.reason.message||e&&e.reason||"promise rejection");
-  window.__lastGameError=reason;
-  if(window.__threeRendererReady){
-    var boot=document.getElementById("boot");
-    if(boot){boot.classList.remove("ready");boot.innerHTML="3D RUNTIME ERROR<br><small>"+reason.slice(0,140)+"</small>";}
-    return;
-  }
-  window.__activateFallback(reason);
-});
-</script>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js"}}
 </script>
-<script type="module" src="./src/game.js?v=stadium-final-2f7"></script>
+<script>
+window.__gameReady=false;
+window.__lastGameError="";
+window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||e?.error||"runtime error")});
+window.addEventListener("unhandledrejection",e=>{window.__lastGameError=String(e?.reason?.message||e?.reason||"promise rejection")});
+</script>
+<script type="module" src="./src/game.js?v=rebuild-20260920-01"></script>
 </body>
 </html>
