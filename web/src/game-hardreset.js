@@ -298,7 +298,52 @@ function moveControlled(dt) {
   }
 }
 
-function aiStep(dt) {
+
+function improvePlayerIdentity(p){
+  const d=p.userData.player||{}; const id=Number(d.id)||p.userData.index||0;
+  const hue=[0x111111,0x3b2418,0x6b4b2a,0x9b7653,0x201c35,0x5a1720][id%6];
+  p.userData.identity={id,name:d.name||p.userData.name,number:p.userData.number||p.userData.number,skin:id%6,hair:hue};
+  // Individual silhouette: height, shoulder width, head scale and limb length are deterministic per player.
+  const hs=0.93+(id%11)*0.018, ws=0.92+(id%7)*0.025;
+  p.scale.y*=hs; p.scale.x*=ws; p.scale.z*=ws;
+  const r=p.userData.rig; if(r?.torso) r.torso.scale.x*=ws;
+}
+
+function teamAI(dt){
+  const ballX=ball.position.x, ballZ=ball.position.z, owner=ball.userData.owner;
+  for(const team of [home,away]){
+    const attack=team===home?1:-1;
+    const controlled=team===home?home[state.selected]:null;
+    for(const p of team){
+      if(p===controlled) continue;
+      const role=p.userData.role, homeX=p.userData.homeX, homeZ=p.userData.homeZ;
+      let tx=homeX,tz=homeZ;
+      const attacking=owner&&owner.userData.team===p.userData.team;
+      if(role==='GK'){tx=attack*49;tz=clamp(ballZ,-9,9);}
+      else if(attacking){
+        const advance=clamp((ballX*attack)*0.20,-9,18);
+        tx=homeX+advance; tz=homeZ+clamp((ballZ-homeZ)*0.24,-8,8);
+      }else{
+        const danger=clamp(12-Math.abs(ballX-p.position.x),0,12);
+        tx=homeX+clamp((ballX*attack)*0.13,-10,10); tz=homeZ+clamp((ballZ-homeZ)*0.28,-10,10);
+        if(danger>7 && role==='DF'){tx=lerp(tx,ballX,0.22);tz=lerp(tz,ballZ,0.18);}
+      }
+      const dx=tx-p.position.x,dz=tz-p.position.z,len=Math.hypot(dx,dz);
+      if(len>0.25){const sp=p.userData.speed*dt*clamp(len/4,0.3,1.12);p.position.x+=dx/len*sp;p.position.z+=dz/len*sp;p.rotation.y=Math.atan2(dx,dz);p.userData.moving=true;}else p.userData.moving=false;
+      p.position.x=clamp(p.position.x,-51,51);p.position.z=clamp(p.position.z,-32.5,32.5);
+    }
+  }
+  // Defensive pressure and simple possession decisions make the opponent react to the ball state.
+  if(owner&&owner.userData.team===HOME){const ch=away.filter(p=>p.userData.role!=='GK').sort((a,b)=>dist(a,owner)-dist(b,owner))[0];if(ch&&dist(ch,owner)<5.5) ch.userData.sprint=true;}
+  if(owner&&owner.userData.team===AWAY){
+    const mates=away.filter(p=>p!==owner&&p.userData.role!=='GK');
+    const forward=mates.filter(p=>(p.position.x-owner.position.x)<0).sort((a,b)=>dist(owner,a)-dist(owner,b))[0];
+    const goalDist=52.5-owner.position.x;
+    if(goalDist<22&&Math.random()<0.025) kick(owner,53,clamp(owner.position.z,-8,8),14);
+    else if(forward&&Math.random()<0.012) kick(owner,forward.position.x,forward.position.z,10.5);
+  }
+}
+\nfunction aiStep(dt) {
   const owner = ball.userData.owner;
   for (const p of players) {
     if (p === home[state.selected]) continue;
@@ -748,7 +793,7 @@ function gameLoop(now) {
   if (!state.paused) {
     state.time += dt;
     moveControlled(dt);
-    aiStep(dt);
+    teamAI(dt);\n  aiStep(dt);
     physics(dt);
     touchBall();
     updateBroadcastCamera(dt);
