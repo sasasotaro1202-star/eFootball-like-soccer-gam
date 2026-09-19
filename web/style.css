@@ -248,3 +248,15 @@ body{overscroll-behavior:none}
 .gachaMiniInfo span{display:block;margin-top:3px;font-size:7px;opacity:.65;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gachaMiniInfo strong{position:absolute;right:7px;bottom:8px;font-size:15px}
 @media(max-width:720px){.gachaPreviewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.gachaMiniPortrait{height:130px}}
+
+/* Gacha card reveal: player portrait is part of the card, not a text-only result. */
+.gachaStage .miniResult.revealCard{width:clamp(92px,15vw,138px);height:clamp(145px,24vw,205px);padding:0;justify-content:flex-end;text-align:left;background:linear-gradient(160deg,#263c4d,#071016 72%);border-radius:14px;box-shadow:0 12px 36px #0009;cursor:pointer;color:#fff}
+.gachaStage .miniResult.revealCard .revealPortrait{position:absolute;inset:0 0 40px 0;overflow:hidden;background:linear-gradient(145deg,#314b5c,#0a1117)}
+.gachaStage .miniResult.revealCard .revealPortrait svg{width:100%;height:100%;display:block}
+.gachaStage .miniResult.revealCard:after{content:"";position:absolute;inset:55% 0 0;background:linear-gradient(transparent,#05090c);pointer-events:none}
+.gachaStage .miniResult.revealCard b,.gachaStage .miniResult.revealCard small{position:relative;z-index:2;padding:0 8px}
+.gachaStage .miniResult.revealCard b{font-size:clamp(8px,1.8vw,12px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gachaStage .miniResult.revealCard small{font-size:clamp(6px,1.35vw,8px);padding-bottom:8px;color:#c6d8d1}
+.gachaStage .miniResult.revealCard span{z-index:3}
+.gachaStage .gachaPrompt{cursor:pointer;border:1px solid #ffffff18;border-radius:18px;background:#06100dcc}
+@media(max-width:560px){.gachaStage .miniResult.revealCard{width:76px;height:124px}.gachaStage .miniResult.revealCard .revealPortrait{inset:0 0 34px}}
