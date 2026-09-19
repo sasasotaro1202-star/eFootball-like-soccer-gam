@@ -57,53 +57,33 @@ function showMessage(text, ms = 900) {
   showMessage.t = setTimeout(() => { message.textContent = ""; }, ms);
 }
 
-function makePlayer(team, index, role) {
-  const g = new THREE.Group();
-  const shirtColor = team === HOME ? 0x2e72e5 : 0xd83c55;
-  const shortsColor = team === HOME ? 0x173c79 : 0x771827;
-  const playerData = team === HOME ? homePool[index % homePool.length] : PLAYER_POOL[(11 + index) % PLAYER_POOL.length];
-  const skinPalette = [0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735];
-  const skinColor = skinPalette[(playerData?.id || index) % skinPalette.length];
-  const bodyScale = 0.88 + ((playerData?.id || index) % 7) * 0.045;
-  const heightScale = 0.94 + ((playerData?.id || index) % 9) * 0.02;
-  const part=(geo,material,parent,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m;};
-  const limb=(parent,x,y,material,length=0.62,radius=0.13)=>{const j=new THREE.Group();j.position.set(x,y,0);parent.add(j);const m=part(new THREE.CapsuleGeometry(radius,length,4,7),material,j,0,-length*0.42,0);return {j,m};};
-
-  const hips=new THREE.Group(); hips.position.y=1.0; g.add(hips);
-  const torso=part(new THREE.CapsuleGeometry(0.56,1.02,5,10),mat(shirtColor,0.68),hips,0,0.48,0); torso.scale.set(1.02,1,0.82);
-  part(new THREE.BoxGeometry(0.92,0.34,0.48),mat(shirtColor,0.72),hips,0,0.88,0);
-  part(new THREE.CylinderGeometry(0.14,0.16,0.18,10),mat(skinColor,0.85),hips,0,1.02,0);
-  part(new THREE.SphereGeometry(0.34,14,10),mat(skinColor,0.82),hips,0,1.35,0);
-  const hairColor=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][(playerData?.id||index)%4];
-  const hair=part(new THREE.SphereGeometry(0.365,14,10,0,Math.PI*2,0,Math.PI*0.48),mat(hairColor,0.94),hips,0,1.51,0); hair.scale.set(1.02,0.88,1.02);
-
-  const leftArm=limb(hips,-0.57,0.84,mat(shirtColor,0.72),0.42,0.12);
-  const rightArm=limb(hips,0.57,0.84,mat(shirtColor,0.72),0.42,0.12);
-  const leftFore=limb(leftArm.j,0,-0.42,mat(skinColor,0.86),0.38,0.105);
-  const rightFore=limb(rightArm.j,0,-0.42,mat(skinColor,0.86),0.38,0.105);
-  const leftThigh=limb(hips,-0.23,0.06,mat(shortsColor,0.78),0.54,0.145);
-  const rightThigh=limb(hips,0.23,0.06,mat(shortsColor,0.78),0.54,0.145);
-  const leftCalf=limb(leftThigh.j,0,-0.52,mat(skinColor,0.86),0.56,0.12);
-  const rightCalf=limb(rightThigh.j,0,-0.52,mat(skinColor,0.86),0.56,0.12);
-  const leftFoot=part(new THREE.BoxGeometry(0.22,0.14,0.48),mat(0x11151a,0.48),leftCalf.j,0,-0.33,0.11);
-  const rightFoot=part(new THREE.BoxGeometry(0.22,0.14,0.48),mat(0x11151a,0.48),rightCalf.j,0,-0.33,0.11);
-
-  const numberCanvas=document.createElement("canvas"); numberCanvas.width=128; numberCanvas.height=128;
-  const nctx=numberCanvas.getContext("2d"); nctx.clearRect(0,0,128,128); nctx.fillStyle="#ffffff"; nctx.font="900 76px Arial"; nctx.textAlign="center"; nctx.textBaseline="middle"; nctx.fillText(String(index+1),64,64);
-  const numberTex=new THREE.CanvasTexture(numberCanvas);
-  const numberMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.38,0.38),new THREE.MeshBasicMaterial({map:numberTex,transparent:true,depthWrite:false}));
-  numberMesh.position.set(0,1.43,-0.56); numberMesh.rotation.y=Math.PI; g.add(numberMesh);
-
-  const selector=new THREE.Mesh(new THREE.RingGeometry(0.72,0.82,32),new THREE.MeshBasicMaterial({color:team===HOME?0x71b7ff:0xff7f91,transparent:true,opacity:0.22,side:THREE.DoubleSide}));
-  selector.rotation.x=-Math.PI/2; selector.position.y=0.04; g.add(selector);
-
-  g.scale.setScalar(bodyScale);
-  g.userData={team,index,role,number:index+1,bodyScale,heightScale,animationPhase:((playerData?.id||index)*0.73)%6.28,
-    player:playerData,name:playerData?.name||("PLAYER "+(index+1)),overall:playerData?.overall||80,position:playerData?.position||role,
-    speed:role==="GK"?4.0:5.0+((playerData?.id||index)%5)*0.22,stamina:100,homeX:0,homeZ:0,aiSeed:((playerData?.id||index)*1.17)%10,
-    selectedRing:selector,moving:false,sprint:false,action:"idle",actionUntil:0,
-    rig:{hips,torso,leftArm:leftArm.j,rightArm:rightArm.j,leftFore:leftFore.j,rightFore:rightFore.j,leftThigh:leftThigh.j,rightThigh:rightThigh.j,leftCalf:leftCalf.j,rightCalf:rightCalf.j,leftFoot,rightFoot}};
-  return g;
+function makePlayer(team,index,role){
+ const g=new THREE.Group(), shirtColor=team===HOME?0x2e72e5:0xd83c55, shortsColor=team===HOME?0x173c79:0x771827;
+ const d=team===HOME?homePool[index%homePool.length]:PLAYER_POOL[(11+index)%PLAYER_POOL.length], id=Number(d?.id)||index;
+ const skin=[0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735][id%6], hair=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][id%4];
+ const height=0.96+(id%9)*0.018, width=0.92+(id%7)*0.022, head=0.94+(id%5)*0.035;
+ const part=(geo,material,parent,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m};
+ const limb=(parent,x,y,material,len,rad)=>{const j=new THREE.Group();j.position.set(x,y,0);parent.add(j);part(new THREE.CapsuleGeometry(rad,len,6,8),material,j,0,-len*.42,0);return j};
+ const hips=new THREE.Group();hips.position.y=1.0;g.add(hips);
+ const torso=part(new THREE.CapsuleGeometry(.53,.92,7,12),mat(shirtColor,.58),hips,0,.47,0);torso.scale.set(width,1,height);
+ part(new THREE.CapsuleGeometry(.22,.18,5,8),mat(skin,.78),hips,0,1.02,0);
+ const neck=part(new THREE.CylinderGeometry(.12,.14,.18,10),mat(skin,.82),hips,0,1.08,0);
+ const face=part(new THREE.SphereGeometry(.30,18,14),mat(skin,.78),hips,0,1.39,0);face.scale.set(head,1.08,head*.92);
+ const hairTop=part(new THREE.SphereGeometry(.315,18,10,0,Math.PI*2,0,Math.PI*.52),mat(hair,.94),hips,0,1.54,0);
+ hairTop.scale.set(1.03,.9,1.02);
+ const eyeMat=new THREE.MeshBasicMaterial({color:0x181818});
+ for(const sx of [-.075,.075])part(new THREE.SphereGeometry(.022,8,6),eyeMat,hips,sx,1.42,.282);
+ const leftArm=limb(hips,-.55,.83,mat(shirtColor,.62),.43,.105),rightArm=limb(hips,.55,.83,mat(shirtColor,.62),.43,.105);
+ const leftFore=limb(leftArm,0,-.39,mat(skin,.82),.36,.09),rightFore=limb(rightArm,0,-.39,mat(skin,.82),.36,.09);
+ const leftThigh=limb(hips,-.22,.04,mat(shortsColor,.65),.52,.14),rightThigh=limb(hips,.22,.04,mat(shortsColor,.65),.52,.14);
+ const leftCalf=limb(leftThigh,0,-.5,mat(skin,.82),.55,.105),rightCalf=limb(rightThigh,0,-.5,mat(skin,.82),.55,.105);
+ const leftFoot=part(new THREE.BoxGeometry(.20,.12,.52),mat(0x11151a,.35),leftCalf,0,-.32,.11),rightFoot=part(new THREE.BoxGeometry(.20,.12,.52),mat(0x11151a,.35),rightCalf,0,-.32,.11);
+ const num=document.createElement("canvas");num.width=num.height=128;const ctx=num.getContext("2d");ctx.clearRect(0,0,128,128);ctx.fillStyle="#fff";ctx.font="900 68px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(d?.number||index+1),64,64);
+ const tex=new THREE.CanvasTexture(num);const nm=part(new THREE.PlaneGeometry(.34,.34),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),g,0,1.38,-.49);nm.rotation.y=Math.PI;
+ const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.82,32),new THREE.MeshBasicMaterial({color:team===HOME?0x71b7ff:0xff7f91,transparent:true,opacity:.22,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
+ g.scale.setScalar(.88+(id%6)*.035);
+ g.userData={team,index,role,number:d?.number||index+1,bodyScale:1,heightScale:height,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,speed:role==="GK"?4:5+(id%5)*.2,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,selectedRing:ring,moving:false,sprint:false,action:"idle",actionUntil:0,rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
+ return g;
 }
 const FORMATION = [
   ["GK", -49, 0],
