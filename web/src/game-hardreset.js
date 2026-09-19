@@ -63,7 +63,7 @@ function makePlayer(team, index, role) {
   const shortsColor = team === HOME ? 0x173c79 : 0x771827;
   const playerData = team === HOME ? homePool[index % homePool.length] : PLAYER_POOL[(11 + index) % PLAYER_POOL.length];
   const skinPalette = [0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735];
-  const skinColor = skinPalette[(playerData?.id || index) % skinPalette.length];
+  const skinColor = skinPalette[(playerData?.id || index) % skinPalette.length];\n  const bodyScale = 0.88 + ((playerData?.id || index) % 7) * 0.045;\n  const heightScale = 0.94 + ((playerData?.id || index) % 9) * 0.02;
 
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.58, 1.18, 4, 8), mat(shirtColor, 0.7));
   torso.position.y = 1.28;
@@ -73,7 +73,7 @@ function makePlayer(team, index, role) {
   const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 7), mat(shirtColor, 0.72)); shoulderR.position.set(0.58,1.55,0); g.add(shoulderR);
   for (const x of [-0.67,0.67]) { const arm=new THREE.Mesh(new THREE.CapsuleGeometry(0.12,0.48,3,6),mat(skinColor,0.84)); arm.position.set(x,1.24,0); g.add(arm); }
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), mat(skinColor, 0.85));
+  const numberCanvas=document.createElement("canvas");numberCanvas.width=128;numberCanvas.height=128;const nctx=numberCanvas.getContext("2d");nctx.fillStyle="#ffffff";nctx.font="900 76px Arial";nctx.textAlign="center";nctx.textBaseline="middle";nctx.fillText(String(index+1),64,64);const numberTex=new THREE.CanvasTexture(numberCanvas);const numberMesh=new THREE.Mesh(new THREE.PlaneGeometry(0.42,0.42),new THREE.MeshBasicMaterial({map:numberTex,transparent:true,depthWrite:false}));numberMesh.position.set(0,1.38,0.59);g.add(numberMesh);\n\n  const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), mat(skinColor, 0.85));
   head.position.y = 2.36;
   g.add(head);
   const hairColor=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][(playerData?.id||index)%4];
@@ -102,7 +102,7 @@ function makePlayer(team, index, role) {
   g.add(selector);
 
   g.userData = {
-    team, index, role, number: index + 1,
+    team, index, role, number: index + 1, bodyScale, heightScale, animationPhase: ((playerData?.id||index)*0.73)%6.28,
     player: playerData,
     name: playerData?.name || `PLAYER ${index + 1}`,
     overall: playerData?.overall || 80,
@@ -724,7 +724,7 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 
-function gameLoop(now) {
+function animatePlayer(p, now) { const u=p.userData;if(!u)return;const moving=p===home[state.selected]?Math.hypot(state.joy.x,state.joy.y)>0.08:dist(p,ball)<10;const phase=now*0.012+u.animationPhase;const stride=moving?Math.sin(phase)*0.5:Math.sin(phase*0.45)*0.05;p.rotation.z=moving?Math.sin(phase*0.5)*0.025:0;p.position.y=moving?Math.abs(Math.sin(phase))*0.035:Math.abs(Math.sin(phase*0.45))*0.012;for(let i=0;i<p.children.length;i++){const m=p.children[i];if(m.isMesh&&m.geometry?.type==="CapsuleGeometry"&&i>2)m.rotation.x=stride*(i%2?1:-1)}}\n\nfunction gameLoop(now) {
   const dt = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000));
   lastFrame = now;
 
