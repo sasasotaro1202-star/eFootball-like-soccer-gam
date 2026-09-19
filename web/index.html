@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#07131d">
+<meta name="theme-color" content="#07131b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FOOTBALL">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
-<title>FOOTBALL // MATCH</title>
+<title>FOOTBALL 3D MATCH</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="stylesheet" href="./style.css">
 </head>
@@ -25,8 +25,6 @@
   </header>
 
   <div id="topTools"><div class="pill"><span class="dot"></span><span id="matchState">LIVE</span></div></div>
-
-  <div id="radarWrap"><canvas id="radar" width="180" height="112"></canvas></div>
 
   <div id="playerCard">
     <div class="playerCardTop"><span id="playerRole">FW</span><span id="playerNo">#10</span></div>
@@ -50,6 +48,6 @@ window.__lastGameError="";
 window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||e?.error||"runtime error")});
 window.addEventListener("unhandledrejection",e=>{window.__lastGameError=String(e?.reason?.message||e?.reason||"promise rejection")});
 </script>
-<script type="module" src="./src/game.js?v=rebuild-20260920-01"></script>
+<script type="module" src="./src/game.js?v=rebuild-20260920-02"></script>
 </body>
 </html>
