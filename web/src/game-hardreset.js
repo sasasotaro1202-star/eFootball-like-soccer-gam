@@ -61,15 +61,23 @@ function makePlayer(team, index, role) {
   const g = new THREE.Group();
   const shirtColor = team === HOME ? 0x2e72e5 : 0xd83c55;
   const shortsColor = team === HOME ? 0x173c79 : 0x771827;
-  const skinColor = 0xd49a78;
+  const playerData = team === HOME ? homePool[index % homePool.length] : PLAYER_POOL[(11 + index) % PLAYER_POOL.length];
+  const skinPalette = [0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735];
+  const skinColor = skinPalette[(playerData?.id || index) % skinPalette.length];
 
   const torso = new THREE.Mesh(new THREE.CapsuleGeometry(0.58, 1.18, 4, 8), mat(shirtColor, 0.7));
   torso.position.y = 1.28;
   g.add(torso);
 
+  const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 7), mat(shirtColor, 0.72)); shoulderL.position.set(-0.58,1.55,0); g.add(shoulderL);
+  const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.24, 10, 7), mat(shirtColor, 0.72)); shoulderR.position.set(0.58,1.55,0); g.add(shoulderR);
+  for (const x of [-0.67,0.67]) { const arm=new THREE.Mesh(new THREE.CapsuleGeometry(0.12,0.48,3,6),mat(skinColor,0.84)); arm.position.set(x,1.24,0); g.add(arm); }
+
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.36, 12, 8), mat(skinColor, 0.85));
   head.position.y = 2.36;
   g.add(head);
+  const hairColor=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][(playerData?.id||index)%4];
+  const hair=new THREE.Mesh(new THREE.SphereGeometry(0.38,12,8,0,Math.PI*2,0,Math.PI*0.48),mat(hairColor,0.95)); hair.position.y=2.52; g.add(hair);
 
   for (const x of [-0.21, 0.21]) {
     const leg = new THREE.Mesh(new THREE.CapsuleGeometry(0.13, 0.6, 3, 6), mat(shortsColor, 0.78));
@@ -95,7 +103,10 @@ function makePlayer(team, index, role) {
 
   g.userData = {
     team, index, role, number: index + 1,
-    name: (team === HOME ? homePool[index % homePool.length] : PLAYER_POOL[(11 + index) % PLAYER_POOL.length])?.name || `PLAYER ${index + 1}`,
+    player: playerData,
+    name: playerData?.name || `PLAYER ${index + 1}`,
+    overall: playerData?.overall || 80,
+    position: playerData?.position || role,
     speed: role === "GK" ? 4.0 : 5.0 + Math.random() * 0.7,
     stamina: 100,
     homeX: 0, homeZ: 0,
@@ -260,7 +271,7 @@ function selectPlayer(index) {
   const p = home[state.selected];
   if (!p) return;
   p.userData.selectedRing.visible = true;
-  playerLabel.textContent = p.userData.name;
+  playerLabel.textContent = p.userData.name + " • " + p.userData.overall;
   playerNo.textContent = "#" + p.userData.number;
   playerRole.textContent = p.userData.role;
 }
