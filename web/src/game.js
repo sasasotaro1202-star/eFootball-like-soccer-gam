@@ -7,7 +7,7 @@ window.__gameModuleLoaded=true;
 const root=document.querySelector("#game"),scoreEl=document.querySelector("#score"),clockEl=document.querySelector("#clock"),msg=document.querySelector("#message");
 const boot=document.querySelector("#boot");
 window.addEventListener("error",e=>{if(boot){boot.classList.remove("ready");boot.innerHTML="GAME ERROR<br><small>"+String(e.message||"runtime error").slice(0,90)+"</small>"}});
-const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false};
+const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.fog=new THREE.Fog(0x07140d,80,175);
 const camera=new THREE.PerspectiveCamera(54,1,.1,220);
 
@@ -299,11 +299,23 @@ function selectBestDefender(){
  selectPlayer(best);
 }
 function reset(text="KICK OFF"){
- ball.position.set(-1.2,.48,0);ball.userData.vx=ball.userData.vz=0;ball.userData.owner=player;state.firstKickoff=true;state.aiEnabled=false;
+ ball.position.set(-1.2,.48,0);ball.userData.vx=ball.userData.vz=0;ball.userData.owner=player;
+ state.firstKickoff=true;state.aiEnabled=false;state.matchPhase="kickoff";state.userTouched=false;state.lastPossessionChange=performance.now();
  player.position.set(-1.2,0,0);mates.forEach((p,i)=>p.position.set(...homePos[i],0));foes.forEach((p,i)=>p.position.set(...awayPos[i],0));
- gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);state.firstKickoff=true;state.aiEnabled=false;msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
+ gks[0].position.set(-50,0,0);gks[1].position.set(50,0,0);selectPlayer(0);
+ msg.textContent=text;setTimeout(()=>{if(msg.textContent===text)msg.textContent=""},1100)
 }
 function dist(a,b){return Math.hypot(a.position.x-b.position.x,a.position.z-b.position.z)}
+function tacticalTarget(p,team,hasBall){
+ const role=p.userData.role||"MID",baseX=p.userData.homeX||0,baseZ=p.userData.homeZ||0;
+ const ballX=ball.position.x,ballZ=ball.position.z;
+ let tx=baseX,tz=baseZ;
+ if(role==="DEF"){tx=baseX+(ballX-baseX)*0.10;tz=baseZ+(ballZ-baseZ)*0.18}
+ else if(role==="MID"){tx=baseX+(ballX-baseX)*0.24;tz=baseZ+(ballZ-baseZ)*0.32}
+ else if(role==="FWD"){tx=baseX+(hasBall?4:0)+(ballX-baseX)*0.30;tz=baseZ+(ballZ-baseZ)*0.22}
+ if(hasBall){tx+=team===blue?3:-3}
+ return {x:THREE.MathUtils.clamp(tx,-49,49),z:THREE.MathUtils.clamp(tz,-30,30)}
+}
 function move(a,x,z,s,dt){const dx=x-a.position.x,dz=z-a.position.z,d=Math.hypot(dx,dz);if(d>.08){const q=Math.min(d,s*dt);a.position.x+=dx/d*q;a.position.z+=dz/d*q;a.rotation.y=Math.atan2(dx,dz)+Math.PI}}
 function nearestMate(){
  return mates.reduce((b,p)=>dist(p,controlled())<dist(b,controlled())?p:b,mates[0])
@@ -313,7 +325,7 @@ function kickTo(tx,tz,power){
  if(Math.hypot(dx,dz)>3.1||performance.now()<state.kickLock)return;
  const x=tx-ball.position.x,z=tz-ball.position.z,l=Math.hypot(x,z)||1;
  p.userData.animState="kick";p.userData.animTimer=.34;
- ball.userData.owner=null;state.firstKickoff=false;state.aiEnabled=true;const passScale=p.userData.profile.passing/80;
+ ball.userData.owner=null;state.firstKickoff=false;state.aiEnabled=true;state.userTouched=true;state.matchPhase="play";state.lastPossessionChange=performance.now();const passScale=p.userData.profile.passing/80;
  ball.userData.vx=x/l*power*passScale;ball.userData.vz=z/l*power*passScale;state.kickLock=performance.now()+260; if(power>28)sfxKick();else sfxPass()
 }
 function stealBall(taker,carrier,force=false){
@@ -374,11 +386,22 @@ function update(dt){
  state.time=Math.max(0,state.time-dt);
  const p=controlled(),sprint=state.actions.sprint,pace=p.userData.profile.pace/90,s=(sprint?14:9.2)*(.82+.28*pace)*(p.userData.stamina>0?1:.65);
  if(sprint)p.userData.stamina=Math.max(0,p.userData.stamina-20*dt);else p.userData.stamina=Math.min(100,p.userData.stamina+8*dt);
- if(Math.hypot(state.joy.x,state.joy.y)>.08){state.firstKickoff=false;move(p,p.position.x+state.joy.x,p.position.z+state.joy.y,s,dt);}p.position.x=THREE.MathUtils.clamp(p.position.x,-51,51);p.position.z=THREE.MathUtils.clamp(p.position.z,-32,32);
- mates.forEach((m,i)=>{const q=homePos[i],tx=q[0]+(ball.position.x-q[0])*.18,tz=q[1]+(ball.position.z-q[1])*.18;move(m,tx,tz,5.0,dt)});
+ if(Math.hypot(state.joy.x,state.joy.y)>.08){
+   if(state.firstKickoff){state.firstKickoff=false;state.userTouched=true;state.aiEnabled=true;state.matchPhase="play";state.lastPossessionChange=performance.now()}
+   move(p,p.position.x+state.joy.x,p.position.z+state.joy.y,s,dt);
+ }
+ p.position.x=THREE.MathUtils.clamp(p.position.x,-51,51);p.position.z=THREE.MathUtils.clamp(p.position.z,-32,32);
+ const blueHas=ball.userData.owner?.team===blue,redHas=ball.userData.owner?.team===red;
+ mates.forEach((m,i)=>{
+   const q=tacticalTarget(m,blue,blueHas), speed=4.2+.9*(m.userData.profile.pace/100);
+   move(m,q.x,q.z,speed,dt);
+ });
  foes.forEach((f,i)=>{
-   const chase=i===0||dist(f,ball)<15,tx=chase?ball.position.x:f.userData.homeX,tz=chase?ball.position.z:f.userData.homeZ;
-   move(f,tx,tz,5.0*(.82+.28*f.userData.profile.pace/80),dt);
+   const q=tacticalTarget(f,red,redHas);
+   const threat=ball.userData.owner?.team===blue?ball.userData.owner:ball;
+   const shouldPress=state.aiEnabled&&state.userTouched&&(i===8||dist(f,threat)<9);
+   const tx=shouldPress?threat.position.x:q.x,tz=shouldPress?threat.position.z:q.z;
+   move(f,tx,tz,4.3*(.82+.28*f.userData.profile.pace/80),dt);
    // Only the actual attacking side may shoot toward the user's goal.
    // The previous condition let the AI fire immediately from its kickoff half,
    // causing repeated automatic goals.
@@ -418,11 +441,15 @@ function update(dt){
  ball.rotation.x+=ball.userData.vz*dt*1.8;ball.rotation.z-=ball.userData.vx*dt*1.8;
  if(ball.position.z<-33||ball.position.z>33){ball.position.z=THREE.MathUtils.clamp(ball.position.z,-33,33);ball.userData.vz*=-.78}
  if(ball.position.x<-53||ball.position.x>53){
-   if(Math.abs(ball.position.z)<7){const home=ball.position.x>53;state.score[home?0:1]++;scoreEl.textContent=state.score.join(" - ");resumeAudio();sfxGoal();reset(home?"GOAL!":"AWAY GOAL")}
-   else{ball.position.x=THREE.MathUtils.clamp(ball.position.x,-53,53);ball.userData.vx*=-.78}
+   const towardAway=ball.position.x>53&&ball.userData.vx>0, towardHome=ball.position.x<-53&&ball.userData.vx<0;
+   if(Math.abs(ball.position.z)<7&&(towardAway||towardHome)&&state.matchPhase==="play"){
+     const home=towardAway;state.score[home?0:1]++;scoreEl.textContent=state.score.join(" - ");state.matchPhase="goal";resumeAudio();sfxGoal();reset(home?"GOAL!":"AWAY GOAL");
+   } else {ball.position.x=THREE.MathUtils.clamp(ball.position.x,-53,53);ball.userData.vx*=-.78}
  }
  gks.forEach((g,i)=>{g.position.z=THREE.MathUtils.clamp(ball.position.z,-6,6);g.rotation.y=i?-Math.PI/2:Math.PI/2});
- const t=new THREE.Vector3(p.position.x,0,p.position.z),want=new THREE.Vector3(t.x-13,19,t.z+18);camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+6,0,t.z);
+ const blendX=p.position.x*.62+ball.position.x*.38,blendZ=p.position.z*.62+ball.position.z*.38;
+ const t=new THREE.Vector3(blendX,0,blendZ),want=new THREE.Vector3(t.x-15,20,t.z+19);
+ camera.position.lerp(want,1-Math.pow(.001,dt));camera.lookAt(t.x+5,0,t.z);
  animatePlayers(dt);updateRadar();updatePlayerCard();
  if(state.time<=0){state.over=true;resumeAudio();sfxWhistle();msg.textContent=`FULL TIME  ${state.score[0]} - ${state.score[1]}  (SHOOTで再開)`}
  state.actions={}
