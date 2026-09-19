@@ -202,16 +202,21 @@ function showSigning(results){
   $("#stageName").textContent="PLAYER SIGNING";
   $("#stageRarity").textContent=(results||[]).length===10?"10 PLAYERS • TAP TO OPEN":"TAP TO OPEN";
   $("#gachaResult").innerHTML=`<button type="button" class="gachaPrompt" id="gachaOpenButton"><span class="promptRing">✦</span><b>${(results||[]).length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>ここをタップして開封</small></button>`;
-  stage.classList.remove("complete","revealing");
-  stage.classList.add("show","charging");
-  // Open immediately on either the prompt, orb, or any safe area of the stage.
-  const open=()=>{stage.classList.remove("charging");stage.classList.add("revealing");revealGacha()};
+  const pattern=gachaPattern(results);
+  stage.dataset.pattern=pattern;
+  stage.classList.remove("complete","revealing","pattern-flash","pattern-burst","pattern-rain","pattern-spotlight","pattern-galaxy","pattern-orbit","pattern-scan");
+  stage.classList.add("show","charging","pattern-"+pattern);
+  let opened=false;
+  const open=()=>{if(opened)return;opened=true;stage.classList.remove("charging");stage.classList.add("revealing");revealGacha()};
   const prompt=$("#gachaOpenButton");
-  if(prompt)prompt.addEventListener("click",(ev)=>{ev.preventDefault();ev.stopPropagation();open()},{once:true});
+  if(prompt){
+    ["click","pointerup","touchend"].forEach(type=>prompt.addEventListener(type,(ev)=>{ev.preventDefault();ev.stopPropagation();open()},{once:true,passive:false}));
+  }
   stage.onclick=(ev)=>{
     if(ev.target.closest("#gachaSkip"))return;
-    if(ev.target.closest("#gachaOpenButton,.stageOrb,.stageName,.stageRarity"))open();
+    if(ev.target.closest("#gachaOpenButton,.stageOrb,.stageName,.stageRarity,.gachaResult"))open();
   };
+  stage.ontouchend=(ev)=>{if(ev.target.closest("#gachaSkip"))return;open()};
   gachaPresentation.timers.push(setTimeout(()=>stage.classList.remove("charging"),500));
 }
 
