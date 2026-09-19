@@ -474,10 +474,111 @@ const stick=document.querySelector("#stick"),knob=document.querySelector("#knob"
 function joy(e){const r=stick.getBoundingClientRect(),x=e.clientX-(r.left+r.width/2),y=e.clientY-(r.top+r.height/2),max=r.width*.34,l=Math.hypot(x,y)||1,k=Math.min(1,max/l);state.joy={x:x/l*k,y:y/l*k};knob.style.transform=`translate(${x*k}px,${y*k}px)`}
 stick.addEventListener("pointerdown",e=>{pid=e.pointerId;stick.setPointerCapture(pid);joy(e)});stick.addEventListener("pointermove",e=>{if(e.pointerId===pid)joy(e)});
 function stop(){pid=null;state.joy={x:0,y:0};knob.style.transform=""}stick.addEventListener("pointerup",stop);stick.addEventListener("pointercancel",stop);
+const chargeUI=new Map(),heldActions=new Map();
 document.querySelectorAll("[data-action]").forEach(b=>{
- const a=b.dataset.action;
- const press=e=>{e.preventDefault();resumeAudio();if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset();return}state.actions[a]=true};
- const release=()=>{state.actions[a]=false};
+ const a=b.dataset.action,bar=b.querySelector(".charge");
+ const isCharged=["pass","shoot","through","lob"].includes(a);
+ const press=e=>{e.preventDefault();resumeAudio();
+   if(state.over&&a==="shoot"){state.over=false;state.score=[0,0];state.time=180;scoreEl.textContent="0 - 0";reset();return}
+   if(isCharged){heldActions.set(a,performance.now());state.actions[a]=false}
+   else state.actions[a]=true;
+ };
+ const release=e=>{
+   if(isCharged){
+     const started=heldActions.get(a);heldActions.delete(a);
+     if(started!=null){const power=THREE.MathUtils.clamp((performance.now()-started)/850,0,1);state.actions[a]=true;state.chargePower=power;state.chargeAction=a}
+   }else state.actions[a]=false;
+ };
  b.addEventListener("pointerdown",press,{passive:false});b.addEventListener("pointerup",release);b.addEventListener("pointercancel",release);b.addEventListener("pointerleave",release);
+ chargeUI.set(a,bar);
 });
-let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
+function updateChargeUI(){
+ const now=performance.now();
+ for(const [a,started] of heldActions){const p=THREE.MathUtils.clamp((now-started)/850,0,1);const bar=chargeUI.get(a);if(bar)bar.style.width=(p*100)+"%"}
+}
+
+
+/* Enhanced match layer: charge-to-release controls, directional assistance,
+   through/lofted passes, first-touch protection and more deterministic duels. */
+const enhancedState={lastKick:0,passTarget:null,firstTouchLock:0,ballHeight:0,ballVz:0};
+function getAimVector(p){
+ const x=state.joy.x,z=state.joy.y;
+ if(Math.hypot(x,z)>.18){const l=Math.hypot(x,z);return{x:x/l,z:z/l}}
+ return{x:Math.sin(p.rotation.y),z:Math.cos(p.rotation.y)}
+}
+function findAimedTeammate(p,through=false){
+ const aim=getAimVector(p),team=allHome().filter(x=>x!==p);
+ let best=null,bestScore=-1e9;
+ for(const t of team){
+   const dx=t.position.x-p.position.x,dz=t.position.z-p.position.z,d=Math.hypot(dx,dz)||1;
+   if(d>42)continue;
+   const dot=(dx*aim.x+dz*aim.z)/d;
+   const forward=Math.max(0,dot);
+   const space=through?Math.max(0,16-d):Math.max(0,10-d)*.35;
+   const score=dot*4.5+forward*2.5+space-(t.userData.role==="DEF"?1.2:0);
+   if(score>bestScore){bestScore=score;best=t}
+ }
+ return best||nearestMate();
+}
+function enhancedKick(kind,power){
+ const p=controlled();if(!p||performance.now()<state.kickLock)return;
+ const aim=getAimVector(p),charge=THREE.MathUtils.clamp(power??.65,0,1);
+ let tx,tz,speed;
+ if(kind==="shoot"){
+   tx=53;tz=p.position.z+aim.z*9;
+   speed=25+12*charge*(p.userData.profile.shooting/80);
+ }else{
+   const through=kind==="through",t=findAimedTeammate(p,through);
+   const lead=through?(5+9*charge):1.5+3*charge;
+   tx=t.position.x+aim.x*lead;tz=t.position.z+aim.z*lead;
+   speed=(kind==="lob"?16:12)+(kind==="lob"?11:10)*charge;
+ }
+ const dx=tx-ball.position.x,dz=tz-ball.position.z,l=Math.hypot(dx,dz)||1;
+ ball.userData.owner=null;
+ ball.userData.vx=dx/l*speed;ball.userData.vz=dz/l*speed;
+ ball.userData.spin=(kind==="shoot"?(state.joy.x*.8):0);
+ if(kind==="lob"){enhancedState.ballVz=7+7*charge}
+ enhancedState.passTarget=kind==="shoot"?null:findAimedTeammate(p,kind==="through");
+ enhancedState.firstTouchLock=performance.now()+180;
+ state.firstKickoff=false;state.aiEnabled=true;state.userTouched=true;state.matchPhase="play";state.lastPossessionChange=performance.now();
+ p.userData.animState="kick";p.userData.animTimer=.36;
+ state.kickLock=performance.now()+260;
+ if(kind==="shoot")sfxKick();else if(kind==="lob")sfxKick();else sfxPass();
+}
+function kickTo(tx,tz,power){
+ const kind=state.chargeAction||"pass",charge=state.chargePower??Math.min(1,power/32);
+ enhancedKick(kind,charge);state.chargeAction=null;state.chargePower=null;
+}
+function stealBall(taker,carrier,force=false){
+ if(!taker||!carrier||carrier===taker||ball.userData.owner!==carrier)return false;
+ const d=dist(taker,carrier);
+ if(d>2.05&&!force)return false;
+ const def=(taker.userData.profile.defending||50)*.58+(taker.userData.profile.physical||70)*.42;
+ const atk=(carrier.userData.profile.dribbling||70)*.68+(carrier.userData.profile.physical||70)*.32;
+ const facing=(Math.cos(carrier.rotation.y)*(taker.position.x-carrier.position.x)+Math.sin(carrier.rotation.y)*(taker.position.z-carrier.position.z));
+ const angleBonus=facing>0?-.08:.08;
+ const chance=THREE.MathUtils.clamp(.28+(def-atk)*.014+angleBonus,.08,.92);
+ if(!force&&Math.random()>chance)return false;
+ ball.userData.owner=taker;ball.userData.vx=0;ball.userData.vz=0;
+ taker.userData.aiPossessionSince=taker.team===red?performance.now():0;
+ taker.userData.aiKick=performance.now()+900;
+ taker.userData.animState="tackle";taker.userData.animTimer=.32;
+ sfxTackle();
+ return true;
+}
+const coreUpdate=update;
+update=function(dt){
+ coreUpdate(dt);
+ if(state.over)return;
+ // Preserve a short first-touch window so a completed pass is not instantly stolen.
+ if(enhancedState.firstTouchLock>0&&performance.now()<enhancedState.firstTouchLock)return;
+ // Give a receiver a small, skill-weighted cushion when a pass is actually aimed at them.
+ if(!ball.userData.owner&&enhancedState.passTarget&&enhancedState.passTarget.team===blue){
+   const t=enhancedState.passTarget,d=dist(t,ball),speed=Math.hypot(ball.userData.vx,ball.userData.vz);
+   if(d<1.85&&speed<17){ball.userData.owner=t;enhancedState.passTarget=null;selectPlayer(allHome().indexOf(t));}
+   if(d>5&&speed<5)enhancedState.passTarget=null;
+ }
+ updateChargeUI();
+};
+
+let last=performance.now();function loop(now){const dt=Math.min(.033,(now-last)/1000);last=now;actions();update(dt);updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
