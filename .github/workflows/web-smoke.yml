@@ -26,5 +26,5 @@ jobs:
           grep -q 'id="stick"' web/index.html
           if grep -q 'id="actions"' web/index.html; then exit 1; fi
           if grep -q 'data-action=' web/index.html; then exit 1; fi
-          node -e "const fs=require('fs'); const s=fs.readFileSync('web/src/game.js','utf8'); if((s.match(/function buildPitch/g)||[]).length!==1) throw new Error('duplicate buildPitch'); if((s.match(/function updateCamera/g)||[]).length!==1) throw new Error('duplicate camera'); console.log('Rebuild invariants passed.')"
+          node -e "const fs=require('fs'); const s=fs.readFileSync('web/src/game.js','utf8'); if((s.match(/function buildPitch/g)||[]).length!==1) throw new Error('duplicate buildPitch'); if((s.match(/function updateBroadcastCamera/g)||[]).length!==1) throw new Error('duplicate broadcast camera'); console.log('Rebuild invariants passed.')"
           echo "Web smoke checks passed."
