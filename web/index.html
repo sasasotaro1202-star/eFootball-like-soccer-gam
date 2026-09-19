@@ -48,7 +48,6 @@
 window.__gameModuleLoaded=false;
 window.__threeBootFailed=false;
 window.addEventListener("error",function(e){
-  if(window.__gameModuleLoaded)return;
   window.__threeBootFailed=true;
   var cv=document.getElementById("fallback"),ctx=cv.getContext("2d"),dpr=Math.min(devicePixelRatio||1,2);
   function resize(){cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;cv.style.width="100%";cv.style.height="100%";ctx.setTransform(dpr,0,0,dpr,0,0)}
