@@ -51,16 +51,26 @@ let renderer=null;
 let rendererBootError=null;
 // Do not pre-create a WebGL context here: a probe consumes a GPU context on some mobile browsers.
 // Three.js WebGLRenderer performs the authoritative WebGL2 capability/context creation itself.
-const rendererAttempts=[
-  {antialias:false,powerPreference:"default",precision:"mediump",stencil:false,depth:true},
-  {antialias:false,powerPreference:"low-power",precision:"mediump",stencil:false,depth:true},
-  {antialias:false,powerPreference:"default",stencil:false,depth:true}
-];
-for(const opts of rendererAttempts){
+// One WebGL2 attempt only: repeated context creation can exhaust mobile GPU context quotas.
+const rendererOptions={antialias:false,powerPreference:"default",precision:"mediump",stencil:false,depth:true,failIfMajorPerformanceCaveat:false};
+try{
+  renderer=new THREE.WebGLRenderer(rendererOptions);
+  window.__rendererMode="webgl2";
+}catch(err){
+  rendererBootError=err;
+}
+// Compatibility bridge: Three.js r163+ intentionally requires WebGL2. r162 is the last official
+// Three.js release whose WebGLRenderer can fall back to WebGL1, so use it only after the modern
+// renderer fails. The scene remains authored by the current Three.js API; this path is a browser
+// compatibility escape hatch, not the normal rendering path.
+if(!renderer){
   try{
-    renderer=new THREE.WebGLRenderer(opts);
-    break;
-  }catch(err){rendererBootError=err}
+    const legacyThree=await import("https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js");
+    renderer=new legacyThree.WebGLRenderer({antialias:false,powerPreference:"default",precision:"mediump",alpha:false,depth:true,stencil:false});
+    window.__rendererMode="webgl1-compat";
+  }catch(err){
+    rendererBootError=err;
+  }
 }
 if(!renderer){
   window.__activateFallback?.("3D renderer could not initialize: "+(rendererBootError?.message||"WebGL unavailable"));
