@@ -33,14 +33,24 @@ jobs:
             ["kickoff gate",/state\.firstKickoff=false;state\.userTouched=true;state\.aiEnabled=true/],
             ["tactical AI",/function tacticalTarget\(/],
             ["goal direction gate",/towardAway=.*towardHome/],
+            ["goal height gate",/ball\.position\.y<3\.55&&Math\.abs\(ball\.position\.z\)<7/],
             ["rigged animation",/THREE\.AnimationMixer/],
             ["two-legged rig",/thigh_l.*thigh_r/s],
             ["ball possession",/function stealBall\(/],
-            ["audio",/function sfxGoal\(/]
+            ["audio",/function sfxGoal\(/],
+            ["mobile joystick y-axis",/Number\(state\.joy\.y\)/],
+            ["true lob arc",/vy=kind==="lob"\?\(6\.5\+6\.5\*charge\)/],
+            ["sprint preserved",/state\.actions\.sprint/],
+            ["core AI kick function",/function kickTo\(tx,tz,power\)/],
+            ["input-only enhancement",/actions=runEnhancedActions;/]
           ];
           for(const [name,re] of required) if(!re.test(s)) throw new Error("Missing gameplay invariant: "+name);
           if((s.match(/function updateRadar/g)||[]).length!==1) throw new Error("Duplicate radar updater");
           if((s.match(/function addStadiumAtmosphere/g)||[]).length!==1) throw new Error("Duplicate stadium initializer");
+          if((s.match(/function kickTo\(/g)||[]).length!==1) throw new Error("Duplicate kickTo implementation");
+          if((s.match(/function stealBall\(/g)||[]).length!==1) throw new Error("Duplicate stealBall implementation");
+          if(!s.includes("ball.userData.vx=ball.userData.vz=ball.userData.vy=0")) throw new Error("Kickoff ball velocity reset missing");
+          console.log("Gameplay invariants passed.");
           console.log("Gameplay invariants passed.");
           NODE
           echo "Web smoke checks passed."
