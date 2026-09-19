@@ -9,7 +9,7 @@ const boot=document.querySelector("#boot");
 window.addEventListener("error",e=>{if(boot){boot.classList.remove("ready");boot.innerHTML="GAME ERROR<br><small>"+String(e.message||"runtime error").slice(0,90)+"</small>"}});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x07140d);scene.fog=new THREE.Fog(0x07140d,80,175);
-const camera=new THREE.PerspectiveCamera(54,1,.1,220);
+const camera=new THREE.PerspectiveCamera(49,1,.1,220);
 
 // Lightweight mobile-safe game audio using Web Audio synthesis (no external files/CORS).
 let audioCtx=null,audioMaster=null,lastKickSfx=0,lastGoalSfx=0,crowdGain=null,crowdStarted=false,crowdTimer=null;
@@ -437,7 +437,11 @@ function update(dt){
  state.time=Math.max(0,state.time-dt);
  const p=controlled(),sprint=state.actions.sprint,pace=p.userData.profile.pace/90,s=(sprint?14:9.2)*(.82+.28*pace)*(p.userData.stamina>0?1:.65);
  if(sprint)p.userData.stamina=Math.max(0,p.userData.stamina-20*dt);else p.userData.stamina=Math.min(100,p.userData.stamina+8*dt);
- if(Math.hypot(state.joy.x,state.joy.y)>.08){
+ if(p.userData.sharpTouchUntil&&performance.now()<p.userData.sharpTouchUntil){
+   const v=p.userData.sharpTouchDir||{x:Math.sin(p.rotation.y),z:Math.cos(p.rotation.y)};
+   if(state.firstKickoff){state.firstKickoff=false;state.userTouched=true;state.aiEnabled=true;state.matchPhase="play";state.lastPossessionChange=performance.now()}
+   move(p,p.position.x+v.x,p.position.z+v.z,s*1.38,dt);
+ }else if(Math.hypot(state.joy.x,state.joy.y)>.08){
    if(state.firstKickoff){state.firstKickoff=false;state.userTouched=true;state.aiEnabled=true;state.matchPhase="play";state.lastPossessionChange=performance.now()}
    move(p,p.position.x+state.joy.x,p.position.z+state.joy.y,s,dt);
  }
@@ -530,7 +534,6 @@ function update(dt){
  const sideOffset=THREE.MathUtils.clamp((ball.position.z-p.position.z)*.22,-7,7);
  const t=new THREE.Vector3(blendX,0,blendZ);
  const want=new THREE.Vector3(t.x-dir*14+sideOffset*.16,10.8,t.z+sideOffset+dir*2.5);
- camera.fov=49;
  camera.position.lerp(want,1-Math.pow(.0008,dt));
  const lookX=blendX+dir*5,lookZ=blendZ+sideOffset*.18;
  camera.lookAt(lookX,1.15,lookZ);
