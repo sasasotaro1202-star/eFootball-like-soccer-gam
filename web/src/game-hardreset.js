@@ -762,4 +762,5 @@ function bootGame() {
   requestAnimationFrame(gameLoop);
 }
 
+window.addEventListener("football:match-start",()=>{const intro=$("#matchIntro");if(intro){intro.style.animation="none";intro.offsetHeight;intro.style.animation="introOut 1.8s 1.1s forwards"}state.paused=false;state.time=0;state.score=[0,0];resetPositions(HOME);initBallPossession();updateScore();showMessage("MATCH START",900);});
 bootGame();
