@@ -6,7 +6,7 @@ import * as SkeletonUtils from "three/addons/utils/SkeletonUtils.js";
 window.__gameModuleLoaded=true;
 const root=document.querySelector("#game"),scoreEl=document.querySelector("#score"),clockEl=document.querySelector("#clock"),msg=document.querySelector("#message");
 const boot=document.querySelector("#boot");
-window.addEventListener("error",e=>{if(boot){boot.classList.remove("ready");boot.innerHTML="GAME ERROR<br><small>"+String(e.message||"runtime error").slice(0,90)+"</small>"}});
+window.addEventListener("error",e=>{window.__lastGameError=String(e?.message||"runtime error");window.__lastGameStack=String(e?.error?.stack||"")});
 const FIELD={w:106,d:68,goalW:14}, state={score:[0,0],time:180,over:false,joy:{x:0,y:0},actions:{},selected:0,kickLock:0,tackleLock:0,firstKickoff:true,aiEnabled:false,matchPhase:"kickoff",userTouched:false,lastPossessionChange:0,difficulty:"pro"};
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x020805);scene.fog=new THREE.Fog(0x020805,92,190);
 const camera=new THREE.PerspectiveCamera(49,1,.1,220);
@@ -133,7 +133,7 @@ function jerseyNumberTexture(number,color){
  ctx.fillStyle=color;ctx.fillText(String(number),64,66);
  const tex=new THREE.CanvasTexture(canvas);tex.colorSpace=THREE.SRGBColorSpace;return tex;
 }
-const RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
+const ENABLE_RIGGED_GLTF=false; // Stable mobile shipping path; enable only after a local GLTF validation/playtest gate.\nconst RIGGED_PLAYER_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/night-striker.glb";
 const ANIMATION_LIBRARY_URL="https://raw.githubusercontent.com/Seyamalam/blood-league-kickoff/main/public/assets/vendor/quaternius/universal-animation-library.glb";
 const RIGGED_LOAD_TIMEOUT=9000;
 function loadWithTimeout(loader,url){
@@ -205,7 +205,7 @@ function animateRiggedLocomotion(a,speed,dt){
    const state=a.userData.animState;
    const desired=state==="kick"||state==="tackle"?(speed>10?"Sprint_Loop":"Jog_Fwd_Loop"):speed>10?"Sprint_Loop":speed>.35?"Jog_Fwd_Loop":"Idle_Loop";
    setRigAnimation(a,desired,speed>.35?.10:.18);
-   mixer.update(dt);
+   try{mixer.update(dt)}catch(err){a.userData.rigMixer=null;a.userData.rigActions=null;a.userData.rigAnim="";window.__lastGameError=String(err?.message||err);window.__lastGameStack=String(err?.stack||"");}
    if(a.userData.animTimer>0){a.userData.animTimer-=dt;if(a.userData.animTimer<=0)a.userData.animState="locomotion"}
    return;
  }
@@ -1046,4 +1046,28 @@ update=function(dt){
   updateChargeUI();
 };
 
-let last=performance.now(),simAcc=0;function loop(now){const frameDt=Math.min(.05,(now-last)/1000);last=now;simAcc=Math.min(.5,simAcc+frameDt);const fixed=1/120;let steps=0;while(simAcc>=fixed&&steps<8){dtForAI=fixed;actions();update(fixed);defensiveLineAndPress();goalkeeperBrain();simAcc-=fixed;steps++}runAutomaticSubstitution();updateChargeUI();clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;if(!renderPaused)renderer.render(scene,camera);requestAnimationFrame(loop)}reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
+let last=performance.now(),simAcc=0,runtimeHalted=false;
+function haltRuntime(err){
+  if(runtimeHalted)return;
+  runtimeHalted=true;
+  window.__lastGameError=String(err?.message||err||"runtime error");
+  window.__lastGameStack=String(err?.stack||"");
+  state.aiEnabled=false;
+  state.actions={};
+  const detail=window.__lastGameError.slice(0,140);
+  if(boot){boot.classList.remove("ready");boot.innerHTML="RUNTIME RECOVERY<br><small>"+detail+"</small>"}
+}
+function loop(now){
+  const frameDt=Math.min(.05,(now-last)/1000);last=now;simAcc=Math.min(.5,simAcc+frameDt);
+  if(!runtimeHalted){
+    const fixed=1/120;let steps=0;
+    try{
+      while(simAcc>=fixed&&steps<8){dtForAI=fixed;actions();update(fixed);defensiveLineAndPress();goalkeeperBrain();simAcc-=fixed;steps++}
+      runAutomaticSubstitution();updateChargeUI();
+    }catch(err){haltRuntime(err)}
+  }
+  clockEl.textContent=`${String(Math.floor(state.time/60)).padStart(2,"0")}:${String(Math.floor(state.time%60)).padStart(2,"0")}`;
+  if(!renderPaused&&!runtimeHalted){try{renderer.render(scene,camera)}catch(err){haltRuntime(err)}}
+  requestAnimationFrame(loop)
+}
+reset();if(boot)boot.classList.add("ready");requestAnimationFrame(loop);
