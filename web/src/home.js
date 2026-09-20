@@ -217,7 +217,9 @@ function showSigning(results){
     if(ev.target.closest("#gachaOpenButton,.stageOrb,.stageName,.stageRarity,.gachaResult"))open();
   };
   stage.ontouchend=(ev)=>{if(ev.target.closest("#gachaSkip"))return;open()};
+  // iPhone/Safari fail-safe: if a synthetic/overlay event blocks the tap, the draw must still reveal.
   gachaPresentation.timers.push(setTimeout(()=>stage.classList.remove("charging"),500));
+  gachaPresentation.timers.push(setTimeout(()=>open(),900));
 }
 
 function revealGacha(){
