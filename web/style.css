@@ -224,7 +224,7 @@ body{overscroll-behavior:none}
 @media(prefers-reduced-motion:reduce){.generatedCardReference{transform:none}}
 
 /* Match controls: original console-style touch layout, optimized for iPhone Safari */
-#actionPad{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:min(190px,40vw);height:170px;pointer-events:none;touch-action:none}
+#actionPad{display:none!important;position:absolute;right:max(14px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));width:min(190px,40vw);height:170px;pointer-events:none;touch-action:none}
 .matchAction{position:absolute;display:grid;place-items:center;width:56px;height:56px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#f4fbf8;background:rgba(3,10,14,.82);box-shadow:0 10px 24px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.14);font-size:8px;font-weight:1000;letter-spacing:.08em;pointer-events:auto;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
 .matchAction:active{transform:scale(.92);filter:brightness(1.25)}
 .matchAction.shoot{right:0;bottom:42px;width:72px;height:72px;background:linear-gradient(145deg,#6f1d2c,#16080d);border-color:#ff8298}
