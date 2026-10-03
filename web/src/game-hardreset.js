@@ -48,7 +48,8 @@ const state = {
   shieldUntil: 0,
   rightTapAt: 0,
   pressUntil: 0,
-  lastTouchAt: 0
+  lastTouchAt: 0,
+  lastDefensiveContactAt: 0
 };
 
 let renderer;
@@ -326,6 +327,28 @@ function moveControlled(dt) {
 
   if(defending&&state.matchUp&&owner){
     p.rotation.y=Math.atan2(owner.position.x-p.position.x,owner.position.z-p.position.z);
+    const gap=dist(p,owner);
+    if(gap<1.7&&now>state.lastDefensiveContactAt){
+      const defend=Number(u.defending)||70;
+      const physical=Number(u.physical)||70;
+      const dribble=Number(owner.userData.dribbling)||70;
+      const chance=clamp(0.18+(defend-dribble)*0.004+(physical-70)*0.0025,0.08,0.52);
+      state.lastDefensiveContactAt=now+650;
+      if(Math.random()<chance){
+        const dx=owner.position.x-p.position.x,dz=owner.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
+        ball.userData.owner=null;
+        ball.userData.lastTeam=HOME;
+        ball.userData.lastKicker=p;
+        ball.userData.lastKickerUntil=now+260;
+        ball.position.set(owner.position.x+dx/len*0.6,0.52,owner.position.z+dz/len*0.6);
+        ball.userData.vx=dx/len*3.8;
+        ball.userData.vz=dz/len*3.8;
+        ball.userData.vy=0.9;
+        setAction(p,"tackle",420);
+        showMessage("PRESSURE WIN",430);
+        return;
+      }
+    }
   }else{
     p.rotation.y=Math.atan2(nx,nz);
   }
@@ -400,6 +423,38 @@ function improvePlayerIdentity(p){
 function teamAI(dt){
   const ballX=ball.position.x, ballZ=ball.position.z, owner=ball.userData.owner;
   const now=performance.now();
+
+  // AI pressure: defenders can contest the carrier without teleporting the ball.
+  if(owner){
+    const defenders=owner.userData.team===HOME?away:home;
+    const carrierStats=owner.userData;
+    for(const d of defenders){
+      if(d===home[state.selected])continue;
+      if(d.userData.role==="GK")continue;
+      const gap=dist(d,owner);
+      if(gap>1.55)continue;
+      if(now<(d.userData.contactCooldown||0))continue;
+      const defend=Number(d.userData.defending)||70;
+      const physical=Number(d.userData.physical)||70;
+      const dribble=Number(carrierStats.dribbling)||70;
+      const chance=clamp(0.12+(defend-dribble)*0.004+(physical-70)*0.0025,0.05,0.42);
+      d.userData.contactCooldown=now+650;
+      if(Math.random()<chance){
+        const sideX=(d.position.x-owner.position.x),sideZ=(d.position.z-owner.position.z),len=Math.hypot(sideX,sideZ)||1;
+        ball.userData.owner=null;
+        ball.userData.lastTeam=d.userData.team;
+        ball.userData.lastKicker=d;
+        ball.userData.lastKickerUntil=now+260;
+        ball.position.set(owner.position.x+sideX/len*0.55,0.52,owner.position.z+sideZ/len*0.55);
+        ball.userData.vx=sideX/len*3.2;
+        ball.userData.vz=sideZ/len*3.2;
+        ball.userData.vy=0.85;
+        setAction(d,"tackle",420);
+        showMessage(d.userData.team===HOME?"AI TACKLE":"BALL LOST",320);
+        break;
+      }
+    }
+  }
 
   for(const team of [home,away]){
     const attack=team===home?1:-1;
@@ -491,6 +546,9 @@ function teamAI(dt){
 function setAction(player,type,duration=520){if(!player?.userData)return;player.userData.action=type;player.userData.actionUntil=performance.now()+duration;}
 function kick(player, tx, tz, speed, actionType="pass") {
   const dx=tx-ball.position.x,dz=tz-ball.position.z,len=Math.hypot(dx,dz)||1;
+  const skill=actionType==="shoot"?(player.userData.shooting||70):(player.userData.passing||70);
+  const skillFactor=0.84+clamp(skill,45,99)*0.0018;
+  speed*=skillFactor;
   setAction(player,actionType,actionType==="shoot"?620:430);
   ball.userData.owner=null;
   ball.userData.lastTeam=player.userData.team;
