@@ -90,7 +90,12 @@ function makePlayer(team,index,role){
  const d=team===HOME?homePool[index%homePool.length]:PLAYER_POOL[(11+index)%PLAYER_POOL.length];
  const id=Number(d?.id)||index,skin=[0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735][id%6],hair=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][id%4];
  const gameplay=gameplayAttributes(d,role,id);
- const stature=0.94+(id%9)*0.018,frame=clamp(0.96+(gameplay.physical-72)*0.0032-(gameplay.pace-72)*0.0008,0.89,1.06),shoulder=frame*(role==="GK"?1.04:1),headScale=0.94+(id%5)*0.025;
+ const roleHeight=role==="GK"?1.08:role==="DF"?1.03:role==="MF"?1.00:0.99;
+ const roleFrame=role==="DF"?1.045:role==="GK"?1.02:role==="FW"?0.95:1;
+ const stature=(0.94+(id%9)*0.018)*roleHeight;
+ const frame=clamp((0.96+(gameplay.physical-72)*0.0032-(gameplay.pace-72)*0.0008)*roleFrame,0.89,1.08);
+ const shoulder=frame*(role==="GK"?1.06:role==="DF"?1.01:1);
+ const headScale=(0.94+(id%5)*0.025)*(role==="GK"?0.98:1);
  const part=(geo,material,parent,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m};
  const limb=(parent,x,y,material,len,rad)=>{const j=new THREE.Group();j.position.set(x,y,0);parent.add(j);part(new THREE.CapsuleGeometry(rad,len,5,8),material,j,0,-(len*.5+rad),0);return j};
  const hips=new THREE.Group();hips.position.y=.94;g.add(hips);
@@ -120,6 +125,9 @@ function makePlayer(team,index,role){
  const thighTotal=.47,calfTotal=.46;
  const leftThigh=limb(hips,-.13*frame,-.01,mat(shortsColor,.66),.21,.13),rightThigh=limb(hips,.13*frame,-.01,mat(shortsColor,.66),.21,.13);
  const leftCalf=limb(leftThigh,0,-thighTotal,mat(sockColor,.62),.26,.10),rightCalf=limb(rightThigh,0,-thighTotal,mat(sockColor,.62),.26,.10);
+ const sockAccent=mat(shirtColor,.62);
+ part(new THREE.TorusGeometry(.101,.014,5,12),sockAccent,leftCalf,0,-.09,0);
+ part(new THREE.TorusGeometry(.101,.014,5,12),sockAccent,rightCalf,0,-.09,0);
  const leftFoot=part(new THREE.BoxGeometry(.19,.11,.37),mat(bootColor,.34),leftCalf,0,-calfTotal+.035,.075);
  const rightFoot=part(new THREE.BoxGeometry(.19,.11,.37),mat(bootColor,.34),rightCalf,0,-calfTotal+.035,.075);
  leftFoot.scale.x=.96;rightFoot.scale.x=.96;
