@@ -44,6 +44,7 @@ const state = {
   matchUp: false,
   teamPressUntil: 0,
   lastSharpTouchAt: 0,
+  pressUntil: 0,
   lastTouchAt: 0
 };
 
@@ -270,7 +271,17 @@ function moveControlled(dt) {
   const mag = Math.hypot(state.joy.x, state.joy.y);
   u.moving=mag>=0.04;
   u.sprint=!!state.sprint;
-  if (mag < 0.04) return;
+  if (mag < 0.04) {
+    if(state.pressUntil>performance.now()&&ball.userData.owner?.userData?.team===AWAY){
+      const target=ball.userData.owner;
+      const dx=target.position.x-p.position.x,dz=target.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
+      p.position.x=clamp(p.position.x+dx/len*p.userData.speed*0.72*dt,-51,51);
+      p.position.z=clamp(p.position.z+dz/len*p.userData.speed*0.72*dt,-32.5,32.5);
+      p.rotation.y=Math.atan2(dx,dz);
+      p.userData.moving=true;
+    }
+    return;
+  }
 
   const nx = state.joy.x / mag;
   const nz = state.joy.y / mag;
@@ -799,7 +810,6 @@ function leftDown(e) {
 
   state.leftPointerId=e.pointerId;
   state.leftStart={x:e.clientX,y:e.clientY};
-  state.leftTapAt=now;
   state.lastTouchAt=now;
   $("#stick").setPointerCapture?.(e.pointerId);
 }
@@ -818,10 +828,7 @@ function leftUp(e) {
   const dx=e.clientX-start.x,dy=e.clientY-start.y;
   const mag=Math.hypot(dx,dy);
 
-  if(mag<20 && now-(state.leftTapAt||0)<250 && ball.userData.owner?.userData?.team===AWAY){
-    tackleControlled();
-    state.leftTapAt=0;
-  }
+  if(mag<20)state.leftTapAt=now;
 
   state.leftPointerId=null;
   state.leftStart=null;
@@ -893,7 +900,8 @@ function rightUp(e){
     }else if(duration>140){
       showMessage("MATCH-UP",300);
     }else{
-      tackleControlled();
+      state.pressUntil=now+900;
+      showMessage("PRESS",350);
     }
     return;
   }
