@@ -44,6 +44,9 @@ const state = {
   matchUp: false,
   teamPressUntil: 0,
   lastSharpTouchAt: 0,
+  sharpTouchTriggered: false,
+  shieldUntil: 0,
+  rightTapAt: 0,
   pressUntil: 0,
   lastTouchAt: 0
 };
@@ -265,59 +268,109 @@ function initBallPossession() {
 }
 
 function moveControlled(dt) {
-  const p = home[state.selected];
-  if (!p) return;
+  const p=home[state.selected];
+  if(!p)return;
   const u=p.userData;
-  const mag = Math.hypot(state.joy.x, state.joy.y);
-  u.moving=mag>=0.04;
-  u.sprint=!!state.sprint;
-  if (mag < 0.04) {
-    if(state.pressUntil>performance.now()&&ball.userData.owner?.userData?.team===AWAY){
-      const target=ball.userData.owner;
-      const dx=target.position.x-p.position.x,dz=target.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
-      p.position.x=clamp(p.position.x+dx/len*p.userData.speed*0.72*dt,-51,51);
-      p.position.z=clamp(p.position.z+dz/len*p.userData.speed*0.72*dt,-32.5,32.5);
+  const now=performance.now();
+  const owner=ball.userData.owner;
+  const defending=owner?.userData?.team===AWAY;
+  const mag=Math.hypot(state.joy.x,state.joy.y);
+
+  if(mag<0.04){
+    u.moving=false;
+    u.sprint=!defending&&state.rightHeld;
+    if(state.pressUntil>now&&defending&&owner){
+      const dx=owner.position.x-p.position.x,dz=owner.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
+      p.position.x=clamp(p.position.x+dx/len*u.speed*0.72*dt,-51,51);
+      p.position.z=clamp(p.position.z+dz/len*u.speed*0.72*dt,-32.5,32.5);
       p.rotation.y=Math.atan2(dx,dz);
-      p.userData.moving=true;
+      u.moving=true;
+    }
+    if(state.shieldUntil>now&&owner===p){
+      const opp=away.slice().sort((a,b)=>dist(a,p)-dist(b,p))[0];
+      if(opp)p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
+    }
+    if(owner===p){
+      const touch=Math.sin(now*0.014)*0.045;
+      const carry=state.shieldUntil>now?0.64:state.rightHeld?0.88:0.74;
+      ball.position.set(p.position.x+Math.sin(p.rotation.y)*(carry+touch),0.38+Math.abs(Math.sin(now*0.014))*0.03,p.position.z+Math.cos(p.rotation.y)*(carry+touch));
     }
     return;
   }
 
-  const nx = state.joy.x / mag;
-  const nz = state.joy.y / mag;
-  const intensity = clamp(mag, 0, 1);
-  const speed = p.userData.speed * intensity * (state.sprint ? 1.38 : 1);
-  p.position.x = clamp(p.position.x + nx * speed * dt, -51, 51);
-  p.position.z = clamp(p.position.z + nz * speed * dt, -32.5, 32.5);
-  p.rotation.y = Math.atan2(nx, nz);
+  const nx=state.joy.x/mag;
+  const nz=state.joy.y/mag;
+  const intensity=clamp(mag,0,1);
+  const dash=!defending&&state.rightHeld;
+  const shield=owner===p&&state.shieldUntil>now;
+  const speed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
 
-  if(state.matchUp && ball.userData.owner?.userData?.team===AWAY){
-    const target=ball.userData.owner;
-    p.rotation.y=Math.atan2(target.position.x-p.position.x,target.position.z-p.position.z);
+  p.position.x=clamp(p.position.x+nx*speed*dt,-51,51);
+  p.position.z=clamp(p.position.z+nz*speed*dt,-32.5,32.5);
+  u.moving=true;
+  u.sprint=dash;
+
+  if(defending&&state.matchUp&&owner){
+    p.rotation.y=Math.atan2(owner.position.x-p.position.x,owner.position.z-p.position.z);
+  }else{
+    p.rotation.y=Math.atan2(nx,nz);
   }
 
-  if(state.rightHeld&&!state.matchUp&&performance.now()-state.lastSharpTouchAt>420&&mag>0.72&&ball.userData.owner===p){
-    const now=performance.now();
-    p.position.x=clamp(p.position.x+nx*2.4,-50,50);
-    p.position.z=clamp(p.position.z+nz*2.4,-31.5,31.5);
-    p.userData.stamina=clamp(p.userData.stamina-1.8,0,100);
-    state.lastSharpTouchAt=now;
-    setAction(p,"sharpTouch",360);
-    showMessage("SHARP TOUCH",420);
+  if(shield){
+    const opp=away.slice().sort((a,b)=>dist(a,p)-dist(b,p))[0];
+    if(opp)p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
   }
 
-  p.userData.stamina = clamp(
-    p.userData.stamina - (state.sprint ? 5.5 : 1.0) * dt,
-    0,
-    100
-  );
+  u.stamina=clamp(u.stamina-(dash?5.0:shield?1.6:1.0)*dt,0,100);
 
-  if (ball.userData.owner === p) {
-    const touch=Math.sin(performance.now()*0.014)*0.06;
-    ball.position.set(p.position.x+Math.sin(p.rotation.y)*(0.74+touch),0.38+Math.abs(Math.sin(performance.now()*0.014))*0.035,p.position.z+Math.cos(p.rotation.y)*(0.74+touch));
+  if(owner===p){
+    const touch=Math.sin(now*0.014)*0.045;
+    const carry=shield?0.64:(dash?0.88:0.74);
+    ball.position.set(
+      p.position.x+Math.sin(p.rotation.y)*(carry+touch),
+      0.38+Math.abs(Math.sin(now*0.014))*0.03,
+      p.position.z+Math.cos(p.rotation.y)*(carry+touch)
+    );
   }
 }
 
+function quickStopFaceGoal(){
+  const p=home[state.selected];
+  if(!p||ball.userData.owner!==p)return;
+  p.userData.moving=false;
+  state.sprint=false;
+  p.rotation.y=0;
+  state.leftTapAt=0;
+  setAction(p,"quickStop",420);
+  showMessage("QUICK STOP",360);
+}
+
+function activateShield(){
+  const p=home[state.selected];
+  if(!p||ball.userData.owner!==p)return;
+  const opp=away.slice().sort((a,b)=>dist(a,p)-dist(b,p))[0];
+  if(!opp||dist(p,opp)>4.4)return;
+  state.shieldUntil=performance.now()+900;
+  p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
+  setAction(p,"shield",620);
+  state.leftTapAt=0;
+  showMessage("SHIELD",360);
+}
+
+function triggerSharpTouch(dx,dz){
+  const p=home[state.selected];
+  if(!p||ball.userData.owner!==p||state.sharpTouchTriggered)return;
+  const mag=Math.hypot(dx,dz);
+  if(mag<42)return;
+  const nx=dx/mag,nz=dz/mag;
+  state.sharpTouchTriggered=true;
+  p.position.x=clamp(p.position.x+nx*2.7,-50.5,50.5);
+  p.position.z=clamp(p.position.z+nz*2.7,-31.5,31.5);
+  p.userData.stamina=clamp(p.userData.stamina-1.6,0,100);
+  state.lastSharpTouchAt=performance.now();
+  setAction(p,"sharpTouch",380);
+  showMessage("SHARP TOUCH",420);
+}
 
 function improvePlayerIdentity(p){
   const d=p.userData.player||{}; const id=Number(d.id)||p.userData.index||0;
@@ -346,6 +399,8 @@ function teamAI(dt){
 
       let tx=homeX,tz=homeZ;
       const attacking=owner&&owner.userData.team===p.userData.team;
+      const pressTarget=p.userData.pressTarget;
+      const teammatePressing=(p.userData.pressUntil||0)>now&&pressTarget?.userData?.team===AWAY;
 
       if(role==='GK'){
         tx=attack*49;
@@ -366,6 +421,12 @@ function teamAI(dt){
           tx=lerp(tx,ballX,0.16);
           tz=lerp(tz,ballZ,0.14);
         }
+      }
+
+      if(teammatePressing){
+        const dx=pressTarget.position.x-p.position.x,dz=pressTarget.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
+        tx=pressTarget.position.x-dx/len*2.4;
+        tz=pressTarget.position.z-dz/len*2.4;
       }
 
       const dx=tx-p.position.x,dz=tz-p.position.z,len=Math.hypot(dx,dz);
@@ -800,16 +861,28 @@ function leftDown(e) {
   e.preventDefault();
   const now=performance.now();
   const doubleTap=now-(state.leftTapAt||0)<280;
+  const owner=ball.userData.owner;
 
-  if(doubleTap && ball.userData.owner?.userData?.team===AWAY){
-    tackleControlled();
-    state.leftTapAt=0;
-    state.lastTouchAt=now;
-    return;
+  if(doubleTap){
+    if(state.rightHeld&&owner?.userData?.team===HOME){
+      activateShield();
+      return;
+    }
+    if(owner?.userData?.team===AWAY){
+      tackleControlled();
+      state.leftTapAt=0;
+      state.lastTouchAt=now;
+      return;
+    }
+    if(owner?.userData?.team===HOME){
+      quickStopFaceGoal();
+      return;
+    }
   }
 
   state.leftPointerId=e.pointerId;
   state.leftStart={x:e.clientX,y:e.clientY};
+  state.sharpTouchTriggered=false;
   state.lastTouchAt=now;
   $("#stick").setPointerCapture?.(e.pointerId);
 }
@@ -817,7 +890,12 @@ function leftDown(e) {
 function leftMove(e) {
   if(e.pointerId!==state.leftPointerId||!state.leftStart)return;
   e.preventDefault();
+  const dx=e.clientX-state.leftStart.x;
+  const dy=e.clientY-state.leftStart.y;
   setJoyFromPointer(e,state.leftStart);
+  if(state.rightHeld&&ball.userData.owner?.userData?.team===HOME){
+    triggerSharpTouch(dx,dy);
+  }
 }
 
 function leftUp(e) {
@@ -825,51 +903,50 @@ function leftUp(e) {
   e.preventDefault();
   const now=performance.now();
   const start=state.leftStart;
-  const dx=e.clientX-start.x,dy=e.clientY-start.y;
-  const mag=Math.hypot(dx,dy);
-
+  const mag=start?Math.hypot(e.clientX-start.x,e.clientY-start.y):0;
   if(mag<20)state.leftTapAt=now;
-
   state.leftPointerId=null;
   state.leftStart=null;
   state.joy.x=0;
   state.joy.y=0;
   state.sprint=false;
+  state.sharpTouchTriggered=false;
   updateJoystickVisual();
 }
 
 function rightDown(e) {
   if(!pointerIsGameplay(e))return;
   e.preventDefault();
+  const now=performance.now();
   state.rightHeld=true;
-  state.rightGesture={
-    id:e.pointerId,x:e.clientX,y:e.clientY,
-    startX:e.clientX,startY:e.clientY,downAt:performance.now(),moved:false
-  };
+  state.rightGesture={id:e.pointerId,startX:e.clientX,startY:e.clientY,downAt:now,moved:false};
 
-  const defending=ball.userData.owner?.userData?.team===AWAY;
-  if(defending){
-    state.matchUp=true;
-    showMessage("MATCH-UP",320);
+  if(ball.userData.owner?.userData?.team===AWAY){
+    state.matchUp=false;
+    state.pressUntil=now+1200;
+    showMessage("PRESS",300);
   }else{
     state.sprint=true;
   }
 }
 
-function rightMove(e){
+function rightMove(e) {
   const g=state.rightGesture;
   if(!g||g.id!==e.pointerId)return;
   const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
-  if(Math.hypot(dx,dy)>12)g.moved=true;
+  if(Math.hypot(dx,dy)>16){
+    g.moved=true;
+    if(ball.userData.owner?.userData?.team===AWAY){
+      state.matchUp=true;
+      state.pressUntil=0;
+    }
+  }
 }
 
-function callTeamPressure(){
+function callTeamPressure() {
   state.teamPressUntil=performance.now()+1800;
   const target=ball.userData.owner;
-  if(target?.userData?.team!==AWAY){
-    showMessage("PRESS",350);
-    return;
-  }
+  if(target?.userData?.team!==AWAY){showMessage("PRESS",350);return;}
   const pressers=home
     .filter(p=>p!==home[state.selected]&&p.userData.role!=="GK")
     .sort((a,b)=>dist(a,target)-dist(b,target))
@@ -881,7 +958,7 @@ function callTeamPressure(){
   showMessage("TEAM PRESS",520);
 }
 
-function rightUp(e){
+function rightUp(e) {
   const g=state.rightGesture;
   if(!g||g.id!==e.pointerId)return;
   const now=performance.now();
@@ -889,42 +966,51 @@ function rightUp(e){
   const mag=Math.hypot(dx,dy);
   const duration=now-g.downAt;
   const defending=ball.userData.owner?.userData?.team===AWAY;
+
   state.rightGesture=null;
   state.rightHeld=false;
   state.matchUp=false;
   state.sprint=false;
 
   if(defending){
-    if(mag>45){
-      callTeamPressure();
-    }else if(duration>140){
-      showMessage("MATCH-UP",300);
-    }else{
+    if(g.moved&&mag>70)callTeamPressure();
+    else if(g.moved)showMessage("MATCH-UP",300);
+    else{
       state.pressUntil=now+900;
-      showMessage("PRESS",350);
+      showMessage("PRESS",400);
     }
     return;
   }
 
-  const aimLen=mag||1;
-  const aim={x:dx/aimLen,z:-dy/aimLen};
+  const len=mag||1;
+  const aim={x:dx/len,z:-dy/len};
   const recentLeftTap=now-(state.leftTapAt||0)<520;
 
-  if(recentLeftTap&&mag>=28){
-    passOrShoot("shoot",clamp(mag/110,0.55,1.15),aim,true);
+  if(recentLeftTap){
+    if(mag>=28){
+      passOrShoot("shoot",clamp(mag/110,0.55,1.15),aim,true);
+    }else{
+      passOrShoot("pass",0.95,aim,true);
+    }
     state.leftTapAt=0;
     return;
   }
 
   if(mag<20&&duration<220){
-    passOrShoot("pass",0.78,null,false);
+    if(now-(state.rightTapAt||0)<280){
+      passOrShoot("shoot",0.92,null,false);
+      state.rightTapAt=0;
+    }else{
+      passOrShoot("pass",0.78,null,false);
+      state.rightTapAt=now;
+    }
     return;
   }
 
-  if(dy<-18&&Math.abs(dy)>Math.abs(dx)*0.85){
+  if(dy<-18&&Math.abs(dy)>Math.abs(dx)*0.82){
     passOrShoot("through",clamp(mag/100,0.55,1.12),aim,false);
-  }else if(dy>18&&Math.abs(dy)>Math.abs(dx)*0.85){
-    passOrShoot("pass",clamp(mag/90,0.55,1.1),aim,true);
+  }else if(dy>18&&Math.abs(dy)>Math.abs(dx)*0.82){
+    passOrShoot("pass",clamp(mag/92,0.55,1.1),aim,false);
   }else{
     passOrShoot("pass",clamp(mag/90,0.5,1.1),aim,false);
   }
