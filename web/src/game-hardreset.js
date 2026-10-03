@@ -39,6 +39,11 @@ const state = {
   cameraMode: "broadcast",
   rightGesture: null,
   leftPointerId: null,
+  leftTapAt: 0,
+  rightHeld: false,
+  matchUp: false,
+  teamPressUntil: 0,
+  lastSharpTouchAt: 0,
   lastTouchAt: 0
 };
 
@@ -274,6 +279,22 @@ function moveControlled(dt) {
   p.position.x = clamp(p.position.x + nx * speed * dt, -51, 51);
   p.position.z = clamp(p.position.z + nz * speed * dt, -32.5, 32.5);
   p.rotation.y = Math.atan2(nx, nz);
+
+  if(state.matchUp && ball.userData.owner?.userData?.team===AWAY){
+    const target=ball.userData.owner;
+    p.rotation.y=Math.atan2(target.position.x-p.position.x,target.position.z-p.position.z);
+  }
+
+  if(state.rightHeld&&!state.matchUp&&performance.now()-state.lastSharpTouchAt>420&&mag>0.72&&ball.userData.owner===p){
+    const now=performance.now();
+    p.position.x=clamp(p.position.x+nx*2.4,-50,50);
+    p.position.z=clamp(p.position.z+nz*2.4,-31.5,31.5);
+    p.userData.stamina=clamp(p.userData.stamina-1.8,0,100);
+    state.lastSharpTouchAt=now;
+    setAction(p,"sharpTouch",360);
+    showMessage("SHARP TOUCH",420);
+  }
+
   p.userData.stamina = clamp(
     p.userData.stamina - (state.sprint ? 5.5 : 1.0) * dt,
     0,
@@ -455,7 +476,7 @@ function tackleControlled(){
   }
 }
 
-function passOrShoot(mode, power = 0.8) {
+function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
   const p = home[state.selected];
   if (!p) return;
 
@@ -468,40 +489,48 @@ function passOrShoot(mode, power = 0.8) {
     return;
   }
 
-  const dir = new THREE.Vector3(
-    Math.sin(p.rotation.y),
-    0,
-    Math.cos(p.rotation.y)
+  const dir = aim ? new THREE.Vector3(aim.x,0,aim.z).normalize() : new THREE.Vector3(
+    Math.sin(p.rotation.y),0,Math.cos(p.rotation.y)
   );
   let target;
 
-  if (mode === "shoot") {
-    setAction(p,"shoot",620);
-    target = new THREE.Vector3(53,1.5,clamp(p.position.z,-8,8));
-  } else if (mode === "through") {
-    setAction(p,"through",480);
-    target = new THREE.Vector3(clamp(p.position.x + 22, -48, 50), 0.8, clamp(p.position.z, -30, 30));
-  } else {
-    setAction(p,"pass",430);
-    const candidates = home
-      .filter((x) => x !== p && x.userData.role !== "GK")
-      .map((x) => ({ p: x, score: x.position.x - p.position.x + Math.abs(x.position.z - p.position.z) * 0.08 }))
-      .sort((a, b) => b.score - a.score);
-    target = candidates[0]?.p?.position?.clone() || p.position.clone().add(dir.multiplyScalar(10));
+  if(mode==="shoot"){
+    setAction(p,"shoot",stunning?720:620);
+    target=new THREE.Vector3(53,1.5,clamp(p.position.z+dir.z*18,-9.2,9.2));
+  }else if(mode==="through"){
+    setAction(p,stunning?"stunningThrough":"through",stunning?560:480);
+    target=new THREE.Vector3(
+      clamp(p.position.x+dir.x*25,-48,50),
+      0.8,
+      clamp(p.position.z+dir.z*25,-30,30)
+    );
+  }else{
+    setAction(p,stunning?"stunningPass":"pass",stunning?620:430);
+    const candidates=home
+      .filter(x=>x!==p&&x.userData.role!=="GK")
+      .map(x=>{
+        const vx=x.position.x-p.position.x,vz=x.position.z-p.position.z,len=Math.hypot(vx,vz)||1;
+        const align=(vx*dir.x+vz*dir.z)/len;
+        const forward=x.position.x-p.position.x;
+        return {p:x,score:align*7+forward*0.18-Math.abs(vz)*0.02};
+      })
+      .sort((a,b)=>b.score-a.score);
+    target=candidates[0]?.p?.position?.clone()||p.position.clone().add(dir.multiplyScalar(10));
   }
 
-  const dx = target.x - ball.position.x;
-  const dz = target.z - ball.position.z;
-  const len = Math.hypot(dx, dz) || 1;
-  const speed = (mode === "shoot" ? 18 : mode === "through" ? 13.5 : 10) * clamp(power, 0.35, 1.15);
+  const dx=target.x-ball.position.x,dz=target.z-ball.position.z,len=Math.hypot(dx,dz)||1;
+  const base=mode==="shoot"?18:mode==="through"?13.5:10;
+  const speed=base*clamp(power,0.35,1.2)*(stunning?1.12:1);
 
-  ball.userData.owner = null;
-  ball.userData.lastTeam = HOME;
-  ball.userData.vx = dx / len * speed;
-  ball.userData.vz = dz / len * speed;
-  ball.userData.vy = mode === "shoot" ? 1.5 + power * 2.0 : mode === "through" ? 0.55 + power * 0.9 : 0.7 + power * 1.2;
-  navigator.vibrate?.(mode === "shoot" ? [20, 25, 20] : 12);
-  showMessage(mode === "shoot" ? "SHOOT" : mode === "through" ? "THROUGH" : "PASS", 450);
+  ball.userData.owner=null;
+  ball.userData.lastTeam=HOME;
+  ball.userData.lastKicker=p;
+  ball.userData.lastKickerUntil=performance.now()+360;
+  ball.userData.vx=dx/len*speed;
+  ball.userData.vz=dz/len*speed;
+  ball.userData.vy=mode==="shoot"?Math.min(7.2,1.8+power*2.2):mode==="through"?0.65+power*1.0:0.65+power*1.25;
+  navigator.vibrate?.(mode==="shoot"?[18,24,18]:stunning?16:10);
+  showMessage(stunning?(mode==="shoot"?"STUNNING SHOT":"STUNNING PASS"):mode==="shoot"?"SHOOT":mode==="through"?"THROUGH":"PASS",460);
 }
 
 function touchBall() {
@@ -758,60 +787,138 @@ function setJoyFromPointer(e, start) {
 
 function leftDown(e) {
   e.preventDefault();
-  state.leftPointerId = e.pointerId;
-  state.leftStart = { x: e.clientX, y: e.clientY };
-  state.lastTouchAt = performance.now();
+  const now=performance.now();
+  const doubleTap=now-(state.leftTapAt||0)<280;
+
+  if(doubleTap && ball.userData.owner?.userData?.team===AWAY){
+    tackleControlled();
+    state.leftTapAt=0;
+    state.lastTouchAt=now;
+    return;
+  }
+
+  state.leftPointerId=e.pointerId;
+  state.leftStart={x:e.clientX,y:e.clientY};
+  state.leftTapAt=now;
+  state.lastTouchAt=now;
   $("#stick").setPointerCapture?.(e.pointerId);
 }
 
 function leftMove(e) {
-  if (e.pointerId !== state.leftPointerId || !state.leftStart) return;
+  if(e.pointerId!==state.leftPointerId||!state.leftStart)return;
   e.preventDefault();
-  setJoyFromPointer(e, state.leftStart);
+  setJoyFromPointer(e,state.leftStart);
 }
 
 function leftUp(e) {
-  if (e.pointerId !== state.leftPointerId) return;
+  if(e.pointerId!==state.leftPointerId)return;
   e.preventDefault();
-  state.leftPointerId = null;
-  state.leftStart = null;
-  state.joy.x = 0;
-  state.joy.y = 0;
-  state.sprint = false;
+  const now=performance.now();
+  const start=state.leftStart;
+  const dx=e.clientX-start.x,dy=e.clientY-start.y;
+  const mag=Math.hypot(dx,dy);
+
+  if(mag<20 && now-(state.leftTapAt||0)<250 && ball.userData.owner?.userData?.team===AWAY){
+    tackleControlled();
+    state.leftTapAt=0;
+  }
+
+  state.leftPointerId=null;
+  state.leftStart=null;
+  state.joy.x=0;
+  state.joy.y=0;
+  state.sprint=false;
   updateJoystickVisual();
 }
 
 function rightDown(e) {
-  if (!pointerIsGameplay(e)) return;
+  if(!pointerIsGameplay(e))return;
   e.preventDefault();
-  state.rightGesture = {
-    id: e.pointerId,
-    x: e.clientX,
-    y: e.clientY,
-    startX: e.clientX,
-    startY: e.clientY,
-    downAt: performance.now()
+  state.rightHeld=true;
+  state.rightGesture={
+    id:e.pointerId,x:e.clientX,y:e.clientY,
+    startX:e.clientX,startY:e.clientY,downAt:performance.now(),moved:false
   };
+
+  const defending=ball.userData.owner?.userData?.team===AWAY;
+  if(defending){
+    state.matchUp=true;
+    showMessage("MATCH-UP",320);
+  }else{
+    state.sprint=true;
+  }
 }
 
-function rightUp(e) {
-  const g = state.rightGesture;
-  if (!g || g.id !== e.pointerId) return;
-  const dx = e.clientX - g.startX;
-  const dy = e.clientY - g.startY;
-  const mag = Math.hypot(dx, dy);
-  state.rightGesture = null;
+function rightMove(e){
+  const g=state.rightGesture;
+  if(!g||g.id!==e.pointerId)return;
+  const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
+  if(Math.hypot(dx,dy)>12)g.moved=true;
+}
 
-  if (mag < 22) {
-    passOrShoot("pass", 0.72);
+function callTeamPressure(){
+  state.teamPressUntil=performance.now()+1800;
+  const target=ball.userData.owner;
+  if(target?.userData?.team!==AWAY){
+    showMessage("PRESS",350);
     return;
   }
-  if (dy < -20 && Math.abs(dy) > Math.abs(dx) * 1.05) {
-    passOrShoot("shoot", clamp(mag / 90, 0.45, 1.15));
-  } else if (dy > 20 && Math.abs(dy) > Math.abs(dx) * 1.05) {
-    passOrShoot("through", clamp(mag / 90, 0.5, 1.1));
-  } else {
-    passOrShoot("pass", clamp(mag / 90, 0.45, 1.1));
+  const pressers=home
+    .filter(p=>p!==home[state.selected]&&p.userData.role!=="GK")
+    .sort((a,b)=>dist(a,target)-dist(b,target))
+    .slice(0,2);
+  for(const p of pressers){
+    p.userData.pressTarget=target;
+    p.userData.pressUntil=state.teamPressUntil;
+  }
+  showMessage("TEAM PRESS",520);
+}
+
+function rightUp(e){
+  const g=state.rightGesture;
+  if(!g||g.id!==e.pointerId)return;
+  const now=performance.now();
+  const dx=e.clientX-g.startX,dy=e.clientY-g.startY;
+  const mag=Math.hypot(dx,dy);
+  const duration=now-g.downAt;
+  const defending=ball.userData.owner?.userData?.team===AWAY;
+  state.rightGesture=null;
+  state.rightHeld=false;
+  state.matchUp=false;
+  state.sprint=false;
+
+  if(defending){
+    if(mag>45){
+      callTeamPressure();
+    }else if(duration>140){
+      showMessage("MATCH-UP",300);
+    }else{
+      tackleControlled();
+    }
+    return;
+  }
+
+  const aimLen=mag||1;
+  const aim={x:dx/aimLen,z:-dy/aimLen};
+  const recentLeftTap=now-(state.leftTapAt||0)<520;
+
+  if(recentLeftTap&&mag>=28){
+    passOrShoot("shoot",clamp(mag/110,0.55,1.15),aim,true);
+    state.leftTapAt=0;
+    return;
+  }
+
+  if(mag<20&&duration<220){
+    passOrShoot("pass",0.78,null,false);
+    return;
+  }
+
+  if(dy<-18&&Math.abs(dy)>Math.abs(dx)*0.85){
+    passOrShoot("through",clamp(mag/100,0.55,1.12),aim,false);
+  }else if(dy>18&&Math.abs(dy)>Math.abs(dx)*0.85){
+    passOrShoot("pass",clamp(mag/90,0.55,1.1),aim,true);
+  }else{
+    passOrShoot("pass",clamp(mag/90,0.5,1.1),aim,false);
   }
 }
 
@@ -855,18 +962,34 @@ function initInput() {
   addEventListener("keydown",(e)=>{if(!window.__keys.includes(e.key.toLowerCase()))window.__keys.push(e.key.toLowerCase());keyboardDown(e);});
   addEventListener("keyup",(e)=>{window.__keys=window.__keys.filter(k=>k!==e.key.toLowerCase());keyboardUp(e);});
   const stick=$("#stick");
-  stick?.addEventListener("pointerdown",leftDown,{passive:false});stick?.addEventListener("pointermove",leftMove,{passive:false});stick?.addEventListener("pointerup",leftUp,{passive:false});stick?.addEventListener("pointercancel",leftUp,{passive:false});
-  mount.addEventListener("pointerdown",rightDown,{passive:false});mount.addEventListener("pointerup",rightUp,{passive:false});mount.addEventListener("pointercancel",rightUp,{passive:false});
-  const action=(id,fn)=>{const b=document.querySelector(id);if(!b)return;
-    b.addEventListener("pointerdown",(e)=>{e.preventDefault();e.stopPropagation();fn(true,e)},{passive:false});
-    b.addEventListener("pointerup",(e)=>{e.preventDefault();e.stopPropagation();fn(false,e)},{passive:false});
-    b.addEventListener("pointercancel",(e)=>{e.preventDefault();e.stopPropagation();fn(false,e)},{passive:false});};
-  action("#passBtn",(down)=>{if(down)passOrShoot("pass",0.9)});
-  action("#throughBtn",(down)=>{if(down)passOrShoot("through",0.95)});
-  action("#shootBtn",(down)=>{if(down)passOrShoot("shoot",1)});
-  action("#switchBtn",(down)=>{if(down)switchPlayer()});
-  action("#tackleBtn",(down)=>{if(down)tackleControlled()});
-  action("#dashBtn",(down)=>{state.sprint=down;updateJoystickVisual()});
+  stick?.addEventListener("pointerdown",leftDown,{passive:false});
+  stick?.addEventListener("pointermove",leftMove,{passive:false});
+  stick?.addEventListener("pointerup",leftUp,{passive:false});
+  stick?.addEventListener("pointercancel",leftUp,{passive:false});
+
+  mount.addEventListener("pointerdown",(e)=>{
+    if(!pointerIsGameplay(e))return;
+    if(e.clientX<innerWidth*0.48){
+      if(state.leftPointerId===null)leftDown(e);
+    }else{
+      rightDown(e);
+    }
+  },{passive:false});
+  mount.addEventListener("pointermove",(e)=>{
+    if(e.pointerId===state.leftPointerId)leftMove(e);
+    else rightMove(e);
+  },{passive:false});
+  mount.addEventListener("pointerup",(e)=>{
+    if(e.pointerId===state.leftPointerId)leftUp(e);
+    else rightUp(e);
+  },{passive:false});
+  mount.addEventListener("pointercancel",(e)=>{
+    if(e.pointerId===state.leftPointerId)leftUp(e);
+    else rightUp(e);
+  },{passive:false});
+
+  // Desktop keyboard remains available for diagnostics; mobile gameplay uses Touch & Flick.
+  document.querySelectorAll("#actionPad .matchAction").forEach(b=>b.tabIndex=-1);
 }
 
 
