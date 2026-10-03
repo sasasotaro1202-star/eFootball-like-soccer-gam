@@ -73,10 +73,19 @@ function showMessage(text, ms = 900) {
   showMessage.t = setTimeout(() => { message.textContent = ""; }, ms);
 }
 
+function gameplayAttributes(player,role,index){
+ const overall=clamp(Number(player?.overall)||70,58,99);
+ const sourcePos=String(player?.position||role).toUpperCase();
+ const seed=((((Number(player?.id)||index+1)*37)%23)-11);
+ const posBoost=sourcePos==="FW"?{pace:4,acceleration:4,shooting:5,passing:-2,dribbling:5,defending:-18,physical:-2}:sourcePos==="MF"?{pace:0,acceleration:1,shooting:-3,passing:5,dribbling:3,defending:3,physical:0}:sourcePos==="DF"?{pace:-2,acceleration:-1,shooting:-15,passing:1,dribbling:-5,defending:8,physical:5}:sourcePos==="GK"?{pace:-12,acceleration:-10,shooting:-30,passing:-5,dribbling:-20,defending:5,physical:2}:{pace:0,acceleration:0,shooting:0,passing:0,dribbling:0,defending:0,physical:0};
+ const clampStat=v=>Math.max(45,Math.min(99,Math.round(v)));
+ return {pace:clampStat(overall+posBoost.pace+seed*.22),acceleration:clampStat(overall+posBoost.acceleration+seed*.18),shooting:clampStat(overall+posBoost.shooting+seed*.16),passing:clampStat(overall+posBoost.passing+seed*.12),dribbling:clampStat(overall+posBoost.dribbling+seed*.20),defending:clampStat(overall+posBoost.defending-seed*.10),physical:clampStat(overall+posBoost.physical+seed*.10),stamina:clampStat(overall+(role==="MF"?5:role==="DF"?3:-2)+seed*.14),gkReflexes:clampStat(overall+(role==="GK"?9:0)+seed*.08)};
+}
+
 function makePlayer(team,index,role){
  const g=new THREE.Group(), shirtColor=team===HOME?0x2e72e5:0xd83c55, shortsColor=team===HOME?0x173c79:0x771827;
  const d=team===HOME?homePool[index%homePool.length]:PLAYER_POOL[(11+index)%PLAYER_POOL.length], id=Number(d?.id)||index;
- const skin=[0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735][id%6], hair=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][id%4];
+ const skin=[0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735][id%6], hair=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][id%4], gameplay=gameplayAttributes(d,role,id);
  const height=0.96+(id%9)*0.018, width=0.92+(id%7)*0.022, head=0.94+(id%5)*0.035;
  const part=(geo,material,parent,x=0,y=0,z=0)=>{const m=new THREE.Mesh(geo,material);m.position.set(x,y,z);parent.add(m);return m};
  const limb=(parent,x,y,material,len,rad)=>{const j=new THREE.Group();j.position.set(x,y,0);parent.add(j);part(new THREE.CapsuleGeometry(rad,len,6,8),material,j,0,-len*.42,0);return j};
@@ -98,7 +107,7 @@ function makePlayer(team,index,role){
  const tex=new THREE.CanvasTexture(num);const nm=part(new THREE.PlaneGeometry(.34,.34),new THREE.MeshBasicMaterial({map:tex,transparent:true,depthWrite:false}),g,0,1.38,-.49);nm.rotation.y=Math.PI;
  const ring=new THREE.Mesh(new THREE.RingGeometry(.72,.82,32),new THREE.MeshBasicMaterial({color:team===HOME?0x71b7ff:0xff7f91,transparent:true,opacity:.22,side:THREE.DoubleSide}));ring.rotation.x=-Math.PI/2;ring.position.y=.04;g.add(ring);
  g.scale.setScalar(.88+(id%6)*.035);
- g.userData={team,index,role,number:d?.number||index+1,bodyScale:1,heightScale:height,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,speed:role==="GK"?4:5+(id%5)*.2,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,moving:false,sprint:false,action:"idle",actionUntil:0,rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
+ g.userData={team,index,role,number:d?.number||index+1,bodyScale:1,heightScale:height,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,speed:role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025,acceleration:7.5+gameplay.acceleration*.075,pace:gameplay.pace,shooting:gameplay.shooting,passing:gameplay.passing,dribbling:gameplay.dribbling,defending:gameplay.defending,physical:gameplay.physical,staminaRating:gameplay.stamina,gkReflexes:gameplay.gkReflexes,currentSpeed:0,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,moving:false,sprint:false,action:"idle",actionUntil:0,rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
  return g;
 }
 const FORMATION = [
