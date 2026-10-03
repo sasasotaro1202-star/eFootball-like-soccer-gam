@@ -568,7 +568,7 @@ function goalkeeperAI(dt){
       gk.position.z+=clamp(dz,-4.8*dt,4.8*dt);
       gk.userData.moving=Math.abs(dz)>0.12;
       if(!ball.userData.owner&&Math.abs(ball.position.x-goalX)<3.2&&Math.abs(ball.position.z-gk.position.z)<2.6&&ball.position.y<3.1){
-        const quality=0.48+(Number(gk.userData.overall)||70-70)*0.004;
+        const quality=0.48+((Number(gk.userData.overall)||70)-70)*0.004;
         if(Math.random()<clamp(quality,0.38,0.72)){
           const awayFromGoal=team===HOME?1:-1;
           ball.userData.owner=null;
@@ -925,6 +925,19 @@ function animatePlayer(p, now) {
     const k=clamp((now-(u.actionUntil-620))/620,0,1),wind=k<0.42?k/0.42:1,strike=k<0.58?0:(k-0.58)/0.42;
     r.hips.rotation.x=-0.04; r.rightThigh.rotation.x=-0.9*wind+1.35*strike; r.rightCalf.rotation.x=1.0*wind-1.35*strike; r.rightFoot.rotation.x=-0.55+1.0*strike;
     r.leftArm.rotation.z=-0.32;r.rightArm.rotation.z=0.30;
+  }else if(action==="tackle"){
+    const k=clamp((now-(u.actionUntil-520))/520,0,1);
+    const swing=Math.sin(k*Math.PI);
+    r.hips.rotation.x=-0.10*swing;
+    r.rightThigh.rotation.x=-1.05*swing;
+    r.rightCalf.rotation.x=0.9*swing;
+    r.leftArm.rotation.z=-0.28*swing;r.rightArm.rotation.z=0.28*swing;
+  }else if(action==="save"){
+    const k=clamp((now-(u.actionUntil-700))/700,0,1);
+    const dive=Math.sin(k*Math.PI);
+    r.hips.rotation.z=0.28*dive;
+    r.leftArm.rotation.z=-0.75*dive;r.rightArm.rotation.z=0.75*dive;
+    r.leftThigh.rotation.x=-0.32*dive;r.rightThigh.rotation.x=-0.18*dive;
   }else if(action==="pass"||action==="through"){
     const k=clamp((now-(u.actionUntil-480))/480,0,1),swing=Math.sin(k*Math.PI);
     r.rightThigh.rotation.x=(action==="through"?-0.72:-0.5)*swing; r.rightCalf.rotation.x=0.65*swing; r.rightFoot.rotation.x=-0.35*swing;
