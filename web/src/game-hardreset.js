@@ -524,10 +524,10 @@ function tackleControlled(){
 
   if(target&&owner===target){
     const id=Number(tackler.userData.player?.id)||tackler.userData.index||0;
-    const atk=Number(tackler.userData.overall)||70;
-    const def=Math.max(0,Math.min(20,(id%11)*0.7));
-    const opp=Math.max(0,Number(target.userData.overall)||70);
-    const success=clamp(0.66+(atk-opp)*0.004+def*0.006,0.30,0.78);
+    const atk=Number(tackler.userData.defending)||Number(tackler.userData.overall)||70;
+    const physical=Number(tackler.userData.physical)||70;
+    const oppDef=Number(target.userData.physical)||Number(target.userData.overall)||70;
+    const success=clamp(0.48+(atk-oppDef)*0.0045+(physical-70)*0.0035,0.25,0.84);
     if(Math.random()<success){
       const tx=tackler.position.x+forwardX*0.85,tz=tackler.position.z+forwardZ*0.85;
       ball.userData.owner=tackler;
@@ -606,7 +606,9 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
 
   const dx=target.x-ball.position.x,dz=target.z-ball.position.z,len=Math.hypot(dx,dz)||1;
   const base=mode==="shoot"?18:mode==="through"?13.5:10;
-  const speed=base*clamp(power,0.35,1.2)*(stunning?1.12:1);
+  const skill=mode==="shoot"?(p.userData.shooting||70):(p.userData.passing||70);
+   const skillFactor=0.82+clamp(skill,45,99)*0.0020;
+   const speed=base*clamp(power,0.35,1.2)*skillFactor*(stunning?1.12:1);
 
   ball.userData.owner=null;
   ball.userData.lastTeam=HOME;
@@ -684,7 +686,7 @@ function goalkeeperAI(dt){
       gk.position.z+=clamp(dz,-4.8*dt,4.8*dt);
       gk.userData.moving=Math.abs(dz)>0.12;
       if(!ball.userData.owner&&Math.abs(ball.position.x-goalX)<3.2&&Math.abs(ball.position.z-gk.position.z)<2.6&&ball.position.y<3.1){
-        const quality=0.48+((Number(gk.userData.overall)||70)-70)*0.004;
+        const quality=0.38+((Number(gk.userData.gkReflexes||gk.userData.overall)||70)-70)*0.007;
         if(Math.random()<clamp(quality,0.38,0.72)){
           const awayFromGoal=team===HOME?1:-1;
           ball.userData.owner=null;
