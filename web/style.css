@@ -231,6 +231,7 @@ body{overscroll-behavior:none}
 .matchAction.pass{right:76px;bottom:4px;background:linear-gradient(145deg,#173d63,#07111d);border-color:#71b7ff}
 .matchAction.through{right:72px;top:0;background:linear-gradient(145deg,#174d43,#071712);border-color:#70e3bd}
 .matchAction.switch{right:0;top:0;width:48px;height:48px;background:rgba(15,24,29,.9);font-size:7px}
+.matchAction.tackle{left:0;bottom:54px;width:54px;height:54px;background:linear-gradient(145deg,#2f3b50,#081019);border-color:#9aa9bd}
 .matchAction.dash{right:0;bottom:0;width:52px;height:52px;background:linear-gradient(145deg,#6b5a1e,#171207);border-color:#f0d66b}
 @media(max-width:560px){#actionPad{width:174px;height:154px}.matchAction.shoot{width:64px;height:64px;right:0;bottom:34px}.matchAction.pass{right:70px;bottom:0}.matchAction.through{right:67px;top:0}.matchAction.switch{width:44px;height:44px}.matchAction.dash{width:48px;height:48px;bottom:0}}
 @media(max-height:560px){#actionPad{height:132px}.matchAction{width:48px;height:48px}.matchAction.shoot{width:58px;height:58px;bottom:26px}.matchAction.pass{right:62px}.matchAction.through{right:58px}}
