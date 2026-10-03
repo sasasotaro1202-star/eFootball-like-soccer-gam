@@ -392,6 +392,68 @@ function kick(player, tx, tz, speed, actionType="pass") {
   ball.userData.vy=actionType==="shoot"?Math.min(7.0,1.8+speed*0.16):Math.min(4.0,1.1+speed*0.12);
 }
 
+function tackleControlled(){
+  const tackler=home[state.selected];
+  if(!tackler||tackler.userData.role==="GK") return;
+  setAction(tackler,"tackle",520);
+
+  const owner=ball.userData.owner;
+  if(owner&&owner.userData.team===HOME){
+    showMessage("NO BALL",350);
+    return;
+  }
+
+  const forwardX=Math.sin(tackler.rotation.y);
+  const forwardZ=Math.cos(tackler.rotation.y);
+  const candidates=away.filter(p=>{
+    const d=dist(tackler,p);
+    if(d>2.65)return false;
+    const dx=p.position.x-tackler.position.x,dz=p.position.z-tackler.position.z;
+    const len=Math.hypot(dx,dz)||1;
+    return (forwardX*dx+forwardZ*dz)/len>0.15;
+  }).sort((a,b)=>dist(tackler,a)-dist(tackler,b));
+  const target=candidates[0];
+
+  if(target&&owner===target){
+    const id=Number(tackler.userData.player?.id)||tackler.userData.index||0;
+    const atk=Number(tackler.userData.overall)||70;
+    const def=Math.max(0,Math.min(20,(id%11)*0.7));
+    const opp=Math.max(0,Number(target.userData.overall)||70);
+    const success=clamp(0.66+(atk-opp)*0.004+def*0.006,0.30,0.78);
+    if(Math.random()<success){
+      const tx=tackler.position.x+forwardX*0.85,tz=tackler.position.z+forwardZ*0.85;
+      ball.userData.owner=tackler;
+      ball.position.set(tx,0.48,tz);
+      ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+      ball.userData.lastTeam=HOME;
+      ball.userData.lastKicker=null;
+      ball.userData.lastKickerUntil=0;
+      showMessage("TACKLE WIN",500);
+    }else{
+      const dx=ball.position.x-tackler.position.x,dz=ball.position.z-tackler.position.z,len=Math.hypot(dx,dz)||1;
+      ball.userData.owner=null;
+      ball.userData.lastTeam=AWAY;
+      ball.userData.lastKicker=target;
+      ball.userData.lastKickerUntil=performance.now()+260;
+      ball.userData.vx=dx/len*4.5;
+      ball.userData.vz=dz/len*4.5;
+      ball.userData.vy=1.0;
+      showMessage("TACKLE",400);
+    }
+    return;
+  }
+
+  if(!owner&&dist(tackler,ball)<2.6&&ball.position.y<1.5){
+    ball.userData.owner=tackler;
+    ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+    ball.userData.lastKicker=null;
+    ball.userData.lastKickerUntil=0;
+    showMessage("BALL WON",450);
+  }else{
+    showMessage("TACKLE",350);
+  }
+}
+
 function passOrShoot(mode, power = 0.8) {
   const p = home[state.selected];
   if (!p) return;
@@ -474,6 +536,60 @@ function touchBall() {
 }
 
 function showGoalFX(team, scorer){const fx=$("#goalFx");if(!fx)return;$("#goalFxText").textContent=team===HOME?"GOAL":"GOAL";$("#goalFxPlayer").textContent=scorer?.userData?.name||"MATCH GOAL";fx.classList.remove("show");void fx.offsetWidth;fx.classList.add("show");setTimeout(()=>fx.classList.remove("show"),1400)}
+
+function goalkeeperAI(dt){
+  const now=performance.now();
+  for(const team of [home,away]){
+    const gk=team.find(p=>p.userData.role==="GK");
+    if(!gk)continue;
+    const goalX=team===HOME?-49:49;
+    const attackDir=team===HOME?1:-1;
+    let targetZ=clamp(ball.position.z,-9,9);
+
+    if(!ball.userData.owner&&Math.abs(ball.userData.vx)>3.5&&Math.sign(ball.userData.vx)!==attackDir){
+      const timeToGoal=(goalX-ball.position.x)/ball.userData.vx;
+      if(timeToGoal>0&&timeToGoal<1.7){
+        targetZ=clamp(ball.position.z+ball.userData.vz*timeToGoal,-8.8,8.8);
+        gk.userData.gkThreatUntil=now+500;
+      }
+    }else if(ball.userData.owner&&ball.userData.owner.userData.team!==team){
+      const attacker=ball.userData.owner;
+      if(Math.abs(goalX-attacker.position.x)<18){
+        targetZ=clamp(attacker.position.z,-8.5,8.5);
+        gk.userData.gkThreatUntil=now+500;
+      }
+    }
+
+    const threatened=(gk.userData.gkThreatUntil||0)>now;
+    if(threatened){
+      const dx=goalX-gk.position.x;
+      gk.position.x=lerp(gk.position.x,goalX+attackDir*1.8,clamp(dt*4.2,0,1));
+      const dz=targetZ-gk.position.z;
+      gk.position.z+=clamp(dz,-4.8*dt,4.8*dt);
+      gk.userData.moving=Math.abs(dz)>0.12;
+      if(!ball.userData.owner&&Math.abs(ball.position.x-goalX)<3.2&&Math.abs(ball.position.z-gk.position.z)<2.6&&ball.position.y<3.1){
+        const quality=0.48+(Number(gk.userData.overall)||70-70)*0.004;
+        if(Math.random()<clamp(quality,0.38,0.72)){
+          const awayFromGoal=team===HOME?1:-1;
+          ball.userData.owner=null;
+          ball.userData.lastKicker=gk;
+          ball.userData.lastKickerUntil=now+240;
+          ball.userData.vx=awayFromGoal*(7+Math.random()*3);
+          ball.userData.vz=(ball.position.z-gk.position.z)*1.8;
+          ball.userData.vy=2.4;
+          setAction(gk,"save",700);
+          showMessage("SAVE",700);
+        }
+      }
+    }else{
+      gk.position.x=lerp(gk.position.x,goalX,clamp(dt*1.5,0,1));
+      gk.position.z=lerp(gk.position.z,clamp(ball.position.z,-8,8),clamp(dt*1.2,0,1));
+      gk.userData.moving=Math.abs(ball.position.z-gk.position.z)>0.2;
+    }
+    gk.position.x=clamp(gk.position.x,team===HOME?-51:-51,team===HOME?51:51);
+    gk.position.z=clamp(gk.position.z,-9,9);
+  }
+}
 
 function physics(dt) {
   if (ball.userData.owner) return;
@@ -748,6 +864,7 @@ function initInput() {
   action("#throughBtn",(down)=>{if(down)passOrShoot("through",0.95)});
   action("#shootBtn",(down)=>{if(down)passOrShoot("shoot",1)});
   action("#switchBtn",(down)=>{if(down)switchPlayer()});
+  action("#tackleBtn",(down)=>{if(down)tackleControlled()});
   action("#dashBtn",(down)=>{state.sprint=down;updateJoystickVisual()});
 }
 
@@ -829,6 +946,7 @@ function gameLoop(now) {
       updateMatchClock();
       moveControlled(dt);
       teamAI(dt);
+      goalkeeperAI(dt);
       physics(dt);
       touchBall();
       updateBroadcastCamera(dt);
