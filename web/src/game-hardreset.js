@@ -710,12 +710,17 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
 function touchBall() {
   if (ball.userData.owner) {
     const p = ball.userData.owner;
+    const speed=Math.max(0,p.userData?.currentSpeed||0);
     ball.position.set(
       p.position.x + Math.sin(p.rotation.y) * 0.78,
       0.48,
       p.position.z + Math.cos(p.rotation.y) * 0.78
     );
     ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
+    if(speed>0.08){
+      ball.rotation.z += speed*0.035;
+      ball.rotation.x += speed*0.020;
+    }
     return;
   }
 
@@ -799,9 +804,14 @@ function physics(dt) {
   if (ball.userData.owner) return;
 
   ball.userData.vy -= 18 * dt;
+  const horizontalSpeed=Math.hypot(ball.userData.vx,ball.userData.vz);
   ball.position.x += ball.userData.vx * dt;
   ball.position.z += ball.userData.vz * dt;
   ball.position.y += ball.userData.vy * dt;
+  if(horizontalSpeed>0.05){
+    ball.rotation.z += ball.userData.vx*dt*1.8;
+    ball.rotation.x += ball.userData.vz*dt*1.8;
+  }
 
   const drag = Math.pow(0.985, dt * 60);
   ball.userData.vx *= drag;
@@ -913,30 +923,28 @@ function updateMatchClock() {
 }
 
 function updateBroadcastCamera(dt) {
-  // eFootball-style behind-player camera: elevated, forward-facing, and locked to the
-  // selected player. The previous camera looked from the goal end of the X/Z plane,
-  // which made mobile portrait/landscape captures appear like a view from below the pitch.
-  const p = home[state.selected] || home[9];
-  const forwardX = 1; // Home attacks toward +X.
-  const target = new THREE.Vector3(
-    p ? p.position.x + forwardX * 11 : 11,
-    1.2,
-    p ? p.position.z : 0
+  const p=home[state.selected]||home[9];
+  const ballPos=ball?.position||p?.position;
+  const forwardX=1;
+  const bx=ballPos?.x??0,bz=ballPos?.z??0;
+  const px=p?.position.x??0,pz=p?.position.z??0;
+  const midX=lerp(px,bx,.34),midZ=lerp(pz,bz,.34);
+  const ballGap=Math.hypot(bx-px,bz-pz);
+  const zoom=clamp(1+ballGap/22,1,1.45);
+  const target=new THREE.Vector3(midX+forwardX*(7+ballGap*.10),1.0,midZ);
+  const desired=new THREE.Vector3(
+    px-forwardX*(15+ballGap*1.8/zoom),
+    9.5+ballGap*.14,
+    pz+4.0+ballGap*.10
   );
-  const desired = new THREE.Vector3(
-    p ? p.position.x - forwardX * 16 : -16,
-    10.5,
-    p ? p.position.z + 4.5 : 4.5
-  );
-  const blend = 1 - Math.pow(0.00001, Math.min(0.05, dt));
-  camera.position.lerp(desired, blend);
-  camera.fov = camera.aspect < 1.05 ? 54 : 50;
-  camera.near = 0.05;
-  camera.far = 320;
+  const blend=1-Math.pow(0.00002,Math.min(.065,dt));
+  camera.position.lerp(desired,blend);
+  camera.fov=camera.aspect<1.05?56:52;
+  camera.near=.05;
+  camera.far=320;
   camera.lookAt(target);
   camera.updateProjectionMatrix();
 }
-
 function updateJoystickVisual() {
   const max = 46;
   knob.style.transform =
@@ -1230,43 +1238,84 @@ function resize() {
 }
 
 function animatePlayer(p, now) {
-  const u=p.userData;if(!u?.rig)return;
-  const moving=!!u.moving,speedRatio=u.sprint?1.18:1,phase=now*0.0105*speedRatio+u.animationPhase;
-  const cycle=moving?Math.sin(phase):Math.sin(phase*0.55),action=u.actionUntil>now?u.action:"idle";
-  if(u.actionUntil<=now)u.action="idle";
+  const u=p.userData;
+  if(!u?.rig)return;
+  const moving=!!u.moving;
+  const speedRatio=u.sprint?1.16:1;
+  const phase=now*0.0102*speedRatio+u.animationPhase;
+  const cycle=moving?Math.sin(phase):0;
+  const stride= u.sprint ? 0.92 : 0.68;
   const r=u.rig;
-  r.hips.rotation.z=moving?cycle*0.035:0; r.hips.rotation.x=moving?(u.sprint?-0.08:-0.045):0;
-  r.leftThigh.rotation.x=moving?-cycle*(u.sprint?0.92:0.68):0.02; r.rightThigh.rotation.x=moving?cycle*(u.sprint?0.92:0.68):-0.02;
-  r.leftCalf.rotation.x=moving?Math.max(0,cycle)*0.75:0.02; r.rightCalf.rotation.x=moving?Math.max(0,-cycle)*0.75:0.02;
-  r.leftArm.rotation.z=moving?cycle*(u.sprint?0.30:0.22):0.04; r.rightArm.rotation.z=moving?-cycle*(u.sprint?0.30:0.22):-0.04;
-  r.leftFore.rotation.z=moving?-cycle*0.12:0; r.rightFore.rotation.z=moving?cycle*0.12:0;
-  r.leftFoot.rotation.x=moving?Math.max(0,-cycle)*0.22:0; r.rightFoot.rotation.x=moving?Math.max(0,cycle)*0.22:0;
-  if(action==="shoot"){
-    const k=clamp((now-(u.actionUntil-620))/620,0,1),wind=k<0.42?k/0.42:1,strike=k<0.58?0:(k-0.58)/0.42;
-    r.hips.rotation.x=-0.04; r.rightThigh.rotation.x=-0.9*wind+1.35*strike; r.rightCalf.rotation.x=1.0*wind-1.35*strike; r.rightFoot.rotation.x=-0.55+1.0*strike;
-    r.leftArm.rotation.z=-0.32;r.rightArm.rotation.z=0.30;
-  }else if(action==="tackle"){
-    const k=clamp((now-(u.actionUntil-520))/520,0,1);
-    const swing=Math.sin(k*Math.PI);
-    r.hips.rotation.x=-0.10*swing;
-    r.rightThigh.rotation.x=-1.05*swing;
-    r.rightCalf.rotation.x=0.9*swing;
-    r.leftArm.rotation.z=-0.28*swing;r.rightArm.rotation.z=0.28*swing;
-  }else if(action==="save"){
-    const k=clamp((now-(u.actionUntil-700))/700,0,1);
-    const dive=Math.sin(k*Math.PI);
-    r.hips.rotation.z=0.28*dive;
-    r.leftArm.rotation.z=-0.75*dive;r.rightArm.rotation.z=0.75*dive;
-    r.leftThigh.rotation.x=-0.32*dive;r.rightThigh.rotation.x=-0.18*dive;
-  }else if(action==="pass"||action==="through"){
-    const k=clamp((now-(u.actionUntil-480))/480,0,1),swing=Math.sin(k*Math.PI);
-    r.rightThigh.rotation.x=(action==="through"?-0.72:-0.5)*swing; r.rightCalf.rotation.x=0.65*swing; r.rightFoot.rotation.x=-0.35*swing;
-    r.leftArm.rotation.z=0.25*swing;r.rightArm.rotation.z=-0.25*swing;
-  }
-  p.position.y=0.01+(moving?Math.abs(Math.sin(phase))*0.018:Math.abs(Math.sin(phase*0.55))*0.006);
-  p.rotation.z=moving?cycle*0.012:0;
-}
+  const action=u.actionUntil>now?u.action:"idle";
+  if(u.actionUntil<=now)u.action="idle";
 
+  // Neutral athletic stance.
+  r.hips.rotation.x=moving?(u.sprint?-0.10:-0.045):0;
+  r.hips.rotation.z=moving?cycle*0.018:0;
+  r.torso.rotation.x=moving?(u.sprint?-0.035:-0.018):0;
+  r.torso.rotation.z=moving?cycle*0.012:0;
+
+  // Legs: hip swing + delayed knee flex + planted-foot recovery.
+  r.leftThigh.rotation.x=moving?-cycle*stride:0.06;
+  r.rightThigh.rotation.x=moving?cycle*stride:-0.06;
+  const leftKnee=Math.max(0,cycle);
+  const rightKnee=Math.max(0,-cycle);
+  r.leftCalf.rotation.x=moving?leftKnee*(u.sprint?1.02:.82):0.04;
+  r.rightCalf.rotation.x=moving?rightKnee*(u.sprint?1.02:.82):0.04;
+  r.leftFoot.rotation.x=moving?-leftKnee*.20:.02;
+  r.rightFoot.rotation.x=moving?-rightKnee*.20:.02;
+
+  // Arms swing from the shoulder, not sideways, which removes the old "T-pose" look.
+  const armSwing=u.sprint?.48:.38;
+  r.leftArm.rotation.x=moving?cycle*armSwing:0.05;
+  r.rightArm.rotation.x=moving?-cycle*armSwing:-0.05;
+  r.leftArm.rotation.z=moving?0.035:0;
+  r.rightArm.rotation.z=moving?-0.035:0;
+  r.leftFore.rotation.x=moving?-leftKnee*.18:0;
+  r.rightFore.rotation.x=moving?-rightKnee*.18:0;
+
+  // Match actions override the run cycle with short, readable football motions.
+  if(action==="shoot"){
+    const k=clamp((now-(u.actionUntil-680))/680,0,1);
+    const wind=clamp(k/.42,0,1);
+    const strike=clamp((k-.48)/.52,0,1);
+    r.hips.rotation.x=-.075;
+    r.torso.rotation.x=-.055;
+    r.rightThigh.rotation.x=-.86*wind+1.18*strike;
+    r.rightCalf.rotation.x=.82*wind-1.30*strike;
+    r.rightFoot.rotation.x=-.32+.75*strike;
+    r.leftArm.rotation.x=-.38;
+    r.rightArm.rotation.x=.48;
+  }else if(action==="tackle"){
+    const k=clamp((now-(u.actionUntil-540))/540,0,1),swing=Math.sin(k*Math.PI);
+    r.hips.rotation.x=-.10*swing;
+    r.torso.rotation.x=-.08*swing;
+    r.rightThigh.rotation.x=-.98*swing;
+    r.rightCalf.rotation.x=.88*swing;
+    r.leftArm.rotation.x=-.30*swing;
+    r.rightArm.rotation.x=.36*swing;
+  }else if(action==="save"){
+    const k=clamp((now-(u.actionUntil-720))/720,0,1),dive=Math.sin(k*Math.PI);
+    r.hips.rotation.z=.34*dive;
+    r.torso.rotation.z=.14*dive;
+    r.leftArm.rotation.z=-.72*dive;
+    r.rightArm.rotation.z=.72*dive;
+    r.leftThigh.rotation.x=-.28*dive;
+    r.rightThigh.rotation.x=-.20*dive;
+  }else if(action==="pass"||action==="through"||action==="stunningPass"||action==="stunningThrough"){
+    const k=clamp((now-(u.actionUntil-500))/500,0,1),swing=Math.sin(k*Math.PI);
+    const strong=action.startsWith("stunning")?1.15:1;
+    r.hips.rotation.x=-.035*strong;
+    r.rightThigh.rotation.x=-((action==="through"||action==="stunningThrough")?.72:.50)*swing*strong;
+    r.rightCalf.rotation.x=.62*swing*strong;
+    r.rightFoot.rotation.x=-.30*swing*strong;
+    r.leftArm.rotation.x=.18*swing;
+    r.rightArm.rotation.x=-.28*swing;
+  }
+
+  // Keep every foot planted: no artificial vertical bobbing that reads as floating.
+  p.position.y=0.01;
+}
 function gameLoop(now) {
   const dt = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000));
   lastFrame = now;
