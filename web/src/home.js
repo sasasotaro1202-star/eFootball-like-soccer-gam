@@ -250,7 +250,7 @@ function draw(n,unitCost=100,free=false){
  setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});state.gp+=n*120;save();wallet();showSigning(results);
 }
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
-function start(){screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){screen("home")}
+function start(){window.__matchRewardClaimed=false;screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){window.dispatchEvent(new Event("football:match-exit"));screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{
  const el=e.target.closest(".playerCardTap,.gachaPlayerMini");
@@ -282,11 +282,34 @@ window.__footballPanel=panel;
   const show=(id,on)=>$(id)?.classList.toggle("hidden",!on);
   window.__setMatchFlow=(name)=>setFlow(name);
   document.addEventListener("click",e=>{
-    if(e.target.closest("#playNow,#quickPlay,#squadPlay")){setFlow("pre");show("#matchIntro",true);show("#matchResult",false);show("#matchReward",false);}
+    if(e.target.closest("#playNow,#quickPlay,#squadPlay")){
+      window.__matchRewardClaimed=false;
+      setFlow("pre");
+      show("#matchIntro",true);
+      show("#matchResult",false);
+      show("#matchReward",false);
+    }
     if(e.target.closest("#kickoffBtn")){setFlow("kickoff");show("#matchIntro",false);setTimeout(()=>setFlow("play"),700);}
-    if(e.target.closest("#rewardBtn")){setFlow("reward");show("#matchResult",false);show("#matchReward",true);}
+    if(e.target.closest("#rewardBtn")){
+      if(!window.__matchRewardClaimed){
+        state.gp+=500;
+        save();
+        wallet();
+        window.__matchRewardClaimed=true;
+      }
+      setFlow("reward");
+      show("#matchResult",false);
+      show("#matchReward",true);
+    }
     if(e.target.closest("#rewardDoneBtn")){show("#matchReward",false);setFlow("pre");}
   },true);
   window.addEventListener("football:goal",()=>{setFlow("goal");setTimeout(()=>setFlow("play"),1800);});
-  window.addEventListener("football:fulltime",()=>{setFlow("result");const s=$("#score")?.textContent||"0 - 0";if($("#finalScore"))$("#finalScore").textContent=s;show("#matchResult",true);});
+  window.addEventListener("football:fulltime",()=>{
+    window.__matchRewardClaimed=false;
+    setFlow("result");
+    const s=$("#score")?.textContent||"0 - 0";
+    if($("#finalScore"))$("#finalScore").textContent=s;
+    if($("#resultSummary"))$("#resultSummary").textContent="MATCH COMPLETE • +500 GP";
+    show("#matchResult",true);
+  });
 })();
