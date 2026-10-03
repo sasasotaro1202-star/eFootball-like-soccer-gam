@@ -260,6 +260,10 @@ function buildPitch() {
     const base = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.12, FIELD.goalW), goalMat);
     base.position.set(x - side * 2, 0.06, 0);
     scene.add(base);
+    const netMat=new THREE.MeshBasicMaterial({color:0xe9efed,transparent:true,opacity:.24,wireframe:true});
+    const net=new THREE.Mesh(new THREE.BoxGeometry(3.8,3.15,FIELD.goalW-.2),netMat);
+    net.position.set(x-side*1.9,1.65,0);
+    scene.add(net);
   }
 
   const standMat=mat(0x151d28,0.92), crowdMat=mat(0xd8d0b8,1);
@@ -268,9 +272,21 @@ function buildPitch() {
 }
 
 function buildBall() {
+  const c=document.createElement("canvas");
+  c.width=c.height=96;
+  const x=c.getContext("2d");
+  x.fillStyle="#f5f6f4";
+  x.fillRect(0,0,96,96);
+  x.fillStyle="#c8cdca";
+  for(let iy=0;iy<6;iy++)for(let ix=0;ix<6;ix++){x.beginPath();x.arc(ix*17+5,iy*17+7,2.5,0,Math.PI*2);x.fill();}
+  x.fillStyle="#15191b";
+  const poly=(cx,cy,r,rot=.0)=>{x.beginPath();for(let i=0;i<5;i++){const a=rot+i*Math.PI*2/5;const px=cx+Math.cos(a)*r,py=cy+Math.sin(a)*r;i?x.lineTo(px,py):x.moveTo(px,py)}x.closePath();x.fill()};
+  poly(48,46,10,.1);poly(16,18,5,.25);poly(78,19,5,.4);poly(20,76,5,.1);poly(76,76,5,.35);
+  const ballTex=new THREE.CanvasTexture(c);
+  ballTex.colorSpace=THREE.SRGBColorSpace;
   ball = new THREE.Mesh(
-    new THREE.SphereGeometry(0.42, 18, 12),
-    mat(0xf4f6f4, 0.5)
+    new THREE.SphereGeometry(0.42, 20, 14),
+    new THREE.MeshStandardMaterial({map:ballTex,color:0xffffff,roughness:.62,metalness:0})
   );
   ball.position.set(0, 0.48, 0);
   ball.userData = { owner: null, vx: 0, vy: 0, vz: 0, lastTeam: HOME, lastKicker: null, lastKickerUntil: 0 };
@@ -888,6 +904,14 @@ function updateHUD() {
   const p = home[state.selected];
   if (p) staminaFill.style.width = p.userData.stamina.toFixed(1) + "%";
   stateEl.textContent = state.matchState==="halftime" ? "HALF TIME" : state.finished ? "FULL TIME" : (state.paused ? "PAUSED" : "LIVE");
+  const modeEl=document.querySelector("#controlMode");
+  const ownerTeam=ball.userData.owner?.userData?.team;
+  if(modeEl){
+    modeEl.textContent=ownerTeam===AWAY?"DEFENSE":"ATTACK";
+    modeEl.style.color=ownerTeam===AWAY?"#ff8796":"#72e2ad";
+  }
+  const halfEl=document.querySelector("#halfLabel");
+  if(halfEl)halfEl.textContent=state.half===2?"2ND HALF":"1ST HALF";
   updateRadar();
 }
 
@@ -1356,7 +1380,7 @@ function bootGame() {
     updateHUD();
 
     window.__gameReady = true;
-    window.__gameVersion = "match-motion-20260920-01";
+    window.__gameVersion = "match-presentation-20261004-01";
     window.__rendererMode = renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1";
     boot.classList.add("ready");
     setTimeout(() => boot.remove(), 500);
