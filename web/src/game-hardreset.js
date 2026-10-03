@@ -287,6 +287,7 @@ function moveControlled(dt) {
 
   if(mag<0.04){
     u.moving=false;
+    u.currentSpeed=Math.max(0,u.currentSpeed-u.acceleration*dt*1.25);
     u.sprint=!defending&&state.rightHeld;
     if(state.pressUntil>now&&defending&&owner){
       const dx=owner.position.x-p.position.x,dz=owner.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
@@ -312,7 +313,10 @@ function moveControlled(dt) {
   const intensity=clamp(mag,0,1);
   const dash=!defending&&state.rightHeld;
   const shield=owner===p&&state.shieldUntil>now;
-  const speed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
+  const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
+  const response=clamp(p.userData.acceleration*dt,0,1);
+  p.userData.currentSpeed+=((targetSpeed-p.userData.currentSpeed)*response);
+  const speed=p.userData.currentSpeed;
 
   p.position.x=clamp(p.position.x+nx*speed*dt,-51,51);
   p.position.z=clamp(p.position.z+nz*speed*dt,-32.5,32.5);
@@ -330,7 +334,8 @@ function moveControlled(dt) {
     if(opp)p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
   }
 
-  u.stamina=clamp(u.stamina-(dash?5.0:shield?1.6:1.0)*dt,0,100);
+  const staminaFactor=clamp(100/(u.staminaRating||70),0.72,1.35);
+  u.stamina=clamp(u.stamina-(dash?5.0:shield?1.6:1.0)*staminaFactor*dt,0,100);
 
   if(owner===p){
     const touch=Math.sin(now*0.014)*0.045;
