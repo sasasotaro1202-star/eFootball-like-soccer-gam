@@ -7,6 +7,6 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["player gameplay attributes",js.includes('function gameplayAttributes')&&js.includes('acceleration:7.5+gameplay.acceleration')&&js.includes('shooting:gameplay.shooting')&&js.includes('passing:gameplay.passing')&&js.includes('staminaRating:gameplay.stamina')],
 ["attribute-driven simulation",js.includes('const skill=mode==="shoot"')&&js.includes('userData.defending')&&js.includes('gkReflexes')&&js.includes('currentSpeed')],
 ["defensive pressure simulation",js.includes('lastDefensiveContactAt')&&js.includes('"PRESSURE WIN"')&&js.includes('contactCooldown')],
-["AI kick skill scaling",js.includes('function kick(player')&&js.includes('skillFactor=0.84+clamp(skill,45,99)')]];
+["AI kick skill scaling",js.includes('function kick(player')&&js.includes('skillFactor=0.84+clamp(skill,45,99)')],\n["player body proportions",js.includes('CapsuleGeometry(rad,len,5,8)')&&js.includes('-(len*.5+rad)')&&js.includes('CylinderGeometry(0.34*shoulder,0.285*frame,0.70,12)')&&js.includes('sockColor=0xf1f3f5')&&js.includes('leftCalf=limb(leftThigh,0,-thighTotal,mat(sockColor')&&js.includes('g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale)')]];
 for(const [n,ok] of checks)if(!ok)throw new Error("Smoke check failed: "+n);
 console.log("Web smoke checks passed:",checks.map(x=>x[0]).join(", "));
