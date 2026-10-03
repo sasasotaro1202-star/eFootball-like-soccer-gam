@@ -1306,7 +1306,7 @@ function animatePlayer(p, now) {
     const k=clamp((now-(u.actionUntil-500))/500,0,1),swing=Math.sin(k*Math.PI);
     const strong=action.startsWith("stunning")?1.15:1;
     r.hips.rotation.x=-.035*strong;
-    r.rightThigh.rotation.x=-((action==="through"||action==="stunningThrough")?.72:.50)*swing*strong;
+    r.rightThigh.rotation.x=-(action==="through"||action==="stunningThrough" ? .72 : .50)*swing*strong;
     r.rightCalf.rotation.x=.62*swing*strong;
     r.rightFoot.rotation.x=-.30*swing*strong;
     r.leftArm.rotation.x=.18*swing;
