@@ -252,6 +252,7 @@ function buildBall() {
 function resetPositions(kickoffTeam = HOME) {
   for (const p of players) {
     p.position.set(p.userData.homeX, 0, p.userData.homeZ);
+    p.userData.currentSpeed = 0;
     p.userData.stamina = 100;
   }
   ball.position.set(0, 0.48, 0);
