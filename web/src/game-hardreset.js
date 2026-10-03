@@ -15,8 +15,9 @@ const knob = $("#knob");
 const message = $("#message");
 
 const FIELD = { w: 105, d: 68, goalW: 14.64 };
-const MATCH_DURATION = 90;
-const HALF_TIME_AT = 45;
+const MATCH_TIME_SCALE = 60;
+const MATCH_DURATION = 90 * 60;
+const HALF_TIME_AT = 45 * 60;
 const HOME = 0;
 const AWAY = 1;
 const savedOwnedIds = JSON.parse(localStorage.getItem("football_owned") || "[]");
@@ -955,7 +956,7 @@ function gameLoop(now) {
   if(matchVisible){
     keyboardMove();
     if (!state.paused && state.matchActive) {
-      state.time += dt;
+      state.time += dt * MATCH_TIME_SCALE;
       updateMatchClock();
       moveControlled(dt);
       teamAI(dt);
