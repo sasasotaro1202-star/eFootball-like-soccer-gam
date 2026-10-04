@@ -1863,8 +1863,39 @@ function animatePlayer(p, now) {
   // Keep every foot planted: no artificial vertical bobbing that reads as floating.
   p.position.y=0.01;
 }
+function repairSimulationState(){
+  let repaired=false;
+  const finite=n=>Number.isFinite(n);
+  if(!ball||!finite(ball.position.x)||!finite(ball.position.y)||!finite(ball.position.z)||!finite(ball.userData.vx)||!finite(ball.userData.vy)||!finite(ball.userData.vz)){
+    if(ball){ball.userData.vx=0;ball.userData.vy=0;ball.userData.vz=0;ball.userData.owner=null;ball.userData.possessionState="FREE";}
+    resetPositions(HOME);initBallPossession();repaired=true;
+  }
+  if(ball){
+    const speed=Math.hypot(ball.userData.vx||0,ball.userData.vz||0);
+    if(speed>38){
+      const scale=38/speed;
+      ball.userData.vx*=scale;ball.userData.vz*=scale;repaired=true;
+    }
+    ball.position.x=clamp(ball.position.x,-56,56);
+    ball.position.z=clamp(ball.position.z,-38,38);
+    ball.position.y=clamp(ball.position.y,.42,12);
+  }
+  for(const p of players){
+    if(!finite(p.position.x)||!finite(p.position.y)||!finite(p.position.z)||!finite(p.userData.currentSpeed)){
+      resetPositions(p.userData.team===HOME?HOME:AWAY);
+      repaired=true;
+      continue;
+    }
+    p.position.x=clamp(p.position.x,-51,51);
+    p.position.z=clamp(p.position.z,-32.5,32.5);
+    p.position.y=.01;
+    p.userData.currentSpeed=clamp(p.userData.currentSpeed||0,0,14);
+  }
+  if(repaired)showMessage("SIMULATION RECOVERED",700);
+}
 function gameLoop(now) {
   const dt = Math.min(0.033, Math.max(0, (now - lastFrame) / 1000));
+  repairSimulationState();
   lastFrame = now;
   const matchVisible=document.body.classList.contains("inMatch");
 
