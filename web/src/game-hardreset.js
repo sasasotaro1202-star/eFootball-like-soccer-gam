@@ -243,6 +243,28 @@ function addLine(x1, z1, x2, z2, y = 0.055) {
 function buildPitch() {
   scene.background = new THREE.Color(0x08151f);
 
+  const grassCanvas=document.createElement("canvas");
+  grassCanvas.width=grassCanvas.height=256;
+  const gx=grassCanvas.getContext("2d");
+  gx.fillStyle="#14733c";gx.fillRect(0,0,256,256);
+  for(let y=0;y<256;y+=8){
+    gx.fillStyle=y%16===0?"rgba(255,255,255,.018)":"rgba(0,0,0,.018)";
+    gx.fillRect(0,y,256,8);
+  }
+  let grassSeed=17;
+  for(let i=0;i<1200;i++){
+    grassSeed=(grassSeed*1664525+1013904223)>>>0;
+    const x=grassSeed%256;
+    grassSeed=(grassSeed*1664525+1013904223)>>>0;
+    const y=grassSeed%256;
+    gx.fillStyle=i%3===0?"rgba(255,255,255,.024)":"rgba(0,0,0,.020)";
+    gx.fillRect(x,y,1+(i%2),2);
+  }
+  const grassTex=new THREE.CanvasTexture(grassCanvas);
+  grassTex.wrapS=grassTex.wrapT=THREE.RepeatWrapping;
+  grassTex.repeat.set(3.4,2.2);
+  grassTex.colorSpace=THREE.SRGBColorSpace;
+
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(260, 220),
     new THREE.MeshBasicMaterial({ color: 0x07100d, side: THREE.DoubleSide })
@@ -253,7 +275,7 @@ function buildPitch() {
 
   const pitch = new THREE.Mesh(
     new THREE.PlaneGeometry(FIELD.w, FIELD.d),
-    new THREE.MeshBasicMaterial({ color: 0x16723b, side: THREE.DoubleSide })
+    new THREE.MeshStandardMaterial({ map:grassTex, color:0xffffff, roughness:.92, metalness:0, side: THREE.DoubleSide })
   );
   pitch.rotation.x = -Math.PI / 2;
   pitch.position.y = 0;
@@ -263,7 +285,7 @@ function buildPitch() {
   for (let i = 0; i < 10; i++) {
     const stripe = new THREE.Mesh(
       new THREE.PlaneGeometry(FIELD.w, FIELD.d / 10 + 0.03),
-      new THREE.MeshBasicMaterial({ color: stripeColors[i % 2], side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({ color: stripeColors[i % 2], transparent:true, opacity:.16, side: THREE.DoubleSide })
     );
     stripe.rotation.x = -Math.PI / 2;
     stripe.position.set(0, 0.008, -FIELD.d / 2 + (i + 0.5) * FIELD.d / 10);
@@ -323,8 +345,33 @@ function buildPitch() {
   }
 
   const standMat=mat(0x151d28,0.92), crowdMat=mat(0xd8d0b8,1);
-  for(const side of [-1,1]){for(let row=0;row<4;row++){const stand=new THREE.Mesh(new THREE.BoxGeometry(125,2.2,4.8),standMat);stand.position.set(0,1.2+row*1.8,side*(39+row*4.2));scene.add(stand);for(let k=0;k<24;k+=2){const c=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.75,0.9),mat((k+row)%4===0?0xd8d0b8:0x7d8a96,1));c.position.set(-49+k*4.1,2.7+row*1.8,side*(38+row*4.2));scene.add(c)}}const led=new THREE.Mesh(new THREE.BoxGeometry(106,0.55,0.35),new THREE.MeshBasicMaterial({color:0x263b4c}));led.position.set(0,0.65,side*35.2);scene.add(led)}
-  for(const x of [-57,57])for(const z of [-39,39]){const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.3,18,8),standMat);pole.position.set(x,9,z);scene.add(pole);const lamp=new THREE.PointLight(0xffffff,8,75,2);lamp.position.set(x,18,z);scene.add(lamp)}
+  for(const side of [-1,1]){
+    for(let row=0;row<4;row++){
+      const stand=new THREE.Mesh(new THREE.BoxGeometry(125,2.2,4.8),standMat);
+      stand.position.set(0,1.2+row*1.8,side*(39+row*4.2));scene.add(stand);
+      for(let k=0;k<24;k+=2){
+        const c=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.75,0.9),mat((k+row)%4===0?0xd8d0b8:0x7d8a96,1));
+        c.position.set(-49+k*4.1,2.7+row*1.8,side*(38+row*4.2));scene.add(c)
+      }
+    }
+    const led=new THREE.Mesh(new THREE.BoxGeometry(106,0.55,0.35),new THREE.MeshBasicMaterial({color:0x263b4c}));
+    led.position.set(0,0.65,side*35.2);scene.add(led);
+    const canopy=new THREE.Mesh(new THREE.BoxGeometry(126,0.9,7.4),new THREE.MeshStandardMaterial({color:0x0c151c,roughness:.95,metalness:.05}));
+    canopy.position.set(0,11.8,side*52.5);scene.add(canopy);
+    const fascia=new THREE.Mesh(new THREE.BoxGeometry(120,0.65,0.5),new THREE.MeshBasicMaterial({color:side<0?0x3d7780:0x7a4d57}));
+    fascia.position.set(0,8.1,side*36.2);scene.add(fascia);
+  }
+  for(const x of [-57,57])for(const z of [-39,39]){
+    const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.3,18,8),standMat);
+    pole.position.set(x,9,z);scene.add(pole);
+    const lamp=new THREE.PointLight(0xffffff,8,75,2);
+    lamp.position.set(x,18,z);scene.add(lamp);
+  }
+  const boardMat=new THREE.MeshBasicMaterial({color:0x0b171d});
+  for(const z of [-42,42]){
+    const board=new THREE.Mesh(new THREE.BoxGeometry(38,4.2,.35),boardMat);
+    board.position.set(0,6.1,z);scene.add(board);
+  }
 }
 
 function buildBall() {
@@ -1170,13 +1217,13 @@ function updateBroadcastCamera(dt) {
   const zoom=clamp(1+ballGap/22,1,1.45);
   const target=new THREE.Vector3(midX+forwardX*(7+ballGap*.10),1.0,midZ);
   const desired=new THREE.Vector3(
-    px-forwardX*(15+ballGap*1.8/zoom),
-    9.5+ballGap*.14,
-    pz+4.0+ballGap*.10
+    px-forwardX*(17+ballGap*1.45/zoom),
+    10.2+ballGap*.10,
+    pz+5.4+ballGap*.08
   );
   const blend=1-Math.pow(0.00002,Math.min(.065,dt));
   camera.position.lerp(desired,blend);
-  camera.fov=camera.aspect<1.05?56:52;
+  camera.fov=camera.aspect<1.05?58:50;
   camera.near=.05;
   camera.far=320;
   camera.lookAt(target);
