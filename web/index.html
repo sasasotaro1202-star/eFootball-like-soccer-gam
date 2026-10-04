@@ -1,7 +1,7 @@
 <!doctype html><html lang="ja"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#07131b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>FOOTBALL</title><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./style.css?v=20260920-ui-08"></head><body><main id="app">
+<title>FOOTBALL</title><link rel="manifest" href="./manifest.webmanifest"><link rel="stylesheet" href="./style.css?v=20261004-premium-02"></head><body><main id="app">
 <section id="homeScreen" class="screen active">
   <div class="homeBg"></div>
   <header class="homeHeader">
@@ -80,7 +80,6 @@
   function show(n){
     Object.keys(screens).forEach(k=>screens[k]?.classList.toggle("active",k===n));
     document.body.classList.toggle("inMatch",n==="match");
-    if(n==="match") window.dispatchEvent(new Event("football:match-start"));
   }
   function fallbackPanel(kind){
     const t=titles[kind]||["MENU",""];
@@ -102,4 +101,4 @@
   },true);
   window.__footballFallback={show,fallbackPanel};
 })();
-</script><script type="module" src="./src/home.js?v=20260920-gacha-hardfix-01"></script><script type="module" src="./src/game-hardreset.js?v=20261004-match-02"></script></body></html>
+</script><script type="module" src="./src/home.js?v=20261004-home-premium-02"></script><script type="module" src="./src/game-hardreset.js?v=20261004-match-controls-02"></script></body></html>
