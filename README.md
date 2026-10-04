@@ -28,10 +28,10 @@ Vercel is optional and is not the release gate for the game. This avoids making 
 Three.js r162 in the web runtime; Capacitor 7 for the iPhone native shell.
 
 ## Controls
-- WASD / Arrow keys: move
-- Shift: sprint
-- J: pass
-- K: shoot
+- Desktop: WASD / Arrow keys = move, Shift = sprint, J = pass, K = shoot.
+- iPhone: left movement stick = move; right action panel = pass, through, shoot, tackle, match-up, press, switch, dash.
+- Touch & flick remains available: tap = pass, upward flick = shoot, downward flick = through ball.
+- Holding pass / through / shoot charges power; defense uses match-up / press / tackle / switch.
 
 ## Development rule
 Prioritize real gameplay quality, deterministic behavior, testability, maintainability, and performance over feature count. Avoid copying proprietary assets, code, trademarks, or copyrighted game content.
