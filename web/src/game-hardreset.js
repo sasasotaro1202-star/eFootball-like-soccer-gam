@@ -1221,15 +1221,15 @@ function updateBroadcastCamera(dt) {
   const midX=lerp(px,bx,.34),midZ=lerp(pz,bz,.34);
   const ballGap=Math.hypot(bx-px,bz-pz);
   const zoom=clamp(1+ballGap/22,1,1.45);
-  const target=new THREE.Vector3(midX+forwardX*(7+ballGap*.10),1.0,midZ);
+  const target=new THREE.Vector3(midX+forwardX*(5.5+ballGap*.08),.72,midZ);
   const desired=new THREE.Vector3(
-    px-forwardX*(17+ballGap*1.45/zoom),
-    10.2+ballGap*.10,
-    pz+5.4+ballGap*.08
+    px-forwardX*(15+ballGap*1.25/zoom),
+    7.8+ballGap*.08,
+    pz+3.6+ballGap*.06
   );
   const blend=1-Math.pow(0.00002,Math.min(.065,dt));
   camera.position.lerp(desired,blend);
-  camera.fov=camera.aspect<1.05?58:50;
+  camera.fov=camera.aspect<1.05?55:48;
   camera.near=.05;
   camera.far=320;
   camera.lookAt(target);
