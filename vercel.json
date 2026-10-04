@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "web",
+  "buildCommand": "node scripts/build-player-pool.mjs",
   "cleanUrls": true,
   "headers": [
     {
