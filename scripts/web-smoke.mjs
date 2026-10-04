@@ -14,8 +14,8 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["role body variation",js.includes('const roleHeight=role==="GK"?1.08')&&js.includes('const roleFrame=role==="DF"?1.045')&&js.includes('sockAccent=mat(shirtColor,.62)')],
 ["movement polish",js.includes('function resolvePlayerSeparation()')&&js.includes('const wa=aMov&&bMov ? .5 : (aMov||bMov ? 1 : 0);')&&js.includes('const response=clamp((p.userData.acceleration||7)*dt,0,1)')],
 ["sharp touch physics",js.includes('sharpTouchUntil:0')&&js.includes('const impulse=4.8*remain*remain')&&!js.includes('p.position.x=clamp(p.position.x+nx*2.7')],
-["match squad integration",js.includes('function readMatchSquad()')&&js.includes('function syncMatchSquad()')&&html.includes('data-squad-ids')&&home.includes('football_match_squad')],
-["economy persistence",home.includes('coins:Math.max(0,+localStorage.getItem("football_coins")||100)')&&home.includes('state.coins=Math.max(0,Math.floor(Number(state.coins)||0))')&&!home.includes('state.coins=999999999')],
+["match squad integration",js.includes('function readMatchSquad()')&&js.includes('function syncMatchSquad()')&&home.includes('data-squad-ids')&&home.includes('football_match_squad')],
+["economy persistence",home.includes('const storedCoins=+localStorage.getItem("football_coins")')&&home.includes('storedCoins===999999999?100')&&home.includes('state.coins=Math.max(0,Math.floor(Number(state.coins)||0))')&&!home.includes('state.coins=999999999')],
 ["fluid formation gameplay",js.includes('fluidFormation=localStorage.getItem("football_fluid_formation")!=="0"')&&js.includes('if(fluidFormation){')&&home.includes('data-fluid-toggle')],
 ["full roster build path",readFileSync("scripts/build-player-pool.mjs","utf8").includes('console.log("Generated "+data.length+" players")')&&readFileSync("vercel.json","utf8").includes('"buildCommand": "node scripts/build-player-pool.mjs"')]];
 for(const [n,ok] of checks)if(!ok)throw new Error("Smoke check failed: "+n);
