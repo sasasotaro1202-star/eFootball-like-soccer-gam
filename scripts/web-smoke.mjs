@@ -17,6 +17,9 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["match squad integration",js.includes('function readMatchSquad()')&&js.includes('function syncMatchSquad()')&&home.includes('data-squad-ids')&&home.includes('football_match_squad')],
 ["economy persistence",home.includes('const storedCoins=+localStorage.getItem("football_coins")')&&home.includes('storedCoins===999999999?100')&&home.includes('state.coins=Math.max(0,Math.floor(Number(state.coins)||0))')&&!home.includes('state.coins=999999999')],
 ["fluid formation gameplay",js.includes('fluidFormation=localStorage.getItem("football_fluid_formation")!=="0"')&&js.includes('if(fluidFormation){')&&home.includes('data-fluid-toggle')],
-["full roster build path",readFileSync("scripts/build-player-pool.mjs","utf8").includes('console.log("Generated "+data.length+" players")')&&readFileSync("vercel.json","utf8").includes('"buildCommand": "node scripts/build-player-pool.mjs"')]];
+["full roster build path",readFileSync("scripts/build-player-pool.mjs","utf8").includes('console.log("Generated "+data.length+" players")')&&readFileSync("vercel.json","utf8").includes('"buildCommand": "node scripts/build-player-pool.mjs"')],
+["contract headliners",home.includes('HEADLINER_SPECS')&&home.includes('3 HEADLINERS')&&home.includes('HEADLINER GUARANTEED')&&home.includes('next%10===0')],
+["contract selection flow",home.includes('function signSelectedPlayer')&&home.includes('activeBanner==="nominating"||activeBanner==="selection"')],
+["card id squad resolver",js.includes('const [baseId,variant]=id.split("-")')&&js.includes('cardType:variant.toUpperCase()')]];
 for(const [n,ok] of checks)if(!ok)throw new Error("Smoke check failed: "+n);
 console.log("Web smoke checks passed:",checks.map(x=>x[0]).join(", "));
