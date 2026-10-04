@@ -49,8 +49,8 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 const gatedActions=[
   "quickStopFaceGoal","activateShield","tackleControlled","slidingTackleControlled",
   "passOrShoot","switchPlayer","callTeamPressure","beginActionCharge","leftDown","rightDown"
-["premium contract deck",home.includes("data-nav=\\"gacha\\"")&&home.includes("function renderGacha")&&home.includes("contractHeroCard")&&home.includes("contractPurchase")&&css.includes(".contractHero")&&css.includes(".contractMiniGrid")&&css.includes(".contractCounter")],
 ];
+checks.push(["premium contract deck",home.includes("data-nav=\"gacha\"")&&home.includes("function renderGacha")&&home.includes("contractHeroCard")&&home.includes("contractPurchase")&&css.includes(".contractHero")&&css.includes(".contractMiniGrid")&&css.includes(".contractCounter")]);
 const actionGateCheck=gatedActions.every(name=>{
   const start=js.indexOf("function "+name);
   if(start<0)return false;
