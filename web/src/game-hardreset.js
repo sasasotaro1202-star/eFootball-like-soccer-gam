@@ -22,7 +22,13 @@ const HOME = 0;
 const AWAY = 1;
 const savedOwnedIds = JSON.parse(localStorage.getItem("football_owned") || "[]");
 const ownedSet = new Set(savedOwnedIds);
-const homePool = [...PLAYER_POOL.filter(p => ownedSet.has(p.id)), ...PLAYER_POOL.filter(p => !ownedSet.has(p.id))];
+function readMatchSquad(){
+  const ids=JSON.parse(localStorage.getItem("football_match_squad")||"[]");
+  const selected=ids.map(id=>PLAYER_POOL.find(p=>String(p.id)===String(id))).filter(Boolean);
+  if(selected.length===11)return selected;
+  return [...PLAYER_POOL.filter(p=>ownedSet.has(p.id)),...PLAYER_POOL.filter(p=>!ownedSet.has(p.id))];
+}
+let homePool=readMatchSquad();
 
 const state = {
   time: 0,
@@ -49,7 +55,8 @@ const state = {
   rightTapAt: 0,
   pressUntil: 0,
   lastTouchAt: 0,
-  lastDefensiveContactAt: 0
+  lastDefensiveContactAt: 0,
+  autoSwitchAt: 0
 };
 
 let renderer;
@@ -333,7 +340,7 @@ function buildBall() {
   ballShadow.position.y=.018;
   ballShadow.name="ballShadow";
   scene.add(ballShadow);
-  ball.userData = { owner: null, vx: 0, vy: 0, vz: 0, lastTeam: HOME, lastKicker: null, lastKickerUntil: 0 };
+  ball.userData = { owner: null, vx: 0, vy: 0, vz: 0, lastTeam: HOME, lastKicker: null, lastKickerUntil: 0, possessionState:"FREE" };
   scene.add(ball);
 }
 
@@ -352,6 +359,30 @@ function resetPositions(kickoffTeam = HOME) {
   selectPlayer(kickoffTeam === HOME ? 9 : 9);
 }
 
+function applyPlayerData(runtime,d,role){
+  if(!runtime||!d)return;
+  const gameplay=gameplayAttributes(d,role,runtime.userData.index);
+  runtime.userData.player=d;
+  runtime.userData.name=d.name||runtime.userData.name;
+  runtime.userData.number=d.number||runtime.userData.number;
+  runtime.userData.overall=d.overall||runtime.userData.overall;
+  runtime.userData.position=d.position||runtime.userData.position;
+  runtime.userData.speed=role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025;
+  runtime.userData.acceleration=7.5+gameplay.acceleration*.075;
+  runtime.userData.pace=gameplay.pace;
+  runtime.userData.shooting=gameplay.shooting;
+  runtime.userData.passing=gameplay.passing;
+  runtime.userData.dribbling=gameplay.dribbling;
+  runtime.userData.defending=gameplay.defending;
+  runtime.userData.physical=gameplay.physical;
+  runtime.userData.staminaRating=gameplay.stamina;
+  runtime.userData.gkReflexes=gameplay.gkReflexes;
+}
+function syncMatchSquad(){
+  homePool=readMatchSquad();
+  if(homePool.length<11)return;
+  for(let i=0;i<Math.min(11,home.length);i++)applyPlayerData(home[i],homePool[i],home[i].userData.role);
+}
 function selectPlayer(index) {
   state.selected = clamp(index, 0, home.length - 1);
   for (const p of home) {
@@ -369,6 +400,7 @@ function selectPlayer(index) {
 
 function initBallPossession() {
   ball.userData.owner = home[9];
+  ball.userData.possessionState="CONTROLLED";
   ball.position.set(home[9].position.x, 0.48, home[9].position.z + 0.8);
 }
 
@@ -538,27 +570,19 @@ function improvePlayerIdentity(p){
 
 function autoSelectDefender(){
   const owner=ball.userData.owner;
-  if(!owner||owner.userData.team!==AWAY||!home.length)return;
+  const now=performance.now();
+  if(!owner||owner.userData.team!==AWAY||!home.length||now<state.autoSwitchAt)return;
   const current=home[state.selected];
   if(!current||current.userData.role==="GK")return;
   const candidates=home.filter(p=>p.userData.role!=="GK");
   if(!candidates.length)return;
-  const score=p=>{
-    const d=dist(p,owner);
-    const goalSide=Math.abs(p.position.x+49);
-    const intercept=dist(p,ball);
-    return d*1.0+intercept*.35+(goalSide<0?0:0);
-  };
-  let best=candidates[0];
-  let bestScore=score(best);
-  for(const p of candidates.slice(1)){
-    const s=score(p);
-    if(s<bestScore){best=p;bestScore=s;}
-  }
+  const score=p=>dist(p,owner)+dist(p,ball)*.35+(Math.abs(owner.position.x-p.position.x)<8?0:-.15);
+  let best=candidates[0],bestScore=score(best);
+  for(const p of candidates.slice(1)){const s=score(p);if(s<bestScore){best=p;bestScore=s}}
   const curScore=score(current);
-  if(best!==current && bestScore+1.35<curScore){
+  if(best!==current&&bestScore+1.35<curScore){
     selectPlayer(best.userData.index);
-    showMessage("SWITCH",260);
+    state.autoSwitchAt=now+420;
   }
 }
 function teamAI(dt){
@@ -721,6 +745,7 @@ function kick(player, tx, tz, speed, actionType="pass") {
   speed*=skillFactor;
   setAction(player,actionType,actionType==="shoot"?620:430);
   ball.userData.owner=null;
+  ball.userData.possessionState="LOOSE";
   ball.userData.lastTeam=player.userData.team;
   ball.userData.lastKicker=player;
   ball.userData.lastKickerUntil=performance.now()+340;
@@ -846,6 +871,7 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
    const speed=base*clamp(power,0.35,1.2)*skillFactor*(stunning?1.12:1);
 
   ball.userData.owner=null;
+  ball.userData.possessionState="LOOSE";
   ball.userData.lastTeam=HOME;
   ball.userData.lastKicker=p;
   ball.userData.lastKickerUntil=performance.now()+360;
@@ -857,19 +883,17 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
 }
 
 function touchBall() {
-  if (ball.userData.owner) {
-    const p = ball.userData.owner;
-    const speed=Math.max(0,p.userData?.currentSpeed||0);
+  if(ball.userData.owner){
+    ball.userData.possessionState="CONTROLLED";
+    const p=ball.userData.owner;
+    const speed=Math.hypot(ball.userData.vx,ball.userData.vz);
     ball.position.set(
-      p.position.x + Math.sin(p.rotation.y) * 0.78,
-      0.48,
-      p.position.z + Math.cos(p.rotation.y) * 0.78
+      p.position.x+Math.sin(p.rotation.y)*.78,
+      .48,
+      p.position.z+Math.cos(p.rotation.y)*.78
     );
-    ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
-    if(speed>0.08){
-      ball.rotation.z += speed*0.035;
-      ball.rotation.x += speed*0.020;
-    }
+    ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+    if(speed>.08){ball.rotation.z+=speed*.035;ball.rotation.x+=speed*.020}
     const bs=scene.getObjectByName("ballShadow");
     if(bs){bs.position.x=ball.position.x;bs.position.z=ball.position.z;bs.scale.setScalar(.92)}
     return;
@@ -878,23 +902,31 @@ function touchBall() {
   const speed=Math.hypot(ball.userData.vx,ball.userData.vz);
   const controlRadius=speed<4.5?1.65:1.22;
   const now=performance.now();
-  let closest = null;
-  let closestD = Infinity;
-  for (const p of players) {
-    const d = dist(p, ball);
-    if (p===ball.userData.lastKicker && now < (ball.userData.lastKickerUntil||0) && d < 2.25) continue;
-    if (d < controlRadius && d < closestD && ball.position.y < 1.35) {
-      closest = p;
-      closestD = d;
-    }
+  const nearby=players.filter(p=>p.userData.role!=="GK"&&dist(p,ball)<controlRadius&&ball.position.y<1.35&&!(p===ball.userData.lastKicker&&now<(ball.userData.lastKickerUntil||0)&&dist(p,ball)<2.25));
+  if(!nearby.length){
+    ball.userData.possessionState="FREE";
+    return;
   }
-  if (closest) {
-    ball.userData.owner = closest;
-    ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
-    if (closest.userData.team === HOME) selectPlayer(closest.userData.index);
+  const ranked=nearby.map(p=>{
+    const d=dist(p,ball);
+    const control=Number(p.userData.dribbling)||70;
+    const physical=Number(p.userData.physical)||70;
+    const pressure=players.filter(q=>q!==p&&q.userData.team!==p.userData.team&&dist(q,p)<2.8).length;
+    return {p,score:control*.60+physical*.12-d*28-pressure*3-speed*.55};
+  }).sort((a,b)=>b.score-a.score);
+  const first=ranked[0],second=ranked[1];
+  if(second&&Math.abs(first.score-second.score)<8){
+    ball.userData.possessionState="CONTESTED";
+    if(now-(ball.userData.lastContestAt||0)<220)return;
+    ball.userData.lastContestAt=now;
+  }else{
+    ball.userData.possessionState="LOOSE";
   }
+  ball.userData.owner=first.p;
+  ball.userData.possessionState="CONTROLLED";
+  ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+  if(first.p.userData.team===HOME)selectPlayer(first.p.userData.index);
 }
-
 function showGoalFX(team, scorer){const fx=$("#goalFx");if(!fx)return;$("#goalFxText").textContent=team===HOME?"GOAL":"GOAL";$("#goalFxPlayer").textContent=scorer?.userData?.name||"MATCH GOAL";fx.classList.remove("show");void fx.offsetWidth;fx.classList.add("show");setTimeout(()=>fx.classList.remove("show"),1400)}
 
 function goalkeeperAI(dt){
@@ -1539,6 +1571,7 @@ function bootGame() {
 }
 
 window.addEventListener("football:match-start",()=>{
+  syncMatchSquad();
   const intro=$("#matchIntro");
   if(intro){intro.style.animation="none";intro.offsetHeight;intro.style.animation="introOut 1.8s 1.1s forwards"}
   state.matchActive=true;
