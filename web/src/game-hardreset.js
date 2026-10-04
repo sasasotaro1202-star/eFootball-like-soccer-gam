@@ -461,10 +461,18 @@ function resetPositions(kickoffTeam = HOME) {
     p.userData.sharpTouchVX = 0;
     p.userData.sharpTouchVZ = 0;
     p.userData.stamina = 100;
+    p.userData.dispossessedUntil = 0;
+    p.userData.receivingProtectUntil = 0;
   }
   ball.position.set(0, 0.48, 0);
   ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
   ball.userData.owner = kickoffTeam === HOME ? home[9] : away[9];
+  ball.userData.possessionState = "CONTROLLED";
+  ball.userData.lastTeam = kickoffTeam;
+  ball.userData.lastKicker = null;
+  ball.userData.lastKickerUntil = 0;
+  ball.userData.stealProtectUntil = 0;
+  ball.userData.lastContestAt = 0;
   selectPlayer(kickoffTeam === HOME ? 9 : 9);
 }
 
@@ -716,6 +724,8 @@ function teamAI(dt){
   const now=performance.now();
   const fluidFormation=localStorage.getItem("football_fluid_formation")!=="0";
   const teamPlaystyle=localStorage.getItem("football_team_playstyle")||"POSSESSION";
+  const looseChaserHome=owner?null:home.filter(p=>p.userData.role!=="GK").sort((a,b)=>dist(a,ball)-dist(b,ball))[0];
+  const looseChaserAway=owner?null:away.filter(p=>p.userData.role!=="GK").sort((a,b)=>dist(a,ball)-dist(b,ball))[0];
 
   // AI pressure: defenders can contest the carrier without teleporting the ball.
   if(owner){
@@ -731,17 +741,20 @@ function teamAI(dt){
       const physical=Number(d.userData.physical)||70;
       const dribble=Number(carrierStats.dribbling)||70;
       const chance=clamp(0.12+(defend-dribble)*0.004+(physical-70)*0.0025,0.05,0.42);
+      if(now<(owner.userData.receivingProtectUntil||0))continue;
       d.userData.contactCooldown=now+650;
       if(Math.random()<chance){
         const sideX=(d.position.x-owner.position.x),sideZ=(d.position.z-owner.position.z),len=Math.hypot(sideX,sideZ)||1;
-        ball.userData.owner=null;
+        owner.userData.dispossessedUntil=now+720;
+        ball.userData.owner=d;
+        ball.userData.possessionState="CONTROLLED";
         ball.userData.lastTeam=d.userData.team;
         ball.userData.lastKicker=d;
-        ball.userData.lastKickerUntil=now+260;
-        ball.position.set(owner.position.x+sideX/len*0.55,0.52,owner.position.z+sideZ/len*0.55);
-        ball.userData.vx=sideX/len*3.2;
-        ball.userData.vz=sideZ/len*3.2;
-        ball.userData.vy=0.85;
+        ball.userData.lastKickerUntil=now+220;
+        ball.userData.stealProtectUntil=now+420;
+        ball.position.set(d.position.x+Math.sin(d.rotation.y)*0.72,0.48,d.position.z+Math.cos(d.rotation.y)*0.72);
+        ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+        d.userData.receivingProtectUntil=now+360;
         setAction(d,"tackle",420);
         showMessage(d.userData.team===HOME?"AI TACKLE":"BALL LOST",320);
         break;
@@ -758,10 +771,17 @@ function teamAI(dt){
       const homeX=p.userData.homeX;
       const homeZ=p.userData.homeZ;
       const isOwner=p===owner;
+      const looseChaser=!owner&&(team===HOME?looseChaserHome:looseChaserAway)===p;
       if(p===controlled) continue;
 
       let tx=homeX,tz=homeZ;
       const attacking=owner&&owner.userData.team===p.userData.team;
+      if(looseChaser){
+        const vX=Number(ball.userData.vx)||0,vZ=Number(ball.userData.vz)||0;
+        const travel=Math.min(.75,Math.hypot(ballX-p.position.x,ballZ-p.position.z)/Math.max(p.userData.speed||6,.1));
+        tx=clamp(ballX+vX*travel,-50.5,50.5);
+        tz=clamp(ballZ+vZ*travel,-31.5,31.5);
+      }
       const pressTarget=p.userData.pressTarget;
       const teammatePressing=(p.userData.pressUntil||0)>now&&pressTarget?.userData?.team===AWAY;
 
@@ -825,7 +845,7 @@ function teamAI(dt){
         }
       }
 
-      if(teammatePressing){
+      if(!looseChaser && teammatePressing){
         const dx=pressTarget.position.x-p.position.x,dz=pressTarget.position.z-p.position.z,len=Math.hypot(dx,dz)||1;
         tx=pressTarget.position.x-dx/len*2.4;
         tz=pressTarget.position.z-dz/len*2.4;
@@ -962,12 +982,16 @@ function tackleControlled(){
     const success=clamp(0.48+(atk-oppDef)*0.0045+(physical-70)*0.0035,0.25,0.84);
     if(Math.random()<success){
       const tx=tackler.position.x+forwardX*0.85,tz=tackler.position.z+forwardZ*0.85;
+      target.userData.dispossessedUntil=performance.now()+720;
       ball.userData.owner=tackler;
+      ball.userData.possessionState="CONTROLLED";
       ball.position.set(tx,0.48,tz);
       ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
       ball.userData.lastTeam=HOME;
-      ball.userData.lastKicker=null;
-      ball.userData.lastKickerUntil=0;
+      ball.userData.lastKicker=tackler;
+      ball.userData.lastKickerUntil=performance.now()+220;
+      ball.userData.stealProtectUntil=performance.now()+420;
+      tackler.userData.receivingProtectUntil=performance.now()+360;
       showMessage("TACKLE WIN",500);
     }else{
       const dx=ball.position.x-tackler.position.x,dz=ball.position.z-tackler.position.z,len=Math.hypot(dx,dz)||1;
@@ -1037,8 +1061,15 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
   if (!p) return;
 
   if (ball.userData.owner !== p) {
-    if (dist(p, ball) < 2.1 && performance.now() >= (ball.userData.lastKickerUntil||0)) {
+    const now=performance.now();
+    if (dist(p, ball) < 2.1 &&
+        now >= (ball.userData.lastKickerUntil||0) &&
+        now >= (p.userData.dispossessedUntil||0) &&
+        (now >= (ball.userData.stealProtectUntil||0) || ball.userData.lastTeam===HOME)) {
       ball.userData.owner = p;
+      ball.userData.possessionState = "CONTROLLED";
+      ball.userData.lastTeam = HOME;
+      ball.userData.stealProtectUntil = now + 180;
       ball.userData.vx = ball.userData.vy = ball.userData.vz = 0;
       return;
     }
@@ -1150,6 +1181,10 @@ function touchBall() {
   ball.userData.possessionState=incomingSpeed>3.8?"RECEIVING":"CONTROLLED";
   const now2=performance.now();
   state.receivingUntil=now2+(incomingSpeed>3.8?150:0);
+  receiver.userData.dispossessedUntil=0;
+  receiver.userData.receivingProtectUntil=now2+(incomingSpeed>3.8?260:180);
+  ball.userData.stealProtectUntil=now2+(incomingSpeed>3.8?260:180);
+  ball.userData.lastTeam=receiver.userData.team;
   state.receivingVelocity={x:incomingVx,z:incomingVz};
   if(incomingSpeed>3.8){
     const touchFactor=clamp(0.40+((Number(receiver.userData.dribbling)||70)-70)*0.006,0.30,0.58);
