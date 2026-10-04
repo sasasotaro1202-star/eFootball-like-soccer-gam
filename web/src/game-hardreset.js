@@ -1894,12 +1894,12 @@ function bootGame() {
 window.addEventListener("football:match-start",()=>{
   syncMatchSquad();
   const intro=$("#matchIntro");
-  if(intro){intro.style.animation="none";intro.offsetHeight;intro.style.animation="introOut 1.8s 1.1s forwards"}
+  if(intro){intro.style.animation="none";intro.offsetHeight;intro.style.animation="none"}
   state.matchActive=true;
-  state.matchState="live";
+  state.matchState="prematch";
   state.half=1;
   state.finished=false;
-  state.paused=false;
+  state.paused=true;
   state.time=0;
   state.score=[0,0];
   state.lastGoalAt=0;
@@ -1907,7 +1907,14 @@ window.addEventListener("football:match-start",()=>{
   initBallPossession();
   updateScore();
   updateHUD();
-  showMessage("MATCH START",900);
+  showMessage("READY",900);
+});
+window.addEventListener("football:kickoff",()=>{
+  if(!state.matchActive||state.finished)return;
+  state.paused=false;
+  state.matchState="live";
+  showMessage("KICK OFF",900);
+  updateHUD();
 });
 window.addEventListener("football:match-exit",()=>{
   state.matchActive=false;
