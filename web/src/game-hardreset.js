@@ -680,7 +680,7 @@ function resolvePlayerSeparation(){
       if(d<=.001||d>=minDist)continue;
       const nx=dx/d,nz=dz/d,push=(minDist-d)*.38;
       const aMov=a!==ball.userData.owner,bMov=b!==ball.userData.owner;
-      const wa=aMov&&bMov?.5:aMov?1:bMov?1:0;
+      const wa=aMov&&bMov ? .5 : (aMov||bMov ? 1 : 0);
       if(aMov){a.position.x-=nx*push*wa;a.position.z-=nz*push*wa}
       if(bMov){b.position.x+=nx*push*wa;b.position.z+=nz*push*wa}
       a.position.x=clamp(a.position.x,-51,51);a.position.z=clamp(a.position.z,-32.5,32.5);
