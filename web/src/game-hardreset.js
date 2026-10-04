@@ -69,6 +69,8 @@ const state = {
   matchupHeld: false,
   rightTapTimer: null,
   manualSwitchLockUntil: 0,
+  inputAction: null,
+  inputActionSeq: 0,
   receivingUntil: 0,
   receivingVelocity: {x:0,z:0},
   pauseReturnState: "live",
@@ -118,6 +120,12 @@ function softShadowTexture(){
   x.fillStyle=g;x.fillRect(0,0,64,64);
   sharedShadowTexture=new THREE.CanvasTexture(c);
   return sharedShadowTexture;
+}
+function recordInputAction(type, source="unknown", meta={}) {
+  const at=performance.now();
+  state.inputAction={type,source,at,...meta};
+  state.inputActionSeq=(state.inputActionSeq||0)+1;
+  window.__lastInputAction={...state.inputAction,seq:state.inputActionSeq};
 }
 function showMessage(text, ms = 900) {
   message.textContent = text;
@@ -621,6 +629,7 @@ function quickStopFaceGoal(){
   p.rotation.y=Math.PI/2;
   state.leftTapAt=0;
   setAction(p,"quickStop",420);
+  recordInputAction("QUICK_STOP","left-double-tap");
   showMessage("QUICK STOP",360);
 }
 
@@ -633,6 +642,7 @@ function activateShield(){
   p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
   setAction(p,"shield",620);
   state.leftTapAt=0;
+  recordInputAction("SHIELD","left-double-tap+right-hold");
   showMessage("SHIELD",360);
 }
 
@@ -652,6 +662,7 @@ function triggerSharpTouch(dx,dz){
   p.userData.stamina=clamp(p.userData.stamina-1.6,0,100);
   state.lastSharpTouchAt=now;
   setAction(p,"sharpTouch",380);
+  recordInputAction("SHARP_TOUCH","left-drag+right-hold",{magnitude:mag});
   showMessage("SHARP TOUCH",420);
 }
 
@@ -904,6 +915,7 @@ function kick(player, tx, tz, speed, actionType="pass") {
 function tackleControlled(){
   const tackler=home[state.selected];
   if(!tackler||tackler.userData.role==="GK") return;
+  recordInputAction("TACKLE","tackle");
   setAction(tackler,"tackle",520);
 
   const owner=ball.userData.owner;
@@ -966,6 +978,7 @@ function tackleControlled(){
 function slidingTackleControlled(){
   const tackler=home[state.selected];
   if(!tackler||tackler.userData.role==="GK")return;
+  recordInputAction("SLIDING_TACKLE","tackle-hold");
   const owner=ball.userData.owner;
   setAction(tackler,"sliding",720);
   const forwardX=Math.sin(tackler.rotation.y),forwardZ=Math.cos(tackler.rotation.y);
@@ -1040,6 +1053,11 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
     target=candidates[0]?.p?.position?.clone()||p.position.clone().add(dir.multiplyScalar(10));
   }
 
+  recordInputAction(
+    stunning ? (mode==="shoot" ? "STUNNING_SHOT" : "STUNNING_PASS") : mode.toUpperCase(),
+    stunning ? "gesture" : "action-button/gesture",
+    {power:clamp(power,.35,1.2)}
+  );
   const rawSkill=mode==="shoot"?(p.userData.shooting||70):(p.userData.passing||70);
   const error=(100-clamp(rawSkill,45,99))*.018*clamp(power,.45,1.2);
   if(error>0.02){
@@ -1493,6 +1511,7 @@ function rightMove(e) {
 
 function callTeamPressure() {
   state.teamPressUntil=performance.now()+1800;
+  recordInputAction("TEAM_PRESS","right-swipe");
   const target=ball.userData.owner;
   if(target?.userData?.team!==AWAY){showMessage("PRESS",350);return;}
   const pressers=home
@@ -1625,6 +1644,7 @@ function switchPlayer(){
   });
   const next=candidates[0];
   if(next){selectPlayer(next.userData.index);state.manualSwitchLockUntil=performance.now()+1100;state.autoSwitchAt=state.manualSwitchLockUntil;}
+  recordInputAction("SWITCH","right-double-tap",{player:next?.userData?.number??null});
   showMessage(next?"SWITCH • "+next.userData.number:"SWITCH",420);
 }
 
@@ -1697,6 +1717,25 @@ function bindActionButton(id,type){
   b.addEventListener("pointerleave",(e)=>{if(type==="dash"||type==="matchup")finishActionCharge(type,e)},{passive:false});
   b.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation()});
 }
+function resetActiveInput(reason="cancel") {
+  clearTimeout(state.rightTapTimer);
+  state.rightTapTimer=null;
+  state.leftPointerId=null;
+  state.leftStart=null;
+  state.rightGesture=null;
+  state.rightHeld=false;
+  state.matchUp=false;
+  state.matchupHeld=false;
+  state.dashHeld=false;
+  state.sprint=false;
+  state.joy.x=0;
+  state.joy.y=0;
+  state.actionPress=null;
+  state.sharpTouchTriggered=false;
+  updateJoystickVisual();
+  updatePowerGauge();
+  if(reason!=="cancel") recordInputAction("INPUT_RESET",reason);
+}
 function initInput() {
   window.__keys=[];
   addEventListener("keydown",(e)=>{if(!window.__keys.includes(e.key.toLowerCase()))window.__keys.push(e.key.toLowerCase());keyboardDown(e);});
@@ -1736,6 +1775,12 @@ function initInput() {
   bindActionButton("throughBtn","through");
   bindActionButton("shootBtn","shoot");
   bindActionButton("dashBtn","dash");
+  const pauseBtn=$("#pauseBtn");
+  pauseBtn?.addEventListener("click",(e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    togglePause();
+  });
   document.querySelectorAll("#actionPad .matchAction").forEach(b=>b.tabIndex=-1);
 }
 
@@ -1777,6 +1822,13 @@ function initRenderer() {
   clock = new THREE.Clock();
 
   addEventListener("resize", resize);
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden) resetActiveInput("visibility");
+  });
+  addEventListener("orientationchange",()=>{
+    resetActiveInput("orientation");
+    setTimeout(resize,120);
+  });
 }
 
 function resize() {
