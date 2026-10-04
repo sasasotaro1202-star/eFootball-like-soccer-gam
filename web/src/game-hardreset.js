@@ -86,6 +86,19 @@ function dist(a, b) { return Math.hypot(a.position.x - b.position.x, a.position.
 function mat(color, roughness = 0.8) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
 }
+const kitTextures={};
+function teamKitTexture(team){
+  if(kitTextures[team])return kitTextures[team];
+  const c=document.createElement("canvas");c.width=c.height=128;
+  const x=c.getContext("2d");
+  x.fillStyle=team===HOME?"#2e72e5":"#d83c55";x.fillRect(0,0,128,128);
+  x.fillStyle=team===HOME?"rgba(255,255,255,.10)":"rgba(255,255,255,.09)";
+  for(let i=-128;i<256;i+=24)x.beginPath(),x.moveTo(i,0),x.lineTo(i+54,128),x.lineTo(i+64,128),x.lineTo(i+10,0),x.fill();
+  x.fillStyle="rgba(0,0,0,.12)";x.fillRect(0,102,128,26);
+  x.strokeStyle="rgba(255,255,255,.24)";x.lineWidth=3;x.beginPath();x.moveTo(11,18);x.lineTo(117,18);x.stroke();
+  const tex=new THREE.CanvasTexture(c);tex.colorSpace=THREE.SRGBColorSpace;kitTextures[team]=tex;return tex;
+}
+function kitMat(team,roughness=.58){return new THREE.MeshStandardMaterial({map:teamKitTexture(team),color:0xffffff,roughness,metalness:0});}
 let sharedShadowTexture=null;
 function softShadowTexture(){
   if(sharedShadowTexture)return sharedShadowTexture;
@@ -136,9 +149,9 @@ function makePlayer(team,index,role){
 
  // Athletic human proportions: tapered torso, compact head, true joint pivots, covered lower legs.
  part(new THREE.CylinderGeometry(.30*frame,.33*frame,.24,10),mat(shortsColor,.68),hips,0,.04,0);
- const torso=part(new THREE.CylinderGeometry(.34*shoulder,.285*frame,.70,12),mat(shirtColor,.56),hips,0,.43,0);
+ const torso=part(new THREE.CylinderGeometry(.34*shoulder,.285*frame,.70,12),shirtMat,hips,0,.43,0);
  torso.scale.z=.76;
- part(new THREE.TorusGeometry(.145*frame,.022,6,12),mat(shirtColor,.60),hips,0,.78,0);
+ part(new THREE.TorusGeometry(.145*frame,.022,6,12),shirtMat,hips,0,.78,0);
  part(new THREE.CylinderGeometry(.11,.13,.16,10),mat(skin,.82),hips,0,.88,0);
 
  const face=part(new THREE.SphereGeometry(.255,16,12),mat(skin,.78),hips,0,1.10,0);
@@ -150,7 +163,7 @@ function makePlayer(team,index,role){
  const eyeMat=new THREE.MeshBasicMaterial({color:0x181818});
  for(const sx of [-.075,.075])part(new THREE.SphereGeometry(.018,8,6),eyeMat,hips,sx,1.105,.237);
 
- const armMat=mat(shirtColor,.60),foreMat=mat(skin,.82),upperArmTotal=.43,forearmTotal=.34;
+ const shirtMat=kitMat(team,.58),armMat=shirtMat,foreMat=mat(skin,.82),upperArmTotal=.43,forearmTotal=.34;
  const leftArm=limb(hips,-.36*shoulder,.66,armMat,.25,.09),rightArm=limb(hips,.36*shoulder,.66,armMat,.25,.09);
  const leftFore=limb(leftArm,0,-upperArmTotal,foreMat,.18,.075),rightFore=limb(rightArm,0,-upperArmTotal,foreMat,.18,.075);
  part(new THREE.SphereGeometry(.073,8,6),foreMat,leftFore,0,-forearmTotal,0);
