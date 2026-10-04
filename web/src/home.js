@@ -36,7 +36,9 @@ const CARD_POOL=PLAYER_POOL.flatMap(p=>{
 const rarityRank=r=>CARD_RANK[String(r||"STANDARD").toUpperCase()]||1;
 const rarityLabel=r=>({STANDARD:"NORMAL",HIGHLIGHT:"HIGHLIGHT",SHOWTIME:"SHOWTIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"}[String(r||"STANDARD").toUpperCase()]||r);
 const starText=n=>{n=Math.max(1,Math.min(5,Number(n)||1));return "★".repeat(n)+"☆".repeat(5-n)};
-const state={gp:+localStorage.getItem("football_gp")||10000,coins:Math.max(0,+localStorage.getItem("football_coins")||100),owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
+const storedCoins=+localStorage.getItem("football_coins");
+const initialCoins=storedCoins===999999999?100:Math.max(0,storedCoins||100);
+const state={gp:+localStorage.getItem("football_gp")||10000,coins:initialCoins,owned:JSON.parse(localStorage.getItem("football_owned")||"[]"),progress:JSON.parse(localStorage.getItem("football_progress")||"{}")};
 const localSave=()=>{state.gp=Math.max(0,Math.floor(Number(state.gp)||0));state.coins=Math.max(0,Math.floor(Number(state.coins)||0));localStorage.setItem("football_gp",state.gp);localStorage.setItem("football_coins",state.coins);localStorage.setItem("football_owned",JSON.stringify(state.owned));localStorage.setItem("football_progress",JSON.stringify(state.progress))};
 const save=()=>localSave();
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c])), money=n=>Math.max(0,Math.floor(n)).toLocaleString("ja-JP");
