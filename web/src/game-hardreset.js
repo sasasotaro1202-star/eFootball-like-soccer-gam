@@ -67,7 +67,8 @@ const state = {
   actionPress: null,
   dashHeld: false,
   matchupHeld: false,
-  rightTapTimer: null
+  rightTapTimer: null,
+  manualSwitchLockUntil: 0
 };
 
 let renderer;
@@ -531,10 +532,11 @@ function moveControlled(dt) {
     return;
   }
 
-  const nx=state.joy.x/mag;
-  const nz=state.joy.y/mag;
+  const joyDir=screenVector(state.joy.x/mag,state.joy.y/mag);
+  const nx=joyDir.x;
+  const nz=joyDir.z;
   const intensity=clamp(mag,0,1);
-  const dash=!defending&&(state.rightHeld||state.dashHeld);
+  const dash=defending?state.dashHeld:(state.rightHeld||state.dashHeld);
   const shield=owner===p&&state.shieldUntil>now;
   if(defending&&state.matchupHeld)state.matchUp=true;
   const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
@@ -602,7 +604,7 @@ function quickStopFaceGoal(){
   if(!p||ball.userData.owner!==p)return;
   p.userData.moving=false;
   state.sprint=false;
-  p.rotation.y=0;
+  p.rotation.y=Math.PI/2;
   state.leftTapAt=0;
   setAction(p,"quickStop",420);
   showMessage("QUICK STOP",360);
@@ -1270,6 +1272,15 @@ function setJoyFromPointer(e, start) {
   updateJoystickVisual();
 }
 
+function screenVector(x, yDown) {
+  if (!camera) return {x, z:-yDown};
+  const dir = camera.getWorldDirection(new THREE.Vector3());
+  const flat = Math.hypot(dir.x, dir.z) || 1;
+  const forwardX = dir.x / flat, forwardZ = dir.z / flat;
+  const rightX = -forwardZ, rightZ = forwardX;
+  return {x:rightX*x + forwardX*(-yDown), z:rightZ*x + forwardZ*(-yDown)};
+}
+
 function leftDown(e) {
   e.preventDefault();
   const now=performance.now();
@@ -1333,6 +1344,8 @@ function rightDown(e) {
   const now=performance.now();
   state.rightHeld=true;
   state.rightGesture={id:e.pointerId,startX:e.clientX,startY:e.clientY,downAt:now,moved:false};
+  try{mount.setPointerCapture?.(e.pointerId)}catch{}
+  try{e.target.setPointerCapture?.(e.pointerId)}catch{};
 
   if(ball.userData.owner?.userData?.team===AWAY){
     state.matchUp=false;
@@ -1406,7 +1419,7 @@ function rightUp(e) {
   }
 
   const len=mag||1;
-  const aim={x:dx/len,z:-dy/len};
+  const aim=screenVector(dx/len,dy/len);
   const recentLeftTap=now-(state.leftTapAt||0)<520;
 
   if(recentLeftTap){
@@ -1489,7 +1502,7 @@ function switchPlayer(){
     return score(a)-score(b);
   });
   const next=candidates[0];
-  if(next)selectPlayer(next.userData.index);
+  if(next){selectPlayer(next.userData.index);state.manualSwitchLockUntil=performance.now()+1100;state.autoSwitchAt=state.manualSwitchLockUntil;}
   showMessage(next?"SWITCH • "+next.userData.number:"SWITCH",420);
 }
 
