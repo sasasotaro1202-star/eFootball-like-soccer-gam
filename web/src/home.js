@@ -139,13 +139,20 @@ function shuffleCards(list){
 function specialBoxSeed(){
  const heads=headlinersFor("special");
  const headIds=new Set(heads.map(p=>String(p.id)));
- const pool=CARD_POOL.filter(p=>!headIds.has(String(p.id)));
- return heads.concat(shuffleCards(pool).slice(0,147)).map(p=>String(p.id));
+ const groups=new Map();
+ for(const p of CARD_POOL){
+   if(headIds.has(String(p.id)))continue;
+   const key=String(p.baseId||String(p.id).split("-")[0]);
+   if(!groups.has(key))groups.set(key,[]);
+   groups.get(key).push(p);
+ }
+ const unique=shuffleCards([...groups.values()].map(cards=>cards[Math.floor(Math.random()*cards.length)]));
+ return heads.concat(unique.slice(0,147)).map(p=>String(p.id));
 }
 function specialBoxIds(){
  let raw=[];
  try{raw=JSON.parse(localStorage.getItem(SPECIAL_BOX_KEY)||"[]")}catch{raw=[]}
- const valid=[...new Set(Array.isArray(raw)?raw.map(String):[])].filter(id=>CARD_POOL.some(p=>String(p.id)===id));
+ const valid=[...new Set(Array.isArray(raw)?raw.map(String):[])].filter(id=>CARD_POOL.some(p=>String(p.id)===id)).slice(0,150);
  if(valid.length)return valid;
  const seeded=specialBoxSeed();
  localStorage.setItem(SPECIAL_BOX_KEY,JSON.stringify(seeded));
