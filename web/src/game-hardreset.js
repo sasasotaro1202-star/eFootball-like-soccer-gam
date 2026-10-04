@@ -170,7 +170,7 @@ function makePlayer(team,index,role){
  const rootScale=.90+(id%6)*.018;
  g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale);
  g.userData={team,index,role,number:d?.number||index+1,bodyScale:rootScale,heightScale:stature,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,
-   speed:role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025,acceleration:7.5+gameplay.acceleration*.075,pace:gameplay.pace,shooting:gameplay.shooting,passing:gameplay.passing,dribbling:gameplay.dribbling,defending:gameplay.defending,physical:gameplay.physical,staminaRating:gameplay.stamina,gkReflexes:gameplay.gkReflexes,currentSpeed:0,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,selectorArrow,moving:false,sprint:false,action:"idle",actionUntil:0,
+   speed:role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025,acceleration:7.5+gameplay.acceleration*.075,pace:gameplay.pace,shooting:gameplay.shooting,passing:gameplay.passing,dribbling:gameplay.dribbling,defending:gameplay.defending,physical:gameplay.physical,staminaRating:gameplay.stamina,gkReflexes:gameplay.gkReflexes,currentSpeed:0,sharpTouchUntil:0,sharpTouchStart:0,sharpTouchVX:0,sharpTouchVZ:0,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,selectorArrow,moving:false,sprint:false,action:"idle",actionUntil:0,
    rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
  return g;
 }
@@ -341,6 +341,9 @@ function resetPositions(kickoffTeam = HOME) {
   for (const p of players) {
     p.position.set(p.userData.homeX, 0, p.userData.homeZ);
     p.userData.currentSpeed = 0;
+    p.userData.sharpTouchUntil = 0;
+    p.userData.sharpTouchVX = 0;
+    p.userData.sharpTouchVZ = 0;
     p.userData.stamina = 100;
   }
   ball.position.set(0, 0.48, 0);
@@ -394,9 +397,16 @@ function moveControlled(dt) {
       if(opp)p.rotation.y=Math.atan2(opp.position.x-p.position.x,opp.position.z-p.position.z);
     }
     if(owner===p){
-      const touch=Math.sin(now*0.014)*0.045;
-      const carry=state.shieldUntil>now?0.64:state.rightHeld?0.88:0.74;
-      ball.position.set(p.position.x+Math.sin(p.rotation.y)*(carry+touch),0.38+Math.abs(Math.sin(now*0.014))*0.03,p.position.z+Math.cos(p.rotation.y)*(carry+touch));
+      const dribbling=clamp(Number(u.dribbling)||70,45,99);
+      const closeControl=.67+(dribbling-60)*.0035;
+      const carry=state.shieldUntil>now?.58:state.rightHeld?.88:clamp(closeControl,.60,.82);
+      const sway=Math.sin(now*.011+u.animationPhase)*(.035+(100-dribbling)*.0003);
+      const tx=p.position.x+Math.sin(p.rotation.y)*carry+Math.cos(p.rotation.y)*sway;
+      const tz=p.position.z+Math.cos(p.rotation.y)*carry-Math.sin(p.rotation.y)*sway;
+      const catchUp=clamp(dt*20,0,1);
+      ball.position.x=lerp(ball.position.x,tx,catchUp);
+      ball.position.y=lerp(ball.position.y,.42,clamp(dt*16,0,1));
+      ball.position.z=lerp(ball.position.z,tz,catchUp);
     }
     return;
   }
@@ -404,6 +414,14 @@ function moveControlled(dt) {
   const nx=state.joy.x/mag;
   const nz=state.joy.y/mag;
   const intensity=clamp(mag,0,1);
+
+  if(u.sharpTouchUntil>now){
+    const remain=clamp((u.sharpTouchUntil-now)/260,0,1);
+    const impulse=4.8*remain*remain;
+    p.position.x=clamp(p.position.x+(u.sharpTouchVX||0)*impulse*dt,-51,51);
+    p.position.z=clamp(p.position.z+(u.sharpTouchVZ||0)*impulse*dt,-32.5,32.5);
+    u.currentSpeed=Math.max(u.currentSpeed,impulse);
+  }
   const dash=!defending&&state.rightHeld;
   const shield=owner===p&&state.shieldUntil>now;
   const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
@@ -453,13 +471,16 @@ function moveControlled(dt) {
   u.stamina=clamp(u.stamina-(dash?5.0:shield?1.6:1.0)*staminaFactor*dt,0,100);
 
   if(owner===p){
-    const touch=Math.sin(now*0.014)*0.045;
-    const carry=shield?0.64:(dash?0.88:0.74);
-    ball.position.set(
-      p.position.x+Math.sin(p.rotation.y)*(carry+touch),
-      0.38+Math.abs(Math.sin(now*0.014))*0.03,
-      p.position.z+Math.cos(p.rotation.y)*(carry+touch)
-    );
+    const dribbling=clamp(Number(u.dribbling)||70,45,99);
+    const carry=shield?.58:(dash?.88:clamp(.67+(dribbling-60)*.0035,.60,.84));
+    const touchPhase=now*.011+u.animationPhase;
+    const sway=Math.sin(touchPhase)*(dash?.055:.035);
+    const tx=p.position.x+Math.sin(p.rotation.y)*carry+Math.cos(p.rotation.y)*sway;
+    const tz=p.position.z+Math.cos(p.rotation.y)*carry-Math.sin(p.rotation.y)*sway;
+    const catchUp=clamp(dt*(dash?24:18),0,1);
+    ball.position.x=lerp(ball.position.x,tx,catchUp);
+    ball.position.y=lerp(ball.position.y,.42,clamp(dt*16,0,1));
+    ball.position.z=lerp(ball.position.z,tz,catchUp);
   }
 }
 
@@ -493,10 +514,13 @@ function triggerSharpTouch(dx,dz){
   if(mag<42)return;
   const nx=dx/mag,nz=dz/mag;
   state.sharpTouchTriggered=true;
-  p.position.x=clamp(p.position.x+nx*2.7,-50.5,50.5);
-  p.position.z=clamp(p.position.z+nz*2.7,-31.5,31.5);
+  const now=performance.now();
+  p.userData.sharpTouchStart=now;
+  p.userData.sharpTouchUntil=now+260;
+  p.userData.sharpTouchVX=nx;
+  p.userData.sharpTouchVZ=nz;
   p.userData.stamina=clamp(p.userData.stamina-1.6,0,100);
-  state.lastSharpTouchAt=performance.now();
+  state.lastSharpTouchAt=now;
   setAction(p,"sharpTouch",380);
   showMessage("SHARP TOUCH",420);
 }
