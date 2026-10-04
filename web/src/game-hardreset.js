@@ -737,6 +737,10 @@ function teamAI(dt){
       const gap=dist(d,owner);
       if(gap>1.55)continue;
       if(now<(d.userData.contactCooldown||0))continue;
+      const toBallX=ball.position.x-owner.position.x,toBallZ=ball.position.z-owner.position.z;
+      const toDefX=d.position.x-owner.position.x,toDefZ=d.position.z-owner.position.z;
+      const ballSide=(toBallX*toDefX+toBallZ*toDefZ)/(Math.hypot(toBallX,toBallZ)*Math.hypot(toDefX,toDefZ)||1);
+      if(ballSide<-0.15)continue;
       const defend=Number(d.userData.defending)||70;
       const physical=Number(d.userData.physical)||70;
       const dribble=Number(carrierStats.dribbling)||70;
