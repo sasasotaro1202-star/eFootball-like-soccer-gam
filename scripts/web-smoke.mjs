@@ -14,9 +14,11 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
   const end=js.indexOf("\nconst FORMATION",start);
   if(start<0||end<0)return false;
   const body=js.slice(start,end);
-  const decl=body.indexOf("const shirtMat=kitMat(team,.58)");
-  const use=body.indexOf("const torso=part(",decl);
-  return decl>0&&use>decl;
+  const skinDecl=body.indexOf(",skin=");
+  const shirtDecl=body.indexOf("const shirtMat=kitMat(team,.58)");
+  const foreUse=body.indexOf("foreMat=mat(skin,.82)");
+  const torsoUse=body.indexOf("const torso=part(");
+  return skinDecl>0&&shirtDecl>skinDecl&&foreUse>shirtDecl&&torsoUse>shirtDecl;
 })()],
 ["player body proportions",js.includes('function makePlayer')&&js.includes('CapsuleGeometry(rad,len,5,8)')&&js.includes('-(len*.5+rad)')&&js.includes('sockColor=0xf1f3f5')&&js.includes('leftCalf=limb(leftThigh,0,-thighTotal,mat(sockColor')&&js.includes('g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale)')&&js.includes('p.position.y=0.01;')],
 ["mobile pause control",js.includes('pauseBtn?.addEventListener("click"')&&js.includes("togglePause()")&&css.includes("#topTools .pauseBtn{pointer-events:auto}")],["pointer cancel safety",js.includes("function leftCancel(e)")&&js.includes("function rightCancel(e)")&&js.includes("clearActionCharge(type,e,\"action-pointercancel\")")&&js.includes('pointercancel",leftCancel')&&js.includes('pointercancel",(e)=>{if(e.pointerId===state.leftPointerId)leftCancel(e);else rightCancel(e);')],["asset cache bust",html.includes("style.css?v=20261004-premium-05")&&html.includes("game-hardreset.js?v=20261004-match-controls-06")],
