@@ -198,7 +198,7 @@ function renderGacha(kind="special"){
  $("#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
  '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>'+pool.length+' PLAYERS</span></div></div><div class="gachaOrb">✦</div></div>'+
  headlinerMarkup+notice+selectNote+guarantee+composition+drawButtons+sub+
- '<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,16).map(card).join("")+'</div>';
+ previewCards+'<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,16).map(card).join("")+'</div>';
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
@@ -314,8 +314,11 @@ document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==
 });wallet();
 (function mountGeneratedCardReference(){
   const host=document.querySelector(".eventPlayers");
-  if(!host||host.querySelector(".generatedCardReference"))return;
-  host.innerHTML=`<img class="generatedCardReference" src="${GENERATED_CARD_REFERENCE}" alt="Generated football player card showcase" loading="eager">`;
+  if(!host)return;
+  const heads=headlinersFor("special").slice(0,3);
+  if(heads.length<3)return;
+  host.className="eventPlayers homeHeadlinerStage";
+  host.innerHTML='<div class="homeHeadlinerBackdrop"></div>'+heads.map((p,i)=>'<button class="homeHeadliner" data-player-id="'+esc(p.id)+'" type="button" aria-label="'+esc(p.name)+'"><div class="homeHeadlinerPortrait">'+portraitSvg(p,true)+'</div><span class="homeHeadlinerRarity">'+esc(rarityLabel(p.cardType||p.rarity))+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+'</small></button>').join("");
 })();
 document.addEventListener("click",e=>{
  const b=e.target.closest("button"); if(!b)return;
