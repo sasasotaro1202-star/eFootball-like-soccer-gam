@@ -617,12 +617,20 @@ function teamAI(dt){
 
       const dx=tx-p.position.x,dz=tz-p.position.z,len=Math.hypot(dx,dz);
       if(len>0.25){
-        const speed=p.userData.speed*dt*clamp(len/4,0.28,1.08);
-        p.position.x+=dx/len*speed;
-        p.position.z+=dz/len*speed;
+        const intensity=clamp(len/4,0.28,1.08);
+        const desiredSpeed=p.userData.speed*intensity;
+        const response=clamp((p.userData.acceleration||7)*dt,0,1);
+        p.userData.currentSpeed=lerp(p.userData.currentSpeed||0,desiredSpeed,response);
+        const staminaFactor=clamp(100/(p.userData.staminaRating||70),0.78,1.22);
+        const drain=(p===owner?0.9:0.45)*staminaFactor*dt;
+        p.userData.stamina=clamp((p.userData.stamina??100)-drain,0,100);
+        p.position.x+=dx/len*p.userData.currentSpeed*dt;
+        p.position.z+=dz/len*p.userData.currentSpeed*dt;
         p.rotation.y=Math.atan2(dx,dz);
         p.userData.moving=true;
+        p.userData.sprint=p.userData.currentSpeed>p.userData.speed*.82;
       }else{
+        p.userData.currentSpeed=Math.max(0,(p.userData.currentSpeed||0)-(p.userData.acceleration||7)*dt*1.1);
         p.userData.moving=false;
       }
 
@@ -631,6 +639,8 @@ function teamAI(dt){
       if(p!==owner&&!p.userData.moving)p.userData.sprint=false;
     }
   }
+
+  resolvePlayerSeparation();
 
   // One decision clock prevents per-frame actions and keeps the opponent readable.
   if(owner&&owner.userData.team===AWAY&&owner.userData.role!=='GK'&&now>=owner.userData.aiNextDecisionAt){
@@ -659,6 +669,25 @@ function teamAI(dt){
   }
 }
 
+function resolvePlayerSeparation(){
+  const minDist=.74;
+  for(let i=0;i<players.length;i++){
+    const a=players[i];
+    for(let j=i+1;j<players.length;j++){
+      const b=players[j];
+      const dx=b.position.x-a.position.x,dz=b.position.z-a.position.z;
+      const d=Math.hypot(dx,dz);
+      if(d<=.001||d>=minDist)continue;
+      const nx=dx/d,nz=dz/d,push=(minDist-d)*.38;
+      const aMov=a!==ball.userData.owner,bMov=b!==ball.userData.owner;
+      const wa=aMov&&bMov?.5:aMov?1:bMov?1:0;
+      if(aMov){a.position.x-=nx*push*wa;a.position.z-=nz*push*wa}
+      if(bMov){b.position.x+=nx*push*wa;b.position.z+=nz*push*wa}
+      a.position.x=clamp(a.position.x,-51,51);a.position.z=clamp(a.position.z,-32.5,32.5);
+      b.position.x=clamp(b.position.x,-51,51);b.position.z=clamp(b.position.z,-32.5,32.5);
+    }
+  }
+}
 function setAction(player,type,duration=520){if(!player?.userData)return;player.userData.action=type;player.userData.actionUntil=performance.now()+duration;}
 function kick(player, tx, tz, speed, actionType="pass") {
   const dx=tx-ball.position.x,dz=tz-ball.position.z,len=Math.hypot(dx,dz)||1;
@@ -779,6 +808,12 @@ function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
     target=candidates[0]?.p?.position?.clone()||p.position.clone().add(dir.multiplyScalar(10));
   }
 
+  const rawSkill=mode==="shoot"?(p.userData.shooting||70):(p.userData.passing||70);
+  const error=(100-clamp(rawSkill,45,99))*.018*clamp(power,.45,1.2);
+  if(error>0.02){
+    target.x+=((Math.random()*2)-1)*error;
+    target.z+=((Math.random()*2)-1)*error;
+  }
   const dx=target.x-ball.position.x,dz=target.z-ball.position.z,len=Math.hypot(dx,dz)||1;
   const base=mode==="shoot"?18:mode==="through"?13.5:10;
   const skill=mode==="shoot"?(p.userData.shooting||70):(p.userData.passing||70);
