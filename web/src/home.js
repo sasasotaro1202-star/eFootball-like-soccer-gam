@@ -414,7 +414,8 @@ document.addEventListener("click",e=>{
    start();return;
  }
  if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();e.stopImmediatePropagation();start();return}
- if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopImmediatePropagation();home();return}
+ if(b.id==="panelBack"||b.id==="matchExit"||b.id==="matchPauseMenu"){e.preventDefault();e.stopImmediatePropagation();home();return}
+ if(b.id==="resumeBtn"){e.preventDefault();e.stopImmediatePropagation();window.dispatchEvent(new Event("football:resume"));return}
  const card=b.closest(".playerCardTap,.gachaPlayerMini,.headlinerCard");
  if(card){
    e.preventDefault();e.stopImmediatePropagation();
