@@ -627,7 +627,8 @@ function triggerSharpTouch(dx,dz){
   if(!p||ball.userData.owner!==p||state.sharpTouchTriggered)return;
   const mag=Math.hypot(dx,dz);
   if(mag<42)return;
-  const nx=dx/mag,nz=dz/mag;
+  const dir=screenVector(dx/mag,dz/mag);
+  const nx=dir.x,nz=dir.z;
   state.sharpTouchTriggered=true;
   const now=performance.now();
   p.userData.sharpTouchStart=now;
