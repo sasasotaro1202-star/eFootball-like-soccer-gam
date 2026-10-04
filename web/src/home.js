@@ -16,8 +16,8 @@ document.addEventListener("click",(e)=>{
 
 // Original card system: 1–5★ with 5★ as the strongest base rank.
 // Limited strength: NORMAL < HIGHLIGHT < SHOWTIME = EPIC = LEGEND < BIG TIME.
-const CARD_TYPES=[{id:"STANDARD",label:"NORMAL",mult:1,stars:1},{id:"HIGHLIGHT",label:"HIGHLIGHT",mult:1.035,stars:4},{id:"SHOWTIME",label:"SHOWTIME",mult:1.06,stars:5},{id:"EPIC",label:"EPIC",mult:1.06,stars:5},{id:"LEGEND",label:"LEGEND",mult:1.06,stars:5},{id:"BIG_TIME",label:"BIG TIME",mult:1.10,stars:5}];
-const CARD_RANK={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};
+const CARD_TYPES=[{id:"STANDARD",label:"NORMAL",mult:1,stars:1},{id:"FEATURED",label:"FEATURED",mult:1.025,stars:3},{id:"HIGHLIGHT",label:"HIGHLIGHT",mult:1.035,stars:4},{id:"SHOWTIME",label:"SHOWTIME",mult:1.06,stars:5},{id:"EPIC",label:"EPIC",mult:1.06,stars:5},{id:"LEGEND",label:"LEGEND",mult:1.06,stars:5},{id:"BIG_TIME",label:"BIG TIME",mult:1.10,stars:5}];
+const CARD_RANK={STANDARD:1,FEATURED:2,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};
 const REAL_POSITIONS={"Messi":"FW","Cristiano Ronaldo":"FW","Pelé":"FW","Diego Maradona":"MF","Johan Cruyff":"FW","Franz Beckenbauer":"DF","Zinedine Zidane":"MF","Ronaldo Nazário":"FW","Ronaldinho":"FW","Neymar":"FW","Kylian Mbappé":"FW","Robert Lewandowski":"FW","Xavi":"MF","Andrés Iniesta":"MF","Luka Modrić":"MF","Kevin De Bruyne":"MF","Mohamed Salah":"FW","Erling Haaland":"FW","Thierry Henry":"FW","David Beckham":"MF","Wayne Rooney":"FW","Steven Gerrard":"MF","Frank Lampard":"MF","Andrea Pirlo":"MF","Paolo Maldini":"DF","Alessandro Del Piero":"FW","Gianluigi Buffon":"GK","Iker Casillas":"GK","Manuel Neuer":"GK","Sergio Ramos":"DF","Carles Puyol":"DF","Virgil van Dijk":"DF","Luis Suárez":"FW","Karim Benzema":"FW","Kaká":"MF","Rivaldo":"FW","Romário":"FW","Roberto Carlos":"DF","Cafu":"DF","Garrincha":"FW","George Best":"FW","Bobby Charlton":"MF","Michel Platini":"MF","Marco van Basten":"FW","Ruud Gullit":"MF","Dennis Bergkamp":"FW","Patrick Vieira":"MF","Didier Drogba":"FW","Samuel Eto'o":"FW","Yaya Touré":"MF","Sadio Mané":"FW","Kevin Keegan":"FW","Kenny Dalglish":"FW","George Weah":"FW","Lev Yashin":"GK","Ferenc Puskás":"FW","Eusébio":"FW","Gerd Müller":"FW","Franco Baresi":"DF","Fabio Cannavaro":"DF","Arjen Robben":"FW","Franck Ribéry":"FW"};
 const CAREER_RATING={"Messi":99,"Cristiano Ronaldo":99,"Pelé":99,"Diego Maradona":98,"Johan Cruyff":97,"Franz Beckenbauer":97,"Zinedine Zidane":97,"Ronaldo Nazário":97,"Ronaldinho":96,"Neymar":95,"Kylian Mbappé":96,"Robert Lewandowski":96,"Xavi":96,"Andrés Iniesta":96,"Luka Modrić":96,"Kevin De Bruyne":95,"Mohamed Salah":94,"Erling Haaland":96,"Thierry Henry":96,"David Beckham":93,"Wayne Rooney":94,"Steven Gerrard":94,"Frank Lampard":93,"Andrea Pirlo":94,"Paolo Maldini":97,"Alessandro Del Piero":93,"Gianluigi Buffon":97,"Iker Casillas":96,"Manuel Neuer":97,"Sergio Ramos":95,"Carles Puyol":94,"Virgil van Dijk":95,"Luis Suárez":96,"Karim Benzema":95,"Kaká":94,"Rivaldo":95,"Romário":95,"Roberto Carlos":95,"Cafu":95,"Garrincha":96,"George Best":95,"Bobby Charlton":95,"Michel Platini":96,"Marco van Basten":96,"Ruud Gullit":95,"Dennis Bergkamp":94,"Patrick Vieira":94,"Didier Drogba":94,"Samuel Eto'o":94,"Yaya Touré":93,"Sadio Mané":92,"Kevin Keegan":94,"Kenny Dalglish":94,"George Weah":94,"Lev Yashin":97,"Ferenc Puskás":96,"Eusébio":96,"Gerd Müller":96,"Franco Baresi":96,"Fabio Cannavaro":94,"Arjen Robben":93,"Franck Ribéry":92};
 const starFor=o=>{o=Number(o)||60;return o>=96?5:o>=92?4:o>=86?3:o>=78?2:1};
@@ -25,16 +25,16 @@ const typeByLegacy=r=>String(r||"STANDARD").toUpperCase()==="LEGEND"?"LEGEND":St
 const CARD_POOL=PLAYER_POOL.flatMap(p=>{
  const position=REAL_POSITIONS[p.name]||p.position;
  const baseOverall=CAREER_RATING[p.name]||Math.max(70,Math.min(94,Number(p.overall)||80));
- const variants=["STANDARD","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"];
+ const variants=["STANDARD","FEATURED","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"];
  return variants.map((type,i)=>{
    const t=CARD_TYPES.find(x=>x.id===type)||CARD_TYPES[0];
-   const mult=type==="STANDARD"?1:type==="HIGHLIGHT"?1.015:type==="BIG_TIME"?1.035:1.025;
+   const mult=type==="STANDARD"?1:type==="FEATURED"?1.015:type==="HIGHLIGHT"?1.02:type==="BIG_TIME"?1.035:1.025;
    const o=Math.min(99,Math.round(baseOverall*mult));
    return {...p,id:String(p.id)+"-"+type.toLowerCase(),baseId:p.id,position,rarity:type,cardType:type,cardLabel:t.label,star:starFor(o),overall:o,sourceRarity:p.rarity,variantIndex:i};
  });
 });
 const rarityRank=r=>CARD_RANK[String(r||"STANDARD").toUpperCase()]||1;
-const rarityLabel=r=>({STANDARD:"NORMAL",HIGHLIGHT:"HIGHLIGHT",SHOWTIME:"SHOWTIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"}[String(r||"STANDARD").toUpperCase()]||r);
+const rarityLabel=r=>({STANDARD:"NORMAL",FEATURED:"FEATURED",HIGHLIGHT:"HIGHLIGHT",SHOWTIME:"SHOWTIME",EPIC:"EPIC",LEGEND:"LEGEND",BIG_TIME:"BIG TIME"}[String(r||"STANDARD").toUpperCase()]||r);
 const starText=n=>{n=Math.max(1,Math.min(5,Number(n)||1));return "★".repeat(n)+"☆".repeat(5-n)};
 const storedCoins=+localStorage.getItem("football_coins");
 const initialCoins=storedCoins===999999999?100:Math.max(0,storedCoins||100);
@@ -122,12 +122,12 @@ function panel(kind){
  const target=CARD_POOL.find(p=>state.owned.includes(p.id))||CARD_POOL[0],tx=getProgress(target);$("#panelBody").innerHTML=`<div class="trainingHero"><span class="eyebrow">PLAYER DEVELOPMENT</span><h2>TRAINING<br>CENTER</h2><p>Level Training • Player Progression • Position Training • Limit Break</p><div class="trainingPlayer"><div class="trainingPortrait">${portraitSvg(target)}</div><div><b>${esc(target.name)}</b><small>${esc(playerArchetype(target))} • OVR ${target.overall}</small></div></div><div class="trainingStat"><span>LEVEL</span><b>${tx.level}/${tx.maxLevel}</b></div><div class="trainingStat"><span>PROGRESSION POINTS</span><b>${tx.points}</b></div><div class="trainingStat"><span>LIMIT BREAK</span><b>${tx.breakthrough}/5</b></div><div class="trainingPositions">${positionMap(target).map(q=>`<span>${q}</span>`).join("")}</div></div><div class="trainingActions"><button class="primary" id="levelTrain">LEVEL +1</button><button class="primary" id="limitBreak">BREAKTHROUGH</button></div><button class="primary wide" id="trainingReward">CLAIM DAILY +500 GP</button>`;$("#levelTrain").onclick=()=>{const x=getProgress(target);if(x.level<x.maxLevel){x.level++;x.points+=3;x.xp=0;state.progress[target.id]=x;save();panel("training")}};$("#limitBreak").onclick=()=>{const x=getProgress(target);if(x.breakthrough<5&&state.gp>=1000){state.gp-=1000;x.breakthrough++;x.maxLevel=Math.min(40,x.maxLevel+2);state.progress[target.id]=x;save();wallet();panel("training")}};$("#trainingReward").onclick=()=>{state.gp+=500;save();wallet();panel("training")}
 }
 const GACHA_BANNERS=[
- {id:"special",title:"SPECIAL PLAYER LIST",sub:"1つのPlayer Listに複数のカードタイプを収録",kind:"special",cost:100,deal:"CHANCE DEAL",featured:"HEADLINER"},
- {id:"standard",title:"STANDARD PLAYER LIST",sub:"GPで対象選手を直接選択して獲得",kind:"standard",cost:0,deal:"GP SIGNING",featured:"STANDARD"},
- {id:"chance",title:"CHANCE DEAL",sub:"対象Player Listからランダムで1選手を獲得",kind:"chance",cost:0,deal:"CHANCE DEAL",featured:"MIXED"},
- {id:"nominating",title:"NOMINATING CONTRACT",sub:"対象リストから好きな選手を1人選択",kind:"nominating",cost:0,deal:"SELECT",featured:"MIXED"},
- {id:"selection",title:"SELECTION CONTRACT",sub:"専用Player Listから好きな選手を選択",kind:"selection",cost:0,deal:"SELECT",featured:"MIXED"},
- {id:"packs",title:"PACKS",sub:"固定内容の選手・アイテムパック",kind:"packs",cost:0,deal:"PACK",featured:"PACK"}
+ {id:"special",title:"SPECIAL PLAYER LIST",sub:"Headlinersを含む期間限定Player List",kind:"special",cost:100,deal:"COIN",featured:"3 HEADLINERS"},
+ {id:"standard",title:"STANDARD PLAYER LIST",sub:"対象選手から直接獲得する通常リスト",kind:"standard",cost:0,deal:"GP",featured:"NORMAL"},
+ {id:"chance",title:"CHANCE DEAL",sub:"対象Player Listからランダムで1選手",kind:"chance",cost:0,deal:"TICKET",featured:"RANDOM"},
+ {id:"nominating",title:"NOMINATING CONTRACT",sub:"専用リストから1選手を指定して獲得",kind:"nominating",cost:0,deal:"CONTRACT",featured:"SELECT"},
+ {id:"selection",title:"SELECTION CONTRACT",sub:"限定リストから好きな選手を選択",kind:"selection",cost:0,deal:"CONTRACT",featured:"SELECT"},
+ {id:"packs",title:"PACKS",sub:"固定内容の選手をまとめて獲得",kind:"packs",cost:0,deal:"PACK",featured:"BUNDLE"}
 ];
 let activeBanner="special";
 function bannerPool(id){
@@ -143,32 +143,62 @@ function bannerPool(id){
  const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));
  return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD");
 }
+const HEADLINER_SPECS={
+ special:[["Lionel Messi","BIG_TIME"],["Cristiano Ronaldo","EPIC"],["Diego Maradona","LEGEND"]],
+ chance:[["Ronaldo Nazário","LEGEND"],["Ronaldinho","EPIC"],["Zinedine Zidane","EPIC"]],
+ nominating:[["Thierry Henry","LEGEND"],["Paolo Maldini","LEGEND"],["Xavi","EPIC"]],
+ selection:[["Luka Modrić","EPIC"],["Andrés Iniesta","EPIC"],["Kevin De Bruyne","EPIC"]]
+};
+function findCard(name,type){
+ return CARD_POOL.find(p=>p.name===name&&String(p.cardType||p.rarity).toUpperCase()===String(type).toUpperCase())
+   ||CARD_POOL.find(p=>p.name===name);
+}
+function headlinersFor(kind){
+ return (HEADLINER_SPECS[kind]||HEADLINER_SPECS.special).map(([name,type])=>findCard(name,type)).filter(Boolean).slice(0,3);
+}
+function randomFromTier(pool,tier){
+ const a=pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===tier);
+ return a.length?a[Math.floor(Math.random()*a.length)]:null;
+}
 function pickPlayer(){
- const b=GACHA_BANNERS.find(x=>x.id===activeBanner)||GACHA_BANNERS[0],pool=bannerPool(activeBanner);
+ const pool=bannerPool(activeBanner);
  if(!pool.length)return CARD_POOL[0];
- const weights={BIG_TIME:1.2,EPIC:2.2,LEGEND:2.2,SHOWTIME:3.2,HIGHLIGHT:7,STANDARD:84.2};
- const weighted=pool.map(p=>({p,w:weights[String(p.cardType||p.rarity).toUpperCase()]||1}));
- const total=weighted.reduce((s,x)=>s+x.w,0);let r=Math.random()*total;
- for(const x of weighted){r-=x.w;if(r<=0)return x.p}
- return weighted[weighted.length-1].p;
+ const tierWeights=activeBanner==="standard"
+  ? [["STANDARD",1]]
+  : [["STANDARD",.79],["FEATURED",.09],["HIGHLIGHT",.055],["SHOWTIME",.03],["EPIC",.02],["LEGEND",.012],["BIG_TIME",.003]];
+ const total=tierWeights.reduce((sum,x)=>sum+x[1],0);
+ let r=Math.random()*total;
+ for(const [tier,w] of tierWeights){
+   r-=w;
+   if(r<=0){
+     const p=randomFromTier(pool,tier);
+     if(p)return p;
+   }
+ }
+ return pool[Math.floor(Math.random()*pool.length)];
 }
 function renderGacha(kind="special"){
  activeBanner=kind;
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
  const mixed=kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection";
+ const heads=headlinersFor(kind);
+ const meta=gachaMeta(),untilGuarantee=10-(meta.pulls%10||10);
  const typeOrder=["BIG_TIME","EPIC","LEGEND","SHOWTIME","HIGHLIGHT","FEATURED","STANDARD"];
  const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
  const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
  const composition=mixed?'<div class="listComposition"><b>PLAYER LIST CONTENTS</b>'+counts.map(x=>'<span>'+x[0]+' <strong>'+x[1]+'</strong></span>').join("")+'</div>':"";
- const previewPool=pool.slice(0,Math.min(8,pool.length));
- const previewCards='<div class="gachaPlayerPreview"><div class="gachaPreviewTitle">PLAYERS IN THIS LIST</div><div class="gachaPreviewGrid">'+previewPool.map(p=>'<button class="gachaPlayerMini" data-player-id="'+esc(p.id)+'" type="button"><div class="gachaMiniPortrait">'+portraitSvg(p,true)+'</div><div class="gachaMiniInfo"><b>'+esc(p.name)+'</b><span>'+esc(p.position)+' • '+esc(cardTypeMark(p))+'</span><strong>'+p.overall+'</strong></div></button>').join("")+'</div></div>';
- const notice=kind==="special"?'<div class="rateNotice">この1つのSPECIAL PLAYER LISTから、STANDARD〜BIG TIMEまで複数タイプを抽選。10連には対象リストのヘッドライナー保証を設定。</div>':"";
- $( "#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
- '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>PLAYER LIST</span></div></div><div class="gachaOrb">✦</div></div>'+
- notice+composition+
- '<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'">SIGN ×1<small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'">SIGN ×10<small>'+ (b.cost?b.cost*10+" COINS":"10 CONTRACTS") +'</small></button></div>'+
- '<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-box="1">PLAYER LIST</button><button class="subGacha" data-rates="1">NOTICE / RATES</button></div>'+
- '<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,12).map(card).join("")+'</div>';
+ const headlinerMarkup=heads.length?'<section class="headlinerSection"><div class="headlinerHeader"><div><span>HEADLINERS</span><b>3 FEATURED PLAYERS</b></div><small>10×: HEADLINER GUARANTEED</small></div><div class="headlinerStrip">'+heads.map((p,i)=>'<button class="headlinerCard rarity-'+String(p.cardType||p.rarity).toLowerCase()+'" data-player-id="'+esc(p.id)+'" type="button"><div class="headlinerGlow"></div><div class="headlinerPortrait">'+portraitSvg(p,true)+'</div><span class="headlinerNo">0'+(i+1)+'</span><div class="headlinerData"><b>'+esc(p.name)+'</b><small>'+esc(rarityLabel(p.cardType||p.rarity))+' • OVR '+p.overall+'</small></div></button>').join("")+'</div></section>':"";
+ const previewPool=pool.filter(p=>!heads.some(h=>h.id===p.id)).slice(0,6);
+ const previewCards='<div class="gachaPlayerPreview"><div class="gachaPreviewTitle">PLAYER LIST PREVIEW <span>'+pool.length+' PLAYERS</span></div><div class="gachaPreviewGrid">'+previewPool.map(p=>'<button class="gachaPlayerMini" data-player-id="'+esc(p.id)+'" type="button"><div class="gachaMiniPortrait">'+portraitSvg(p,true)+'</div><div class="gachaMiniInfo"><b>'+esc(p.name)+'</b><span>'+esc(p.position)+' • '+esc(cardTypeMark(p))+'</span><strong>'+p.overall+'</strong></div></button>').join("")+'</div></div>';
+ const notice=kind==="special"?'<div class="rateNotice"><b>10× HEADLINER GUARANTEE</b><span>このリストでは10回目の獲得時に3人のHeadlinerから1人を確定獲得。10×は通常900 COINS。</span></div>':"";
+ const selectNote=(kind==="nominating"||kind==="selection")?'<div class="rateNotice selectNotice"><b>SELECT A PLAYER</b><span>Player Listの選手をタップして詳細を確認し、そのまま指定獲得できます。</span></div>':"";
+ const guarantee=kind==="special"?'<div class="guaranteeMeter"><span>NEXT HEADLINER</span><b>'+untilGuarantee+' / 10</b><i><em style="width:'+((10-untilGuarantee)/10*100)+'%"></em></i></div>':"";
+ const drawButtons=(kind==="nominating"||kind==="selection")?'':'<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'"><b>SIGN ×1</b><small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'"><b>SIGN ×10</b><small>'+ (b.cost?b.cost*9+" COINS":"10 CONTRACTS") +'</small></button></div>';
+ const sub='<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-rates="1">LIST DETAILS</button><button class="subGacha" data-box="1">OTHER LISTS</button></div>';
+ $("#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
+ '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>'+pool.length+' PLAYERS</span></div></div><div class="gachaOrb">✦</div></div>'+
+ headlinerMarkup+notice+selectNote+guarantee+composition+drawButtons+sub+
+ '<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,16).map(card).join("")+'</div>';
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
@@ -251,12 +281,24 @@ function draw(n,unitCost=100,free=false){
  if(n<1||n>10){showMessage("契約数が不正です");return}
  if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
  state.coins-=cost;const meta=gachaMeta(),results=[];
- for(let i=0;i<n;i++){let p=pickPlayer();const next=meta.pulls+i+1;
-   if(next%10===0){const pool=bannerPool(activeBanner),minimum=activeBanner==="bigtime"?"BIG_TIME":activeBanner==="legend"?"LEGEND":activeBanner==="epic"?"EPIC":activeBanner==="showtime"?"SHOWTIME":"HIGHLIGHT",rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4},guaranteed=pool.filter(x=>(rank[String(x.cardType).toUpperCase()]||0)>=(rank[minimum]||2));if(guaranteed.length)p=guaranteed[Math.floor(Math.random()*guaranteed.length)]}
-   results.push(p);if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
+ for(let i=0;i<n;i++){
+   let p=pickPlayer();const next=meta.pulls+i+1;
+   if(activeBanner==="special"&&next%10===0){
+     const heads=headlinersFor("special");
+     if(heads.length)p=heads[(meta.pulls+i)%heads.length];
+   }
+   results.push(p);
+   if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
  }
- const best=results.reduce((a,b)=>{const rank={STANDARD:1,HIGHLIGHT:2,SHOWTIME:3,EPIC:3,LEGEND:3,BIG_TIME:4};return(rank[String(b.cardType||b.rarity).toUpperCase()]||0)>(rank[String(a.cardType||a.rarity).toUpperCase()]||0)?b:a},results[0]);
- setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});state.gp+=n*120;save();wallet();showSigning(results);
+ const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);
+ setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});
+ state.gp+=n*120;save();wallet();showSigning(results);
+}
+function signSelectedPlayer(id){
+ const p=CARD_POOL.find(x=>String(x.id)===String(id));if(!p)return;
+ if(!state.owned.includes(p.id))state.owned.push(p.id);else state.gp+=120;
+ save();wallet();showMessage(p.name+" SIGNED",900);
+ panel(activeBanner);
 }
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){window.__matchRewardClaimed=false;screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){window.dispatchEvent(new Event("football:match-exit"));screen("home")}
@@ -276,7 +318,8 @@ document.addEventListener("click",e=>{
  if(b.dataset?.banner){e.preventDefault();e.stopPropagation();renderGacha(b.dataset.banner);return}
  if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
  if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return}
- if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("SPECIAL PLAYER LIST：STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME を同一リストに収録");return}
+ if(b.dataset?.playerId&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();signSelectedPlayer(b.dataset.playerId);return}
+ if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("PLAYER LIST：3 HEADLINERS + STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME");return}
  if(b.dataset?.box){e.preventDefault();e.stopPropagation();showMessage("BOX DRAW: 準備中");return}
  if(b.dataset?.fluidToggle){e.preventDefault();e.stopPropagation();const on=localStorage.getItem("football_fluid_formation")!=="0";localStorage.setItem("football_fluid_formation",on?"0":"1");panel("squad");return}
  if(b.id==="squadPlay"){e.preventDefault();e.stopPropagation();const ids=(b.dataset.squadIds||"").split(",").filter(Boolean);if(ids.length===11)localStorage.setItem("football_match_squad",JSON.stringify(ids));localStorage.setItem("football_fluid_formation",localStorage.getItem("football_fluid_formation")||"1");start();return}
