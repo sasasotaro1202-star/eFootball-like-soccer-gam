@@ -86,7 +86,8 @@ const state = {
   receivingUntil: 0,
   receivingVelocity: {x:0,z:0},
   pauseReturnState: "live",
-  goalResumeTimer: null
+  goalResumeTimer: null,
+  aiActionGraceUntil: 0
 };
 
 function canGameplayAct() {
@@ -473,6 +474,7 @@ function resetPositions(kickoffTeam = HOME) {
   ball.userData.lastKickerUntil = 0;
   ball.userData.stealProtectUntil = 0;
   ball.userData.lastContestAt = 0;
+  state.aiActionGraceUntil=performance.now()+2200;
   selectPlayer(kickoffTeam === HOME ? 9 : 9);
 }
 
@@ -746,6 +748,7 @@ function teamAI(dt){
       const dribble=Number(carrierStats.dribbling)||70;
       const chance=clamp(0.12+(defend-dribble)*0.004+(physical-70)*0.0025,0.05,0.42);
       if(now<(owner.userData.receivingProtectUntil||0))continue;
+      if(now<(state.aiActionGraceUntil||0))continue;
       d.userData.contactCooldown=now+650;
       if(Math.random()<chance){
         const sideX=(d.position.x-owner.position.x),sideZ=(d.position.z-owner.position.z),len=Math.hypot(sideX,sideZ)||1;
@@ -759,6 +762,7 @@ function teamAI(dt){
         ball.position.set(d.position.x+Math.sin(d.rotation.y)*0.72,0.48,d.position.z+Math.cos(d.rotation.y)*0.72);
         ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
         d.userData.receivingProtectUntil=now+360;
+        if(d.userData.team===HOME)selectPlayer(d.userData.index);
         setAction(d,"tackle",420);
         showMessage(d.userData.team===HOME?"AI TACKLE":"BALL LOST",320);
         break;
@@ -883,6 +887,7 @@ function teamAI(dt){
   resolvePlayerSeparation();
 
   // One decision clock prevents per-frame actions and keeps the opponent readable.
+  if(now<(state.aiActionGraceUntil||0))return;
   if(owner&&owner.userData.team===AWAY&&owner.userData.role!=='GK'&&now>=owner.userData.aiNextDecisionAt){
     const goalDistance=owner.position.x+52.5;
     const nearestHome=home.slice().sort((a,b)=>dist(a,owner)-dist(b,owner))[0];
