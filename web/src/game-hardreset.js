@@ -68,7 +68,9 @@ const state = {
   dashHeld: false,
   matchupHeld: false,
   rightTapTimer: null,
-  manualSwitchLockUntil: 0
+  manualSwitchLockUntil: 0,
+  receivingUntil: 0,
+  receivingVelocity: {x:0,z:0}
 };
 
 let renderer;
@@ -524,10 +526,16 @@ function moveControlled(dt) {
       const sway=Math.sin(now*.011+u.animationPhase)*(.035+(100-dribbling)*.0003);
       const tx=p.position.x+Math.sin(p.rotation.y)*carry+Math.cos(p.rotation.y)*sway;
       const tz=p.position.z+Math.cos(p.rotation.y)*carry-Math.sin(p.rotation.y)*sway;
-      const catchUp=clamp(dt*20,0,1);
+      const receiving=ball.userData.possessionState==="RECEIVING"&&now<(state.receivingUntil||0);
+      const catchUp=clamp(dt*(receiving?7:20),0,1);
       ball.position.x=lerp(ball.position.x,tx,catchUp);
       ball.position.y=lerp(ball.position.y,.42,clamp(dt*16,0,1));
       ball.position.z=lerp(ball.position.z,tz,catchUp);
+      if(receiving){
+        const rv=state.receivingVelocity||{x:0,z:0};
+        ball.userData.vx=lerp(ball.userData.vx||0,0,clamp(dt*7,0,1));
+        ball.userData.vz=lerp(ball.userData.vz||0,0,clamp(dt*7,0,1));
+      }
     }
     return;
   }
@@ -1020,10 +1028,24 @@ function touchBall() {
   }else{
     ball.userData.possessionState="LOOSE";
   }
-  ball.userData.owner=first.p;
-  ball.userData.possessionState="CONTROLLED";
-  ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
-  if(first.p.userData.team===HOME)selectPlayer(first.p.userData.index);
+  const receiver=first.p;
+  const incomingVx=ball.userData.vx||0,incomingVz=ball.userData.vz||0;
+  const incomingSpeed=Math.hypot(incomingVx,incomingVz);
+  ball.userData.owner=receiver;
+  ball.userData.possessionState=incomingSpeed>3.8?"RECEIVING":"CONTROLLED";
+  const now2=performance.now();
+  state.receivingUntil=now2+(incomingSpeed>3.8?150:0);
+  state.receivingVelocity={x:incomingVx,z:incomingVz};
+  if(incomingSpeed>3.8){
+    const touchFactor=clamp(0.40+((Number(receiver.userData.dribbling)||70)-70)*0.006,0.30,0.58);
+    ball.userData.vx=incomingVx*touchFactor;
+    ball.userData.vz=incomingVz*touchFactor;
+    ball.position.x += incomingVx*0.018;
+    ball.position.z += incomingVz*0.018;
+  }else{
+    ball.userData.vx=ball.userData.vy=ball.userData.vz=0;
+  }
+  if(receiver.userData.team===HOME)selectPlayer(receiver.userData.index);
 }
 function showGoalFX(team, scorer){const fx=$("#goalFx");if(!fx)return;$("#goalFxText").textContent=team===HOME?"GOAL":"GOAL";$("#goalFxPlayer").textContent=scorer?.userData?.name||"MATCH GOAL";fx.classList.remove("show");void fx.offsetWidth;fx.classList.add("show");setTimeout(()=>fx.classList.remove("show"),1400)}
 
@@ -1454,9 +1476,9 @@ function rightUp(e) {
   }
 
   if(dy<-18&&Math.abs(dy)>Math.abs(dx)*0.82){
-    passOrShoot("through",clamp(mag/100,0.55,1.12),aim,false);
+    passOrShoot("shoot",clamp(mag/100,0.55,1.12),aim,false);
   }else if(dy>18&&Math.abs(dy)>Math.abs(dx)*0.82){
-    passOrShoot("pass",clamp(mag/92,0.55,1.1),aim,false);
+    passOrShoot("through",clamp(mag/92,0.55,1.1),aim,false);
   }else{
     passOrShoot("pass",clamp(mag/90,0.5,1.1),aim,false);
   }
