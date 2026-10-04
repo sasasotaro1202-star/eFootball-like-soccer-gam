@@ -66,7 +66,8 @@ const state = {
   defenseRightTapAt: 0,
   actionPress: null,
   dashHeld: false,
-  matchupHeld: false
+  matchupHeld: false,
+  rightTapTimer: null
 };
 
 let renderer;
@@ -1401,12 +1402,21 @@ function rightUp(e) {
   }
 
   if(mag<20&&duration<220){
-    if(now-(state.rightTapAt||0)<280){
-      passOrShoot("shoot",0.92,null,false);
+    // Mobile gesture tap: first tap resolves to PASS unless a second tap arrives quickly for SHOOT.
+    if(state.rightTapTimer){
+      clearTimeout(state.rightTapTimer);
+      state.rightTapTimer=null;
       state.rightTapAt=0;
+      passOrShoot("shoot",0.92,null,false);
     }else{
-      passOrShoot("pass",0.78,null,false);
       state.rightTapAt=now;
+      state.rightTapTimer=setTimeout(()=>{
+        state.rightTapTimer=null;
+        if(state.matchActive&&!state.finished&&!state.paused&&ball.userData.owner===home[state.selected]){
+          passOrShoot("pass",0.78,null,false);
+        }
+        state.rightTapAt=0;
+      },160);
     }
     return;
   }
