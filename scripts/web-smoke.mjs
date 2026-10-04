@@ -38,5 +38,19 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["contract selection flow",home.includes('function signSelectedPlayer')&&home.includes('activeBanner==="nominating"||activeBanner==="selection"')],
 ["contract premium reveal",home.includes('function stagePlayerCard')&&home.includes('function signingPackMarkup')&&html.includes('id="stageCard"')&&css.includes('.stagePlayerCard')],["mobile control presentation",css.includes('#actionPad.attacking .shoot')&&css.includes('#actionPad.defending .switch')&&css.includes('#powerGauge')&&css.includes('.matchAction[data-pressed="1"]')&&html.includes('id="pauseBtn"')&&html.includes('id="resumeBtn"')],
 ["card id squad resolver",js.includes('const [baseId,variant]=id.split("-")')&&js.includes('cardType:variant.toUpperCase()')]];
+const gatedActions=[
+  "quickStopFaceGoal","activateShield","tackleControlled","slidingTackleControlled",
+  "passOrShoot","switchPlayer","callTeamPressure","beginActionCharge","leftDown","rightDown"
+];
+const actionGateCheck=gatedActions.every(name=>{
+  const start=js.indexOf("function "+name);
+  if(start<0)return false;
+  const next=js.indexOf("\nfunction ",start+10);
+  const body=js.slice(start,next<0?js.length:next);
+  return body.includes("if(!canGameplayAct())return;");
+});
+checks.push(["all interactive gameplay actions gated",actionGateCheck]);
+checks.push(["match lifecycle clears stale input",js.includes('resetActiveInput("match-start")')&&js.includes('resetActiveInput("kickoff")')&&js.includes('resetActiveInput("match-exit")')]);
+
 for(const [n,ok] of checks)if(!ok)throw new Error("Smoke check failed: "+n);
 console.log("Web smoke checks passed:",checks.map(x=>x[0]).join(", "));
