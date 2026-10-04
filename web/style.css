@@ -857,3 +857,179 @@ button{appearance:none;-webkit-appearance:none}
 .tacticChoices .tacticBtn span{font-size:5.5px;white-space:nowrap}
 .tacticBar{align-items:stretch}
 @media(max-width:760px){.tacticBar{flex-direction:column}.tacticChoices{width:100%}.tacticBar>.tacticBtn{width:100%}.tacticBar>div:last-child{text-align:left}}
+
+/* PREMIUM CONTRACT DECK */
+.panelScreen:has(.contractDeck){padding-left:0;padding-right:0;background:#03070a}
+.panelScreen:has(.contractDeck) #panelBody{padding:0 0 48px;height:calc(100% - 72px)}
+.contractDeck{min-height:100%;background:#05090c;color:#f6faf8;overflow:hidden;position:relative}
+.contractTabs{display:flex;gap:6px;padding:10px 14px;overflow-x:auto;scrollbar-width:none;background:rgba(2,7,10,.96);border-bottom:1px solid #ffffff12;position:relative;z-index:8}
+.contractTabs::-webkit-scrollbar{display:none}
+.contractTabs .gachaTab{flex:0 0 auto;border:1px solid #ffffff12;border-radius:999px;padding:8px 12px;background:#0b1217;color:#73827f;font-size:7px;font-weight:1000;letter-spacing:.12em;white-space:nowrap}
+.contractTabs .gachaTab.active{background:linear-gradient(135deg,#d9f6e8,#73d8ae);border-color:#bfffe044;color:#04100b;box-shadow:0 6px 18px #0008}
+.contractHero{position:relative;min-height:410px;margin:0;overflow:hidden;border-bottom:1px solid #ffffff16;background:#081116;isolation:isolate}
+.contractBackdrop{position:absolute;inset:0;z-index:-3;background:
+ radial-gradient(circle at 82% 26%,#74e6b82b,transparent 24%),
+ radial-gradient(circle at 58% 74%,#1c72a530,transparent 28%),
+ linear-gradient(118deg,#061015 0%,#0b1d20 48%,#102a22 100%)}
+.contractDiagonal{position:absolute;inset:-20% -10%;z-index:-2;opacity:.52;background:
+ repeating-linear-gradient(122deg,transparent 0 54px,#8ce6c118 55px 61px,transparent 62px 108px),
+ linear-gradient(180deg,transparent 35%,#020608c9 100%)}
+.contractDeck.theme-blue .contractBackdrop{background:radial-gradient(circle at 76% 18%,#4b91ff3d,transparent 25%),radial-gradient(circle at 30% 80%,#36d5ff24,transparent 35%),linear-gradient(120deg,#050b15,#0a1528 52%,#091d27)}
+.contractDeck.theme-crimson .contractBackdrop{background:radial-gradient(circle at 82% 18%,#ff473d35,transparent 26%),radial-gradient(circle at 46% 70%,#ff7e3030,transparent 32%),linear-gradient(120deg,#170606,#2a0b09 50%,#12080a)}
+.contractDeck.theme-violet .contractBackdrop{background:radial-gradient(circle at 82% 22%,#b75cff35,transparent 26%),radial-gradient(circle at 42% 72%,#5266ff25,transparent 32%),linear-gradient(120deg,#0a0714,#171024 50%,#0a0912)}
+.contractDeck.theme-gold .contractBackdrop{background:radial-gradient(circle at 82% 22%,#ffe15d3c,transparent 24%),radial-gradient(circle at 35% 75%,#d88c1e28,transparent 34%),linear-gradient(120deg,#110d05,#20170b 50%,#0b0905)}
+.contractCounter{position:absolute;right:14px;top:14px;z-index:6;min-width:120px;text-align:right;padding:10px 12px;border:1px solid #ffffff18;border-radius:13px;background:#020607c9;backdrop-filter:blur(15px);box-shadow:0 12px 32px #0008}
+.contractCounter span{display:block;color:#85a19a;font-size:6px;letter-spacing:.18em;font-weight:1000}
+.contractCounter b{display:block;margin-top:2px;font-size:18px;letter-spacing:.04em}
+.contractCounter small{display:block;margin-top:2px;color:#cfe8df;font-size:6px;letter-spacing:.1em}
+.contractHeroCopy{position:absolute;z-index:4;left:5%;top:44px;width:min(33%,360px)}
+.contractKicker{display:inline-block;color:#8cf2c6;font-size:8px;font-weight:1000;letter-spacing:.24em}
+.contractHeroCopy h2{margin:9px 0 10px;font-size:clamp(34px,5.2vw,68px);line-height:.86;letter-spacing:-.055em;text-transform:uppercase;text-shadow:0 6px 28px #0008}
+.contractHeroCopy p{margin:0;max-width:330px;color:#a6b7b2;font-size:10px;line-height:1.5;letter-spacing:.04em}
+.contractTimer{margin-top:18px;display:flex;flex-direction:column;gap:3px;width:max-content;padding:8px 11px;border-left:2px solid #91efc5;background:linear-gradient(90deg,#8fe6bd0f,transparent);text-transform:uppercase}
+.contractTimer span{font-size:6px;color:#88a09a;letter-spacing:.18em}
+.contractTimer b{font-size:15px;letter-spacing:.12em}
+.contractTimer small{font-size:5px;color:#657670;letter-spacing:.1em}
+.contractHeroCards{position:absolute;z-index:3;left:34%;right:2%;top:36px;bottom:12px;display:flex;align-items:flex-end;justify-content:center;gap:clamp(4px,1.4vw,18px);perspective:1000px}
+.contractHeroCard{position:relative;flex:0 0 min(20vw,206px);height:min(45vh,330px);min-height:270px;border:1px solid #ffffff2a;border-radius:18px;padding:0;overflow:hidden;background:linear-gradient(160deg,#1c4a5e,#081015 76%);box-shadow:0 28px 60px #000a;transform:translateY(12px) rotate(-2.5deg);cursor:pointer;isolation:isolate}
+.contractHeroCard:nth-child(2){transform:translateY(0) rotate(1deg);z-index:4}
+.contractHeroCard:nth-child(3){transform:translateY(18px) rotate(3deg)}
+.contractHeroCard.featured{transform:translateY(-4px) rotate(0deg) scale(1.05);z-index:5}
+.contractHeroCard:hover{transform:translateY(-6px) rotate(0deg) scale(1.04)}
+.contractHeroCard:active{transform:translateY(0) scale(.99)}
+.contractHeroCard:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 44%,#030608 92%);z-index:1;pointer-events:none}
+.contractHeroCard.rarity-big_time{background:linear-gradient(155deg,#6a5221,#21190a 56%,#060706)}
+.contractHeroCard.rarity-epic{background:linear-gradient(155deg,#4f3b74,#171024 56%,#05070c)}
+.contractHeroCard.rarity-legend{background:linear-gradient(155deg,#6a542a,#25180b 56%,#060706)}
+.contractCardGlow{position:absolute;inset:-45%;z-index:-1;background:radial-gradient(circle at 50% 45%,#a8ffd955,transparent 47%);filter:blur(20px)}
+.contractHeroCard.rarity-epic .contractCardGlow{background:radial-gradient(circle at 50% 42%,#b46cff66,transparent 47%)}
+.contractHeroCard.rarity-legend .contractCardGlow{background:radial-gradient(circle at 50% 42%,#ffda7666,transparent 47%)}
+.contractHeroCard.rarity-big_time .contractCardGlow{background:radial-gradient(circle at 50% 42%,#bdfd7c66,transparent 47%)}
+.contractCardTop{position:absolute;left:12px;right:12px;top:10px;z-index:5;display:flex;justify-content:space-between;align-items:flex-start}
+.contractCardTop span{font-size:6px;font-weight:1000;letter-spacing:.2em;color:#f1f7f4}
+.contractCardTop b{font-size:31px;line-height:.85;font-weight:1000;text-shadow:0 4px 14px #000}
+.contractCardPortrait{position:absolute;left:4%;right:4%;top:20px;height:66%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.contractCardPortrait svg{width:100%;height:100%;filter:saturate(.95) contrast(1.03) drop-shadow(0 14px 22px #000a)}
+.contractCardNo{position:absolute;right:11px;top:50px;z-index:5;font-size:18px;font-weight:1000;color:#ffffff50}
+.contractCardInfo{position:absolute;left:12px;right:12px;bottom:12px;z-index:6;display:flex;flex-direction:column;align-items:flex-start;text-align:left}
+.contractCardInfo strong{font-size:clamp(15px,2vw,27px);line-height:.92;letter-spacing:-.04em;text-shadow:0 4px 16px #000}
+.contractCardInfo span{margin-top:5px;color:#bdcec8;font-size:7px;letter-spacing:.12em}
+.contractCardInfo small{margin-top:5px;color:#e9f3ef;font-size:7px;letter-spacing:.1em}
+.contractHeroFoot{position:absolute;left:5%;right:3%;bottom:10px;z-index:6;display:flex;justify-content:space-between;align-items:end;gap:12px;pointer-events:none}
+.contractHeroFoot span{max-width:48%;color:#6e807b;font-size:5px;letter-spacing:.08em}
+.contractHeroFoot b{font-size:7px;letter-spacing:.16em;color:#b9c9c4}
+.contractComposition{display:flex;flex-wrap:wrap;gap:6px;padding:9px 14px;background:#020607;border-bottom:1px solid #ffffff10}
+.contractComposition span,.contractComposition b,.contractComposition i{padding:7px 9px;border:1px solid #ffffff12;border-radius:999px;font-size:6px;font-weight:1000;letter-spacing:.12em;font-style:normal}
+.contractComposition span{color:#8ca69e}
+.contractComposition b{color:#f4faf7}
+.contractComposition i{color:#9dffcf;background:#7ee8b40b}
+.contractNotice{margin:12px 14px 0;padding:10px 12px;border:1px solid #9ef1c62a;border-radius:12px;background:linear-gradient(90deg,#92f1c60b,#ffffff03);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.contractNotice b{font-size:7px;letter-spacing:.14em;color:#c6f6df}
+.contractNotice span{font-size:6px;color:#81948e;line-height:1.45;text-align:right}
+.contractPurchase{display:grid;grid-template-columns:1fr 1.35fr;gap:8px;padding:14px;background:linear-gradient(180deg,#05090c,#081014)}
+.contractBuy{min-height:58px;border-radius:12px;padding:10px 14px;border:1px solid #ffffff14;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;cursor:pointer}
+.contractBuy span{font-size:13px;font-weight:1000;letter-spacing:.04em}
+.contractBuy small{font-size:7px;font-weight:1000;letter-spacing:.1em}
+.contractBuy.secondaryBuy{background:#0b1318}
+.contractBuy.secondaryBuy small{color:#b4c1bd}
+.contractBuy.primaryBuy{background:linear-gradient(135deg,#dcf4e8,#63d4a5);color:#04100b;box-shadow:0 10px 25px #0007}
+.contractBuy.primaryBuy small{color:#1a4f3a}
+.contractQuickLinks{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:0 14px 14px}
+.contractQuickLinks .subGacha{border:1px solid #ffffff12;background:#091116;border-radius:10px;color:#9db0aa;padding:9px 7px;font-size:6px;font-weight:1000;letter-spacing:.12em}
+.contractPreview,.contractArchive,.contractListSection{padding:0 14px 16px}
+.contractSectionHead{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:7px 0 9px;padding-top:9px;border-top:1px solid #ffffff0d}
+.contractSectionHead div{display:flex;flex-direction:column;gap:3px}
+.contractSectionHead span{font-size:6px;color:#829991;letter-spacing:.18em;font-weight:1000}
+.contractSectionHead b{font-size:12px;letter-spacing:.02em}
+.contractSectionHead small{font-size:6px;color:#72817d;letter-spacing:.12em}
+.contractMiniGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.contractMiniCard{position:relative;min-height:120px;overflow:hidden;border:1px solid #ffffff12;border-radius:13px;background:#0a1217;padding:8px;cursor:pointer;text-align:left}
+.contractMiniCard.rarity-epic{background:linear-gradient(145deg,#2e2450,#0b0b12)}
+.contractMiniCard.rarity-legend,.contractMiniCard.rarity-big_time{background:linear-gradient(145deg,#44351a,#0d0a05)}
+.contractMiniCard.rarity-highlight{background:linear-gradient(145deg,#24452f,#0a120d)}
+.contractMiniCard.rarity-featured{background:linear-gradient(145deg,#244357,#081015)}
+.miniCardPortrait{position:absolute;right:-8px;top:4px;width:70%;height:80%;opacity:.92}
+.miniCardPortrait svg{width:100%;height:100%}
+.miniCardRating{position:absolute;left:8px;top:8px;z-index:2;display:flex;flex-direction:column}
+.miniCardRating b{font-size:22px;line-height:.82}
+.miniCardRating span{margin-top:3px;font-size:5px;color:#b8c9c3;letter-spacing:.12em}
+.miniCardInfo{position:absolute;left:8px;right:6px;bottom:7px;z-index:3;display:flex;flex-direction:column;max-width:74%}
+.miniCardInfo strong{font-size:8px;line-height:1.05}
+.miniCardInfo small{margin-top:3px;color:#8ea29c;font-size:5px;letter-spacing:.09em}
+.contractListHead{display:flex;justify-content:space-between;align-items:center;margin:9px 0;padding-top:9px;border-top:1px solid #ffffff0d}
+.contractListHead b{font-size:9px;letter-spacing:.12em}
+.contractListHead span{font-size:6px;color:#8da29a;letter-spacing:.14em}
+.contractDirectGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.contractDirectCard{position:relative;min-height:170px;border:1px solid #ffffff12;border-radius:14px;background:#091116;padding:9px;color:#fff;text-align:left;overflow:hidden}
+.contractDirectCard:active{transform:scale(.99)}
+.directMiniPortrait{position:absolute;right:-12px;top:-2px;width:70%;height:75%;opacity:.95}
+.directMiniPortrait svg{width:100%;height:100%}
+.contractDirectCard>span{position:relative;z-index:3;font-size:6px;color:#90a59e;letter-spacing:.16em}
+.contractDirectCard>b{position:absolute;z-index:4;left:9px;right:6px;bottom:38px;font-size:9px;line-height:1}
+.contractDirectCard>small{position:absolute;z-index:4;left:9px;bottom:25px;color:#82958f;font-size:5px}
+.contractDirectCard>strong{position:absolute;z-index:4;right:8px;bottom:8px;color:#aaf6d1;font-size:6px;letter-spacing:.13em}
+.contractArchiveGrid{margin-top:0}
+.contractArchiveGrid .playerCardItem{min-height:180px}
+@media(max-width:900px){
+ .contractHero{min-height:370px}
+ .contractHeroCopy{left:4%;top:30px;width:30%}
+ .contractHeroCopy h2{font-size:clamp(28px,4.8vw,52px)}
+ .contractHeroCards{left:31%;right:1%}
+ .contractHeroCard{flex-basis:min(22vw,180px);height:300px;min-height:245px}
+ .contractMiniGrid,.contractDirectGrid{grid-template-columns:repeat(4,1fr)}
+}
+@media(max-width:760px){
+ .contractTabs{padding:8px 10px}
+ .contractHero{min-height:330px}
+ .contractCounter{top:10px;right:10px;min-width:100px}
+ .contractCounter b{font-size:15px}
+ .contractHeroCopy{left:4%;top:38px;width:27%}
+ .contractKicker{font-size:6px}
+ .contractHeroCopy h2{font-size:clamp(25px,6vw,38px)}
+ .contractHeroCopy p{font-size:7px}
+ .contractTimer{margin-top:11px}
+ .contractTimer b{font-size:11px}
+ .contractHeroCards{left:28%;right:2%;top:28px;gap:4px}
+ .contractHeroCard{flex-basis:30%;height:250px;min-height:0;border-radius:14px}
+ .contractHeroCard.featured{transform:translateY(-2px) scale(1.04)}
+ .contractCardTop{left:8px;right:8px;top:8px}
+ .contractCardTop span{font-size:5px}
+ .contractCardTop b{font-size:23px}
+ .contractCardPortrait{top:20px;height:64%}
+ .contractCardInfo{left:8px;right:8px;bottom:8px}
+ .contractCardInfo strong{font-size:12px}
+ .contractCardInfo span,.contractCardInfo small{font-size:5px}
+ .contractHeroFoot{left:4%;bottom:6px}
+ .contractHeroFoot span{font-size:4px}
+ .contractComposition{padding:7px 10px}
+ .contractComposition span,.contractComposition b,.contractComposition i{font-size:5px;padding:6px 8px}
+ .contractNotice{margin:10px 10px 0;display:block}
+ .contractNotice span{display:block;text-align:left;margin-top:4px}
+ .contractPurchase{padding:10px;gap:6px}
+ .contractBuy{min-height:52px;padding:8px 10px}
+ .contractBuy span{font-size:11px}
+ .contractBuy small{font-size:6px}
+ .contractQuickLinks{padding:0 10px 10px}
+ .contractPreview,.contractArchive,.contractListSection{padding:0 10px 12px}
+ .contractMiniGrid,.contractDirectGrid{grid-template-columns:repeat(4,1fr);gap:6px}
+ .contractMiniCard{min-height:106px}
+ .contractDirectCard{min-height:150px}
+ .contractArchiveGrid .playerCardItem{min-height:155px}
+}
+@media(max-height:560px){
+ .contractHero{min-height:285px}
+ .contractHeroCard{height:220px}
+ .contractHeroCopy{top:26px}
+ .contractHeroCopy p{display:none}
+ .contractTimer{margin-top:8px}
+}
+@media(max-width:580px){
+ .contractMiniGrid{grid-template-columns:repeat(4,140px)}
+ .contractPreview{overflow:hidden}
+ .contractMiniGrid{overflow-x:auto;scrollbar-width:none}
+ .contractMiniGrid::-webkit-scrollbar{display:none}
+ .contractDirectGrid{grid-template-columns:repeat(2,1fr)}
+ .contractHeroCopy{width:25%}
+ .contractHeroCopy h2{font-size:24px}
+ .contractHeroCard{flex-basis:31%}
+}
