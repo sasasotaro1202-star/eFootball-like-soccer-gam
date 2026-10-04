@@ -9,6 +9,7 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["defensive pressure simulation",js.includes('lastDefensiveContactAt')&&js.includes('"PRESSURE WIN"')&&js.includes('contactCooldown')],
 ["AI kick skill scaling",js.includes('function kick(player')&&js.includes('skillFactor=0.84+clamp(skill,45,99)')],["AI tactical marking",js.includes('Goal-side marking')&&js.includes('markWeight')&&js.includes('space=home.filter')],
 ["player identity variation",js.includes('function improvePlayerIdentity')&&js.includes('improvePlayerIdentity(g);')&&js.includes('p.userData.identity')],
+["corrupted save recovery",js.includes("function readStoredJson(key,fallback)")&&js.includes("function readStoredArray(key)")&&js.includes('const savedOwnedIds = readStoredArray("football_owned")')&&home.includes("function readStoredJson(key,fallback)")&&home.includes("function readStoredArray(key)")&&home.includes("function readStoredObject(key)")&&home.includes('owned:readStoredArray("football_owned")')&&home.includes('progress:readStoredObject("football_progress")')],
 ["player material declaration order",(()=>{
   const start=js.indexOf("function makePlayer(");
   const end=js.indexOf("\nconst FORMATION",start);
