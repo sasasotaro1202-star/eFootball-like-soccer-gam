@@ -57,7 +57,10 @@ const state = {
   lastTouchAt: 0,
   lastDefensiveContactAt: 0,
   autoSwitchAt: 0,
-  defenseRightTapAt: 0
+  defenseRightTapAt: 0,
+  actionPress: null,
+  dashHeld: false,
+  matchupHeld: false
 };
 
 let renderer;
@@ -457,8 +460,9 @@ function moveControlled(dt) {
   const nx=state.joy.x/mag;
   const nz=state.joy.y/mag;
   const intensity=clamp(mag,0,1);
-  const dash=!defending&&state.rightHeld;
+  const dash=!defending&&(state.rightHeld||state.dashHeld);
   const shield=owner===p&&state.shieldUntil>now;
+  if(defending&&state.matchupHeld)state.matchUp=true;
   const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
   const response=clamp(p.userData.acceleration*dt,0,1);
   p.userData.currentSpeed+=((targetSpeed-p.userData.currentSpeed)*response);
@@ -1106,9 +1110,11 @@ function updateHUD() {
   if(guide&&guide.dataset.mode!==(defense?"defense":"attack")){
     guide.dataset.mode=defense?"defense":"attack";
     guide.innerHTML=defense
-      ? '<span>RIGHT HOLD<i>MATCH-UP</i></span><span>RIGHT SWIPE<i>TEAM PRESS</i></span><span>RIGHT ×2<i>SWITCH</i></span><span>LEFT ×2<i>TACKLE</i></span>'
-      : '<span>RIGHT TAP<i>PASS</i></span><span>DOUBLE TAP<i>SHOOT</i></span><span>↑ / ↓<i>THROUGH / PASS</i></span>';
+      ? '<span>MATCH-UP / PRESS / TACKLE / SWITCH <i>RIGHT PANEL</i></span><span>HOLD <i>JOCKEY / DASH</i></span><span>FLICK <i>OPTIONAL</i></span>'
+      : '<span>PASS / THROUGH / SHOOT <i>RIGHT PANEL</i></span><span>HOLD + RELEASE <i>POWER</i></span><span>FLICK <i>OPTIONAL</i></span>';
   }
+  updateActionPad();
+  updatePowerGauge();
   const halfEl=document.querySelector("#halfLabel");
   if(halfEl)halfEl.textContent=state.half===2?"2ND HALF":"1ST HALF";
   updateRadar();
@@ -1404,6 +1410,67 @@ function switchPlayer(){
   showMessage(next?"SWITCH • "+next.userData.number:"SWITCH",420);
 }
 
+function updateActionPad(){
+  const pad=$("#actionPad");
+  if(!pad)return;
+  const defending=ball?.userData?.owner?.userData?.team===AWAY;
+  pad.classList.toggle("defending",!!defending);
+  pad.classList.toggle("attacking",!defending);
+}
+function updatePowerGauge(){
+  const g=$("#powerGauge"),fill=$("#powerFill"),label=$("#powerLabel"),press=state.actionPress;
+  if(!g||!fill||!label)return;
+  if(!press){g.classList.remove("show");fill.style.width="0%";label.textContent="POWER";return}
+  const hold=clamp((performance.now()-press.startedAt)/700,0,1);
+  fill.style.width=(20+hold*80).toFixed(1)+"%";
+  label.textContent=(press.type||"POWER").toUpperCase()+"  "+Math.round(hold*100)+"%";
+  g.classList.add("show");
+}
+function beginActionCharge(type,e){
+  e.preventDefault(); e.stopPropagation();
+  const button=e.currentTarget;
+  if(button.setPointerCapture)button.setPointerCapture(e.pointerId);
+  const p=home[state.selected];
+  if(type!=="dash"&&type!=="matchup"&&type!=="press"&&type!=="switch"&&type!=="tackle"&&!p)return;
+  if(type==="switch"){switchPlayer();return}
+  if(type==="press"){callTeamPressure();return}
+  if(type==="matchup"){
+    state.matchupHeld=true;
+    state.matchUp=true;
+    return;
+  }
+  if(type==="tackle"){tackleControlled();return}
+  if(type==="dash"){
+    state.dashHeld=true;
+    state.sprint=true;
+    return;
+  }
+  state.actionPress={type,startedAt:performance.now(),pointerId:e.pointerId};
+  updatePowerGauge();
+}
+function finishActionCharge(type,e){
+  e.preventDefault(); e.stopPropagation();
+  if(type==="matchup"){state.matchupHeld=false;state.matchUp=false;return}
+  if(type==="dash"){state.dashHeld=false;state.sprint=false;return}
+  const press=state.actionPress;
+  if(!press||press.type!==type)return;
+  const hold=clamp((performance.now()-press.startedAt)/700,0,1);
+  state.actionPress=null;
+  updatePowerGauge();
+  const power=clamp(.52+hold*.68,.52,1.20);
+  if(type==="shoot")passOrShoot("shoot",power);
+  else if(type==="through")passOrShoot("through",power);
+  else if(type==="pass")passOrShoot("pass",power);
+}
+function bindActionButton(id,type){
+  const b=$("#"+id); if(!b)return;
+  const down=(e)=>beginActionCharge(type,e),up=(e)=>finishActionCharge(type,e);
+  b.addEventListener("pointerdown",down,{passive:false});
+  b.addEventListener("pointerup",up,{passive:false});
+  b.addEventListener("pointercancel",up,{passive:false});
+  b.addEventListener("pointerleave",(e)=>{if(type==="dash"||type==="matchup")finishActionCharge(type,e)},{passive:false});
+  b.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation()});
+}
 function initInput() {
   window.__keys=[];
   addEventListener("keydown",(e)=>{if(!window.__keys.includes(e.key.toLowerCase()))window.__keys.push(e.key.toLowerCase());keyboardDown(e);});
@@ -1418,7 +1485,7 @@ function initInput() {
     if(!pointerIsGameplay(e))return;
     if(e.clientX<innerWidth*0.48){
       if(state.leftPointerId===null)leftDown(e);
-    }else{
+    }else if(!e.target.closest("#controls")){
       rightDown(e);
     }
   },{passive:false});
@@ -1435,7 +1502,14 @@ function initInput() {
     else rightUp(e);
   },{passive:false});
 
-  // Desktop keyboard remains available for diagnostics; mobile gameplay uses Touch & Flick.
+  bindActionButton("switchBtn","switch");
+  bindActionButton("matchupBtn","matchup");
+  bindActionButton("pressBtn","press");
+  bindActionButton("tackleBtn","tackle");
+  bindActionButton("passBtn","pass");
+  bindActionButton("throughBtn","through");
+  bindActionButton("shootBtn","shoot");
+  bindActionButton("dashBtn","dash");
   document.querySelectorAll("#actionPad .matchAction").forEach(b=>b.tabIndex=-1);
 }
 
@@ -1566,6 +1640,7 @@ function gameLoop(now) {
 
   if(matchVisible){
     keyboardMove();
+    updatePowerGauge();
     if (!state.paused && state.matchActive) {
       state.time += dt * MATCH_TIME_SCALE;
       updateMatchClock();
