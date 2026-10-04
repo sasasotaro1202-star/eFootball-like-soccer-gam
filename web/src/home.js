@@ -182,7 +182,7 @@ function renderGacha(kind="special"){
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
  const mixed=kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection";
  const heads=headlinersFor(kind);
- const meta=gachaMeta(),untilGuarantee=10-(meta.pulls%10||10);
+ const meta=gachaMeta(),progress=meta.pulls%10,untilGuarantee=progress===0?10:10-progress;
  const typeOrder=["BIG_TIME","EPIC","LEGEND","SHOWTIME","HIGHLIGHT","FEATURED","STANDARD"];
  const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
  const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
@@ -304,8 +304,13 @@ function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector
 function start(){window.__matchRewardClaimed=false;screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){window.dispatchEvent(new Event("football:match-exit"));screen("home")}
 $("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
 document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{
- const el=e.target.closest(".playerCardTap,.gachaPlayerMini");
- if(el)showPlayerDetail(el.dataset.playerId);
+ const el=e.target.closest(".playerCardTap,.gachaPlayerMini,.headlinerCard");
+ if(!el)return;
+ if((activeBanner==="nominating"||activeBanner==="selection")&&el.classList.contains("playerCardTap")){
+   signSelectedPlayer(el.dataset.playerId);
+   return;
+ }
+ showPlayerDetail(el.dataset.playerId);
 });wallet();
 (function mountGeneratedCardReference(){
   const host=document.querySelector(".eventPlayers");
