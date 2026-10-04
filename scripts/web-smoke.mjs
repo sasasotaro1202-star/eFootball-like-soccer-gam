@@ -39,6 +39,8 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 checks.push(["loose-ball chase",js.includes('const looseChaserHome=owner?null:home.filter(p=>p.userData.role!=="GK")')&&js.includes('const looseChaser=!owner&&(team===HOME?looseChaserHome:looseChaserAway)===p')&&js.includes('tx=clamp(ballX+vX*travel,-50.5,50.5)')]);
 checks.push(["possession protection",js.includes('dispossessedUntil')&&js.includes('stealProtectUntil')&&js.includes('receivingProtectUntil')&&js.includes('owner.userData.dispossessedUntil=now+720')]);
 checks.push(["AI tackle realism gate",js.includes('const ballSide=(toBallX*toDefX+toBallZ*toDefZ)')&&js.includes('if(ballSide<-0.15)continue;')]);
+checks.push(["kickoff AI grace",js.includes('aiActionGraceUntil')&&js.includes('state.aiActionGraceUntil=performance.now()+2200')&&js.includes('if(now<(state.aiActionGraceUntil||0))return;')]);
+checks.push(["AI winner switches control",js.includes('if(d.userData.team===HOME)selectPlayer(d.userData.index)')]);
 ["sharp touch physics",js.includes('sharpTouchUntil:0')&&js.includes('const impulse=4.8*remain*remain')&&js.includes('const dir=screenVector')&&!js.includes('p.position.x=clamp(p.position.x+nx*2.7')],["first touch receiving",js.includes('possessionState==="RECEIVING"')&&js.includes('receivingUntil')&&js.includes('receivingVelocity')&&js.includes('touchFactor')&&js.includes('incomingSpeed>3.8')],
 ["charged action controls",js.includes('function beginActionCharge')&&js.includes('function finishActionCharge')&&js.includes('powerGauge')&&html.includes('id="powerGauge"')],
 ["match squad integration",js.includes('function readMatchSquad()')&&js.includes('function syncMatchSquad()')&&home.includes('data-squad-ids')&&home.includes('football_match_squad')],
