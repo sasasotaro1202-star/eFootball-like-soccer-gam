@@ -952,6 +952,41 @@ function tackleControlled(){
   }
 }
 
+function slidingTackleControlled(){
+  const tackler=home[state.selected];
+  if(!tackler||tackler.userData.role==="GK")return;
+  const owner=ball.userData.owner;
+  setAction(tackler,"sliding",720);
+  const forwardX=Math.sin(tackler.rotation.y),forwardZ=Math.cos(tackler.rotation.y);
+  const targets=away.filter(target=>{
+    if(target.userData.role==="GK")return false;
+    const d=dist(tackler,target);
+    if(d>3.4)return false;
+    const dx=target.position.x-tackler.position.x,dz=target.position.z-tackler.position.z,len=Math.hypot(dx,dz)||1;
+    return (forwardX*dx+forwardZ*dz)/len>0.05;
+  }).sort((a,b)=>dist(tackler,a)-dist(tackler,b));
+  const target=targets[0];
+  if(!target||owner!==target){showMessage("SLIDE",360);return}
+  const defending=Number(tackler.userData.defending)||70;
+  const physical=Number(tackler.userData.physical)||70;
+  const balance=Number(target.userData.balance)||70;
+  const chance=clamp(.34+(defending-70)*.004+(physical-70)*.003-(balance-70)*.002,0.18,0.70);
+  if(Math.random()<chance){
+    const nx=target.position.x-tackler.position.x,nz=target.position.z-tackler.position.z,len=Math.hypot(nx,nz)||1;
+    ball.userData.owner=null;
+    ball.userData.possessionState="CONTESTED";
+    ball.userData.lastTeam=HOME;
+    ball.userData.lastKicker=tackler;
+    ball.userData.lastKickerUntil=performance.now()+180;
+    ball.position.set(target.position.x+nx/len*.7,.52,target.position.z+nz/len*.7);
+    ball.userData.vx=nx/len*4.2;
+    ball.userData.vz=nz/len*4.2;
+    ball.userData.vy=.72;
+    showMessage("SLIDING WIN",500);
+  }else{
+    showMessage("SLIDE",360);
+  }
+}
 function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
   const p = home[state.selected];
   if (!p) return;
@@ -1589,7 +1624,11 @@ function beginActionCharge(type,e){
     state.matchUp=true;
     return;
   }
-  if(type==="tackle"){tackleControlled();return}
+  if(type==="tackle"){
+    state.actionPress={type,startedAt:performance.now(),pointerId:e.pointerId};
+    updatePowerGauge();
+    return;
+  }
   if(type==="dash"){
     state.dashHeld=true;
     state.sprint=true;
@@ -1613,6 +1652,7 @@ function finishActionCharge(type,e){
   if(type==="shoot")passOrShoot("shoot",power);
   else if(type==="through")passOrShoot("through",power);
   else if(type==="pass")passOrShoot("pass",power);
+  else if(type==="tackle")hold>.42?slidingTackleControlled():tackleControlled();
 }
 function bindActionButton(id,type){
   const b=$("#"+id); if(!b)return;
