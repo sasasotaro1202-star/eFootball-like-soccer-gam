@@ -677,3 +677,165 @@ button{font-family:inherit;-webkit-tap-highlight-color:transparent}
 @keyframes stageCardIn{0%{opacity:0;transform:translateY(36px) rotateY(-34deg) scale(.82)}100%{opacity:1;transform:translateY(0) rotateY(-7deg) scale(1)}}@keyframes stageFoil{0%{transform:translateX(-65%)}100%{transform:translateX(35%)}}@keyframes packFloat{to{transform:translateY(-7px) rotateX(2deg)}}@keyframes packSweep{to{transform:translate(24%,24%) rotate(8deg)}}
 @media(max-width:760px){#actionPad{width:208px;height:196px;right:12px;bottom:12px}.matchAction{width:56px;height:56px}.matchAction.shoot,.matchAction.tackle{width:72px;height:72px}#actionPad.attacking .shoot{right:0;bottom:48px}#actionPad.attacking .pass{right:81px}.#actionPad.attacking .through{right:86px}.stageCard{min-height:330px}.stagePlayerCard{height:min(84vw,350px)} }
 @media(max-height:620px){#controls{height:205px}#stick{width:128px;height:128px;left:12px;bottom:10px}#actionPad{height:176px;width:198px;bottom:10px}.matchAction{width:52px;height:52px}.matchAction.shoot,.matchAction.tackle{width:66px;height:66px}.stageCard{min-height:260px}.stagePlayerCard{height:min(64vh,300px)}}
+
+
+/* ===== FINAL SPORTS-SIM PRESENTATION / MOBILE CONTROL PASS ===== */
+:root{
+  --sport-bg:#05090c;--sport-panel:#0b141a;--sport-panel-hi:#12222b;
+  --sport-cyan:#7ddce1;--sport-green:#7de0ad;--sport-gold:#e5bd68;
+  --sport-red:#e87587;--sport-white:#edf5f3;--sport-muted:#82979e;
+}
+html,body{font-synthesis:none}
+button{appearance:none;-webkit-appearance:none}
+.homeContent{max-width:1320px}
+.eventSlide{position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.14);background:
+ radial-gradient(90% 140% at 86% 35%,rgba(91,184,180,.18),transparent 46%),
+ linear-gradient(118deg,#102731 0,#081117 55%,#102127 100%)}
+.eventSlide:before{content:"";position:absolute;inset:0;background:
+ linear-gradient(108deg,transparent 0 58%,rgba(255,255,255,.04) 58.2%,transparent 59%),
+ linear-gradient(180deg,rgba(255,255,255,.035),transparent 20%,transparent 78%,rgba(0,0,0,.35));
+ pointer-events:none}
+.eventCopy{position:relative;z-index:4}
+.eventCopy h1{font-weight:950;text-shadow:0 12px 32px rgba(0,0,0,.5)}
+.eventCopy p{max-width:380px}
+.eventBadge{z-index:5}
+.homeHeadlinerStage{z-index:2}
+.homeHeadliner{border:1px solid rgba(255,255,255,.17);background:
+ linear-gradient(160deg,rgba(25,50,61,.88),rgba(4,9,12,.96) 72%),
+ radial-gradient(circle at 50% 35%,rgba(255,255,255,.10),transparent 34%);
+ box-shadow:0 24px 54px rgba(0,0,0,.52),inset 0 1px rgba(255,255,255,.12)}
+.homeHeadliner:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.12),transparent 22%,transparent 64%,rgba(255,216,120,.08));pointer-events:none}
+.homeHeadliner:nth-of-type(2){box-shadow:0 28px 66px rgba(0,0,0,.58),0 0 42px rgba(103,202,209,.10),inset 0 1px rgba(255,255,255,.16)}
+.homeHeadlinerRarity{letter-spacing:.22em}
+.homeHeadliner b{font-weight:950;letter-spacing:.01em}
+.actionCard{min-height:84px;border-radius:9px;border-color:rgba(255,255,255,.12);background:
+ linear-gradient(180deg,#14252e,#081117 72%);
+ box-shadow:0 12px 28px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.05)}
+.actionCard.match{background:linear-gradient(145deg,#17463a,#091713 78%)!important;border-color:rgba(125,224,173,.23)}
+.actionCard.contract{background:linear-gradient(145deg,#57451e,#181006 78%)!important;border-color:rgba(229,189,104,.25)}
+.actionCard:active{transform:translateY(1px) scale(.985)}
+.miniFeature{min-height:72px;border-radius:9px}
+.bottomNav{box-shadow:0 -18px 40px rgba(0,0,0,.22)}
+.panelHeader{backdrop-filter:blur(18px);background:rgba(4,9,13,.45)}
+.gachaTabs{scrollbar-width:none}.gachaTabs::-webkit-scrollbar{display:none}
+.gachaTab{min-height:36px}
+.gachaHero{position:relative;overflow:hidden}
+.gachaHero:before{content:"";position:absolute;inset:0;background:
+ linear-gradient(110deg,rgba(255,255,255,.055),transparent 30%),
+ radial-gradient(circle at 88% 22%,rgba(224,189,104,.11),transparent 26%);
+ pointer-events:none}
+.headlinerSection{position:relative;overflow:hidden}
+.headlinerCard{background:
+ linear-gradient(155deg,#162c36,#071015 74%);
+ box-shadow:0 16px 34px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.08)}
+.headlinerCard.rarity-big_time{background:linear-gradient(145deg,#6b5723,#0b0b08 75%)}
+.headlinerCard.rarity-epic{background:linear-gradient(145deg,#4d3970,#0c0810 75%)}
+.headlinerCard.rarity-legend{background:linear-gradient(145deg,#5f4d20,#0c0904 75%)}
+.guaranteeMeter>i{height:4px}
+.drawBtn{min-height:62px;font-size:11px;letter-spacing:.08em}
+.drawBtn b{font-size:12px}
+.gachaPlayerPreview{background:linear-gradient(180deg,#0a151b,#061015)}
+.gachaPlayerMini{box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.playerCardItem{transition:transform .14s ease,filter .14s ease}
+.playerCardItem:active{transform:scale(.985);filter:brightness(1.04)}
+.detailBlock{background:linear-gradient(145deg,#0d1a21,#071015)!important}
+.listRow{box-shadow:inset 0 1px rgba(255,255,255,.03)}
+.matchScreen{background:radial-gradient(circle at 50% 30%,rgba(52,88,95,.10),transparent 42%),#061018}
+#matchbar{top:max(10px,env(safe-area-inset-top));width:min(600px,62vw);height:58px;border-radius:10px;
+ background:linear-gradient(180deg,rgba(8,18,23,.95),rgba(2,7,10,.90));
+ box-shadow:0 18px 55px rgba(0,0,0,.46),inset 0 1px rgba(255,255,255,.05)}
+.scoreBlock #score{font-variant-numeric:tabular-nums}
+#playerCard,#opponentCard{backdrop-filter:blur(9px);border-radius:8px}
+#controls{z-index:42;pointer-events:none}
+#actionPad{display:block!important;z-index:44;right:max(18px,env(safe-area-inset-right));bottom:max(14px,env(safe-area-inset-bottom));
+ width:min(278px,31vw);height:214px;pointer-events:none;touch-action:none}
+.actionPadGlow{opacity:.8}
+.matchAction{z-index:45;min-width:58px;min-height:58px;border-radius:50%;
+ border:1px solid rgba(255,255,255,.24);box-shadow:0 14px 30px rgba(0,0,0,.42),inset 0 1px rgba(255,255,255,.12);
+ font-size:8px;font-weight:950;text-shadow:0 1px 5px rgba(0,0,0,.45);
+ touch-action:none;pointer-events:auto}
+.matchAction small{font-size:5px;color:#a6babd;opacity:.9}
+.matchAction.shoot,.matchAction.tackle{width:78px;height:78px;border-color:rgba(238,117,137,.72)}
+.matchAction.pass{border-color:rgba(119,187,239,.64)}
+.matchAction.through{border-color:rgba(121,224,196,.66)}
+.matchAction.matchup{border-color:rgba(185,202,219,.54)}
+.matchAction.press{border-color:rgba(120,220,175,.58)}
+.matchAction.switch{border-color:rgba(198,214,221,.38)}
+.matchAction.dash{width:54px;height:54px;border-color:rgba(229,189,104,.62)}
+.matchAction[data-pressed="1"]{filter:brightness(1.28) saturate(1.08);box-shadow:0 8px 22px rgba(0,0,0,.34),0 0 20px rgba(125,220,214,.12),inset 0 1px rgba(255,255,255,.18)}
+#actionPad.attacking .shoot{right:4px;bottom:54px}
+#actionPad.attacking .pass{right:92px;bottom:8px}
+#actionPad.attacking .through{right:100px;top:8px}
+#actionPad.attacking .dash{right:0;bottom:0}
+#actionPad.defending .tackle{right:4px;bottom:44px}
+#actionPad.defending .matchup{right:101px;top:8px}
+#actionPad.defending .press{right:103px;bottom:7px}
+#actionPad.defending .switch{right:0;top:7px}
+#actionPad.defending .dash{right:0;bottom:0}
+#powerGauge{z-index:48;left:auto;right:max(22px,calc(env(safe-area-inset-right) + 10px));bottom:max(226px,calc(env(safe-area-inset-bottom) + 216px));
+ width:min(182px,20vw);height:7px}
+#gestureGuide{z-index:39;right:auto;left:50%;transform:translateX(-50%);bottom:max(12px,env(safe-area-inset-bottom));width:min(230px,28vw);padding:6px 8px;opacity:.42;pointer-events:none}
+#gestureHint{display:none}
+#radar{z-index:38;bottom:max(13px,env(safe-area-inset-bottom));width:156px;height:84px;opacity:.82}
+.matchFlow{z-index:46;pointer-events:none;opacity:.68}
+.matchOverlay{z-index:90}
+.matchPanel{backdrop-filter:blur(18px)}
+.goalFx{z-index:88}
+.gachaStage{z-index:120}
+.stagePlayerCard{box-shadow:0 34px 90px rgba(0,0,0,.68),0 0 56px rgba(121,214,220,.13),inset 0 1px rgba(255,255,255,.10)}
+.stagePlayerCard.rarity-big_time{box-shadow:0 36px 90px rgba(0,0,0,.7),0 0 80px rgba(229,189,104,.24)}
+.stagePlayerCard.rarity-epic{box-shadow:0 36px 90px rgba(0,0,0,.7),0 0 80px rgba(183,149,255,.20)}
+.stagePlayerCard.rarity-legend{box-shadow:0 36px 90px rgba(0,0,0,.7),0 0 80px rgba(238,215,127,.22)}
+@media(max-width:900px){
+ .eventCopy{max-width:52%}
+ #actionPad{width:230px;height:204px}
+ #powerGauge{right:14px;bottom:218px;width:170px}
+}
+@media(max-width:560px){
+ .homeContent{inset:max(106px,calc(env(safe-area-inset-top) + 102px)) 11px 72px}
+ .eventSlide{min-height:218px}
+ .eventCopy{max-width:60%;padding:17px}
+ .eventCopy h1{font-size:31px}
+ .eventCopy p{font-size:8px;line-height:1.4}
+ .homeHeadlinerStage{width:50%!important}
+ .homeHeadliner{width:31%;height:82%}
+ .homeHeadliner:nth-of-type(2){height:92%}
+ .homeHeadliner:nth-of-type(3){height:86%}
+ .actionCard{min-height:70px}
+ #matchbar{width:78vw;height:54px}
+ #controls{height:218px}
+ #stick{width:126px;height:126px;left:10px;bottom:10px}
+ #actionPad{width:196px;height:174px;right:8px;bottom:8px}
+ .matchAction{width:50px;height:50px}
+ .matchAction.shoot,.matchAction.tackle{width:66px;height:66px}
+ #actionPad.attacking .shoot{right:0;bottom:40px}
+ #actionPad.attacking .pass{right:60px;bottom:0}
+ #actionPad.attacking .through{right:66px;top:0}
+ #actionPad.attacking .dash{right:0;bottom:0;width:44px;height:44px}
+ #actionPad.defending .tackle{right:0;bottom:35px}
+ #actionPad.defending .matchup{right:66px;top:0}
+ #actionPad.defending .press{right:66px;bottom:0}
+ #actionPad.defending .switch{right:0;top:0;width:44px;height:44px}
+ #actionPad.defending .dash{right:0;bottom:0;width:44px;height:44px}
+ #powerGauge{right:10px;bottom:191px;width:152px}
+ #radar{width:138px;height:72px;bottom:10px}
+ #gestureGuide{display:none}
+ .gachaHero{min-height:156px!important}
+ .headlinerStrip{gap:4px}
+ .headlinerCard{min-height:166px}
+ .headlinerData b{font-size:8px}
+ .gachaPlayerMini .gachaMiniPortrait{height:124px!important}
+}
+@media(max-height:560px){
+ #controls{height:194px}
+ #stick{width:116px;height:116px;bottom:8px}
+ #actionPad{height:154px;bottom:8px;width:182px}
+ .matchAction{width:46px;height:46px}
+ .matchAction.shoot,.matchAction.tackle{width:58px;height:58px}
+ #actionPad.attacking .shoot{bottom:30px}
+ #actionPad.attacking .pass{right:54px}
+ #actionPad.attacking .through{right:59px}
+ #actionPad.defending .tackle{bottom:28px}
+ #actionPad.defending .matchup,#actionPad.defending .press{right:58px}
+ #powerGauge{bottom:171px;width:148px}
+}
