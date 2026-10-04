@@ -15,6 +15,15 @@ Build a responsive soccer game foundation first, then expand toward:
 - mobile controls
 - online multiplayer
 
+## Playtest
+
+**Primary test URL (GitHub Pages):**  
+https://sasasotaro1202-star.github.io/eFootball-like-soccer-gam/
+
+GitHub Pages is the primary public browser test/release target for this project. The `Deploy mobile web game` GitHub Actions workflow publishes the current `main` branch to this URL.
+
+Vercel is optional and is not the release gate for the game. This avoids making the development/test loop dependent on a Vercel deployment quota.
+
 ## Engine
 Three.js r162 in the web runtime; Capacitor 7 for the iPhone native shell.
 
@@ -46,7 +55,7 @@ npx cap sync ios
 npx cap open ios
 ```
 
-GitHub Pages remains the visual test target. Base44 is not used. The iPhone native project is generated and validated by GitHub Actions on macOS. The canonical web CI validates both the browser runtime syntax and deterministic gameplay smoke checks.
+GitHub Pages is the primary visual/playtest target. Vercel is optional and not a release gate. Base44 is not used. The iPhone native project is generated and validated by GitHub Actions on macOS. The canonical web CI validates both the browser runtime syntax and deterministic gameplay smoke checks.
 
 ### Design rule
 
