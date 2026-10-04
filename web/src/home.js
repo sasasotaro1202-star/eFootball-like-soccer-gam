@@ -443,7 +443,7 @@ window.__footballPanel=panel;
       show("#matchResult",false);
       show("#matchReward",false);
     }
-    if(e.target.closest("#kickoffBtn")){setFlow("kickoff");show("#matchIntro",false);setTimeout(()=>setFlow("play"),700);}
+    if(e.target.closest("#kickoffBtn")){e.preventDefault();setFlow("kickoff");show("#matchIntro",false);window.dispatchEvent(new Event("football:kickoff"));setTimeout(()=>setFlow("play"),700);}
     if(e.target.closest("#rewardBtn")){
       if(!window.__matchRewardClaimed){
         state.gp+=500;
