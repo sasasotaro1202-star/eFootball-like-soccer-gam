@@ -1462,13 +1462,7 @@ function leftMove(e) {
   }
 }
 
-function leftUp(e) {
-  if(e.pointerId!==state.leftPointerId)return;
-  e.preventDefault();
-  const now=performance.now();
-  const start=state.leftStart;
-  const mag=start?Math.hypot(e.clientX-start.x,e.clientY-start.y):0;
-  if(mag<20)state.leftTapAt=now;
+function clearLeftPointer() {
   state.leftPointerId=null;
   state.leftStart=null;
   state.joy.x=0;
@@ -1476,6 +1470,22 @@ function leftUp(e) {
   state.sprint=false;
   state.sharpTouchTriggered=false;
   updateJoystickVisual();
+}
+function leftUp(e) {
+  if(e.pointerId!==state.leftPointerId)return;
+  e.preventDefault();
+  const now=performance.now();
+  const start=state.leftStart;
+  const mag=start?Math.hypot(e.clientX-start.x,e.clientY-start.y):0;
+  if(mag<20)state.leftTapAt=now;
+  clearLeftPointer();
+}
+function leftCancel(e) {
+  if(e.pointerId!==state.leftPointerId)return;
+  e.preventDefault();
+  state.leftTapAt=0;
+  clearLeftPointer();
+  recordInputAction("INPUT_CANCEL","left-pointercancel");
 }
 
 function rightDown(e) {
@@ -1525,6 +1535,18 @@ function callTeamPressure() {
   showMessage("TEAM PRESS",520);
 }
 
+function rightCancel(e) {
+  const g=state.rightGesture;
+  if(!g||g.id!==e.pointerId)return;
+  e.preventDefault();
+  state.rightGesture=null;
+  state.rightHeld=false;
+  state.matchUp=false;
+  state.sprint=false;
+  state.pressUntil=0;
+  state.leftTapAt=0;
+  recordInputAction("INPUT_CANCEL","right-pointercancel");
+}
 function rightUp(e) {
   const g=state.rightGesture;
   if(!g||g.id!==e.pointerId)return;
@@ -1691,6 +1713,19 @@ function beginActionCharge(type,e){
   state.actionPress={type,startedAt:performance.now(),pointerId:e.pointerId};
   updatePowerGauge();
 }
+function clearActionCharge(type,e,reason="cancel"){
+  e?.preventDefault?.();
+  e?.stopPropagation?.();
+  const button=e?.currentTarget;
+  if(button)delete button.dataset.pressed;
+  if(type==="matchup"){state.matchupHeld=false;state.matchUp=false;return}
+  if(type==="dash"){state.dashHeld=false;state.sprint=false;return}
+  if(state.actionPress?.type===type){
+    state.actionPress=null;
+    updatePowerGauge();
+    recordInputAction("INPUT_CANCEL",reason,{action:type});
+  }
+}
 function finishActionCharge(type,e){
   e.preventDefault(); e.stopPropagation();
   const button=e.currentTarget;
@@ -1713,7 +1748,7 @@ function bindActionButton(id,type){
   const down=(e)=>beginActionCharge(type,e),up=(e)=>finishActionCharge(type,e);
   b.addEventListener("pointerdown",down,{passive:false});
   b.addEventListener("pointerup",up,{passive:false});
-  b.addEventListener("pointercancel",up,{passive:false});
+  b.addEventListener("pointercancel",(e)=>clearActionCharge(type,e,"action-pointercancel"),{passive:false});
   b.addEventListener("pointerleave",(e)=>{if(type==="dash"||type==="matchup")finishActionCharge(type,e)},{passive:false});
   b.addEventListener("click",(e)=>{e.preventDefault();e.stopPropagation()});
 }
@@ -1744,7 +1779,7 @@ function initInput() {
   stick?.addEventListener("pointerdown",leftDown,{passive:false});
   stick?.addEventListener("pointermove",leftMove,{passive:false});
   stick?.addEventListener("pointerup",leftUp,{passive:false});
-  stick?.addEventListener("pointercancel",leftUp,{passive:false});
+  stick?.addEventListener("pointercancel",leftCancel,{passive:false});
 
   mount.addEventListener("pointerdown",(e)=>{
     if(!pointerIsGameplay(e))return;
@@ -1763,8 +1798,8 @@ function initInput() {
     else rightUp(e);
   },{passive:false});
   mount.addEventListener("pointercancel",(e)=>{
-    if(e.pointerId===state.leftPointerId)leftUp(e);
-    else rightUp(e);
+    if(e.pointerId===state.leftPointerId)leftCancel(e);
+    else rightCancel(e);
   },{passive:false});
 
   bindActionButton("switchBtn","switch");
