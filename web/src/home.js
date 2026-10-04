@@ -252,6 +252,7 @@ function renderSpecialContract(){
 
 function renderGacha(kind="special"){
  activeBanner=kind;
+ if(kind==="special"){renderSpecialContract();return;}
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
  const heads=kind==="special"?activeSpecialHeadliners(pool):headlinersFor(kind);
  const remaining=pool.length;
