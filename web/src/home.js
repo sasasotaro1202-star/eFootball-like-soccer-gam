@@ -221,6 +221,14 @@ function ensureGachaStage(){
 
 let gachaPresentation={results:[],revealed:false,timers:[]};
 function clearGachaTimers(){gachaPresentation.timers.forEach(clearTimeout);gachaPresentation.timers=[]}
+function stagePlayerCard(p){
+  if(!p)return "";
+  const type=String(p.cardType||p.rarity||"STANDARD").toLowerCase();
+  return `<article class="stagePlayerCard rarity-${type}"><div class="stageCardTop"><span>${esc(rarityLabel(p.cardType||p.rarity))}</span><b>${p.overall}</b></div><div class="stageCardPortrait">${portraitSvg(p,true)}</div><div class="stageCardBottom"><strong>${esc(p.name)}</strong><span>${esc(p.position)} • ${esc(p.nation||"World")}</span><small>${starText(p.star||5)} • NEW PLAYER</small></div></article>`;
+}
+function signingPackMarkup(count){
+  return `<div class="signingPack"><div class="packSheen"></div><strong>PLAYER LIST</strong><b>${count===10?"10×":"1×"}</b><span>SPECIAL CONTRACT</span><i>◆</i></div>`;
+}
 function finishGachaPresentation(skip=false){
   const stage=ensureGachaStage();if(!stage)return;
   clearGachaTimers();
@@ -228,8 +236,9 @@ function finishGachaPresentation(skip=false){
   if(results.length){
     const p=results[results.length-1];
     $("#stageName").textContent=p.name;
-    $("#stageRarity").textContent=p.rarity+" • "+p.position+" • OVR "+p.overall;
-    $("#gachaResult").innerHTML=results.map((x,i)=>`<div class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}"><span>${i+1}</span><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></div>`).join("");
+    $("#stageRarity").textContent=rarityLabel(p.cardType||p.rarity)+" • "+p.position+" • OVR "+p.overall;
+    const card=$("#stageCard");if(card)card.innerHTML=stagePlayerCard(p);
+    $("#gachaResult").innerHTML=results.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • OVR ${x.overall}</small></button>`).join("");
   }
   stage.classList.remove("charging","revealing");
   stage.classList.add("show","complete");
@@ -241,9 +250,11 @@ function showSigning(results){
   const stage=ensureGachaStage(); if(!stage){showMessage("ガチャ演出画面を初期化できません");return;}
   clearGachaTimers();
   gachaPresentation={results:results||[],revealed:false,timers:[]};
-  $("#stageName").textContent="PLAYER SIGNING";
-  $("#stageRarity").textContent=(results||[]).length===10?"10 PLAYERS • TAP TO OPEN":"TAP TO OPEN";
-  $("#gachaResult").innerHTML=`<button type="button" class="gachaPrompt" id="gachaOpenButton"><span class="promptRing">✦</span><b>${(results||[]).length===10?"10× PLAYER DRAW":"PLAYER DRAW"}</b><small>ここをタップして開封</small></button>`;
+  const count=(results||[]).length;
+  $("#stageName").textContent="SPECIAL PLAYER LIST";
+  $("#stageRarity").textContent=count===10?"10 PLAYERS • HEADLINER GUARANTEE":"1 PLAYER • CONTRACT";
+  const card=$("#stageCard");if(card)card.innerHTML=signingPackMarkup(count);
+  $("#gachaResult").innerHTML=`<button type="button" class="gachaPrompt" id="gachaOpenButton"><span class="promptRing">◆</span><b>${count===10?"OPEN 10 PLAYERS":"OPEN PLAYER"}</b><small>タップして契約を開封</small></button>`;
   const pattern=gachaPattern(results);
   stage.dataset.pattern=pattern;
   stage.classList.remove("complete","revealing","pattern-flash","pattern-burst","pattern-rain","pattern-spotlight","pattern-galaxy","pattern-orbit","pattern-scan");
@@ -270,8 +281,9 @@ function revealGacha(){
   const stage=ensureGachaStage(),results=gachaPresentation.results||[];
   if(!stage||!results.length){if(stage)stage.classList.remove("show");return;}
   const order=[...results].sort((a,b)=>rarityRank(b.cardType||b.rarity)-rarityRank(a.cardType||a.rarity));
-  $("#gachaResult").innerHTML=order.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><div class="revealPortrait">${portraitSvg(x,true)}</div><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></button>`).join("");
   const top=order[0];
+  const card=$("#stageCard");if(card)card.innerHTML=stagePlayerCard(top);
+  $("#gachaResult").innerHTML=order.map((x,i)=>`<button type="button" class="miniResult revealCard rarity-${String(x.cardType||x.rarity).toLowerCase()}" style="--i:${i}" data-player-id="${esc(x.id)}"><span>${i+1}</span><div class="revealPortrait">${portraitSvg(x,true)}</div><b>${esc(x.name)}</b><small>${esc(rarityLabel(x.cardType||x.rarity))} • ${starText(x.star||5)} • OVR ${x.overall}</small></button>`).join("");
   $("#stageName").textContent=top?.name||"PLAYER";
   $("#stageRarity").textContent=rarityLabel(top?.cardType||top?.rarity||"STANDARD")+" • "+(top?.position||"")+" • OVR "+(top?.overall||0);
   stage.onclick=(ev)=>{if(ev.target.closest("#gachaSkip"))return;const card=ev.target.closest(".revealCard");if(card)showPlayerDetail(card.dataset.playerId)};
