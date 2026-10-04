@@ -189,6 +189,7 @@ function makePlayer(team,index,role){
 
  const rootScale=.90+(id%6)*.018;
  g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale);
+ g.traverse(o=>{if(o.isMesh&&o.geometry?.type!=="PlaneGeometry"){o.castShadow=true;o.receiveShadow=true;}});
  g.userData={team,index,role,number:d?.number||index+1,bodyScale:rootScale,heightScale:stature,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,
    speed:role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025,acceleration:7.5+gameplay.acceleration*.075,pace:gameplay.pace,shooting:gameplay.shooting,passing:gameplay.passing,dribbling:gameplay.dribbling,defending:gameplay.defending,physical:gameplay.physical,staminaRating:gameplay.stamina,gkReflexes:gameplay.gkReflexes,currentSpeed:0,sharpTouchUntil:0,sharpTouchStart:0,sharpTouchVX:0,sharpTouchVZ:0,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,selectorArrow,moving:false,sprint:false,action:"idle",actionUntil:0,
    rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
@@ -272,6 +273,7 @@ function buildPitch() {
   );
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.12;
+  ground.receiveShadow = true;
   scene.add(ground);
 
   const pitch = new THREE.Mesh(
@@ -280,6 +282,7 @@ function buildPitch() {
   );
   pitch.rotation.x = -Math.PI / 2;
   pitch.position.y = 0;
+  pitch.receiveShadow = true;
   scene.add(pitch);
 
   const stripeColors = [0x1a7b40, 0x156c38];
@@ -393,6 +396,8 @@ function buildBall() {
     new THREE.MeshStandardMaterial({map:ballTex,color:0xffffff,roughness:.62,metalness:0})
   );
   ball.position.set(0, 0.48, 0);
+  ball.castShadow=true;
+  ball.receiveShadow=true;
   const ballShadow=new THREE.Mesh(
     new THREE.PlaneGeometry(.95,.95),
     new THREE.MeshBasicMaterial({map:softShadowTexture(),transparent:true,depthWrite:false,opacity:.58})
@@ -1597,15 +1602,24 @@ function initRenderer() {
   renderer.domElement.style.width = "100%";
   renderer.domElement.style.height = "100%";
   renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(50, 1, 0.1, 300);
   camera.position.set(0, 48, 69);
 
-  const hemi = new THREE.HemisphereLight(0xd9f1ff, 0x10251a, 1.8);
+  scene.fog = new THREE.FogExp2(0x0a1820,0.0048);
+  const hemi = new THREE.HemisphereLight(0xd9f1ff, 0x10251a, 1.65);
   scene.add(hemi);
-  const sun = new THREE.DirectionalLight(0xffffff, 2.4);
-  sun.position.set(0, 90, 30);
+  const sun = new THREE.DirectionalLight(0xffffff, 2.6);
+  sun.position.set(-18, 88, 28);
+  sun.castShadow = true;
+  const shadowSize = innerWidth < 900 ? 512 : 768;
+  sun.shadow.mapSize.set(shadowSize,shadowSize);
+  sun.shadow.camera.left=-82;sun.shadow.camera.right=82;sun.shadow.camera.top=62;sun.shadow.camera.bottom=-62;
+  sun.shadow.camera.near=4;sun.shadow.camera.far=150;
+  sun.shadow.bias=-0.00045;
   scene.add(sun);
   clock = new THREE.Clock();
 
