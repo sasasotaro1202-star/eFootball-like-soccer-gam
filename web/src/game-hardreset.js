@@ -89,6 +89,10 @@ const state = {
   goalResumeTimer: null
 };
 
+function canGameplayAct() {
+  return !!(state.matchActive && !state.finished && !state.paused && state.matchState === "live");
+}
+
 let renderer;
 let scene;
 let camera;
@@ -634,6 +638,7 @@ function moveControlled(dt) {
 }
 
 function quickStopFaceGoal(){
+  if(!canGameplayAct())return;
   const p=home[state.selected];
   if(!p||ball.userData.owner!==p)return;
   p.userData.moving=false;
@@ -646,6 +651,7 @@ function quickStopFaceGoal(){
 }
 
 function activateShield(){
+  if(!canGameplayAct())return;
   const p=home[state.selected];
   if(!p||ball.userData.owner!==p)return;
   const opp=away.slice().sort((a,b)=>dist(a,p)-dist(b,p))[0];
@@ -925,6 +931,7 @@ function kick(player, tx, tz, speed, actionType="pass") {
 }
 
 function tackleControlled(){
+  if(!canGameplayAct())return;
   const tackler=home[state.selected];
   if(!tackler||tackler.userData.role==="GK") return;
   recordInputAction("TACKLE","tackle");
@@ -988,6 +995,7 @@ function tackleControlled(){
 }
 
 function slidingTackleControlled(){
+  if(!canGameplayAct())return;
   const tackler=home[state.selected];
   if(!tackler||tackler.userData.role==="GK")return;
   recordInputAction("SLIDING_TACKLE","tackle-hold");
@@ -1024,6 +1032,7 @@ function slidingTackleControlled(){
   }
 }
 function passOrShoot(mode, power = 0.8, aim = null, stunning = false) {
+  if(!canGameplayAct())return;
   const p = home[state.selected];
   if (!p) return;
 
@@ -1434,6 +1443,7 @@ function screenVector(x, yDown) {
 }
 
 function leftDown(e) {
+  if(!canGameplayAct())return;
   e.preventDefault();
   const now=performance.now();
   const doubleTap=now-(state.leftTapAt||0)<280;
@@ -1501,7 +1511,7 @@ function leftCancel(e) {
 }
 
 function rightDown(e) {
-  if(!pointerIsGameplay(e))return;
+  if(!canGameplayAct()||!pointerIsGameplay(e))return;
   e.preventDefault();
   const now=performance.now();
   state.rightHeld=true;
@@ -1532,6 +1542,7 @@ function rightMove(e) {
 }
 
 function callTeamPressure() {
+  if(!canGameplayAct())return;
   state.teamPressUntil=performance.now()+1800;
   recordInputAction("TEAM_PRESS","right-swipe");
   const target=ball.userData.owner;
@@ -1667,6 +1678,7 @@ function keyboardMove() {
 }
 
 function switchPlayer(){
+  if(!canGameplayAct())return;
   const current=home[state.selected],owner=ball.userData.owner;
   const target=owner?.userData?.team===AWAY?owner:ball;
   const candidates=home.filter(p=>p!==current&&p.userData.role!=="GK");
@@ -1700,6 +1712,7 @@ function updatePowerGauge(){
 }
 function beginActionCharge(type,e){
   e.preventDefault(); e.stopPropagation();
+  if(!canGameplayAct())return;
   const button=e.currentTarget;
   button.dataset.pressed="1";
   if(button.setPointerCapture)button.setPointerCapture(e.pointerId);
@@ -2056,6 +2069,7 @@ function bootGame() {
 }
 
 window.addEventListener("football:match-start",()=>{
+  resetActiveInput("match-start");
   syncMatchSquad();
   const intro=$("#matchIntro");
   if(intro){intro.style.animation="none";intro.offsetHeight;intro.style.animation="none"}
@@ -2075,6 +2089,7 @@ window.addEventListener("football:match-start",()=>{
 });
 window.addEventListener("football:kickoff",()=>{
   if(!state.matchActive||state.finished)return;
+  resetActiveInput("kickoff");
   clearTimeout(state.goalResumeTimer);
   state.paused=false;
   state.matchState="live";
@@ -2083,6 +2098,7 @@ window.addEventListener("football:kickoff",()=>{
   updateHUD();
 });
 window.addEventListener("football:match-exit",()=>{
+  resetActiveInput("match-exit");
   state.matchActive=false;
   state.paused=true;
   state.matchState="idle";
