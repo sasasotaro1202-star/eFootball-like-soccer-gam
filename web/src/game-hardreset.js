@@ -381,6 +381,15 @@ function moveControlled(dt) {
   const defending=owner?.userData?.team===AWAY;
   const mag=Math.hypot(state.joy.x,state.joy.y);
 
+  // Sharp Touch is a short physics impulse, applied even after the flick is released.
+  if(u.sharpTouchUntil>now){
+    const remain=clamp((u.sharpTouchUntil-now)/260,0,1);
+    const impulse=4.8*remain*remain;
+    p.position.x=clamp(p.position.x+(u.sharpTouchVX||0)*impulse*dt,-51,51);
+    p.position.z=clamp(p.position.z+(u.sharpTouchVZ||0)*impulse*dt,-32.5,32.5);
+    u.currentSpeed=Math.max(u.currentSpeed,impulse);
+  }
+
   if(mag<0.04){
     u.moving=false;
     u.currentSpeed=Math.max(0,u.currentSpeed-u.acceleration*dt*1.25);
@@ -414,14 +423,6 @@ function moveControlled(dt) {
   const nx=state.joy.x/mag;
   const nz=state.joy.y/mag;
   const intensity=clamp(mag,0,1);
-
-  if(u.sharpTouchUntil>now){
-    const remain=clamp((u.sharpTouchUntil-now)/260,0,1);
-    const impulse=4.8*remain*remain;
-    p.position.x=clamp(p.position.x+(u.sharpTouchVX||0)*impulse*dt,-51,51);
-    p.position.z=clamp(p.position.z+(u.sharpTouchVZ||0)*impulse*dt,-32.5,32.5);
-    u.currentSpeed=Math.max(u.currentSpeed,impulse);
-  }
   const dash=!defending&&state.rightHeld;
   const shield=owner===p&&state.shieldUntil>now;
   const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
