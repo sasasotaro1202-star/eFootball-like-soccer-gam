@@ -686,6 +686,7 @@ function teamAI(dt){
   const ballX=ball.position.x, ballZ=ball.position.z, owner=ball.userData.owner;
   const now=performance.now();
   const fluidFormation=localStorage.getItem("football_fluid_formation")!=="0";
+  const teamPlaystyle=localStorage.getItem("football_team_playstyle")||"POSSESSION";
 
   // AI pressure: defenders can contest the carrier without teleporting the ball.
   if(owner){
@@ -739,16 +740,20 @@ function teamAI(dt){
         tx=attack*49;
         tz=clamp(ballZ,-9,9);
       }else if(attacking){
-        const advance=clamp((ballX*attack)*0.16,-8,14);
+        const advanceBase=teamPlaystyle==="QUICK_COUNTER"?.24:teamPlaystyle==="LONG_BALL"?.19:.16;
+        const advanceCap=teamPlaystyle==="QUICK_COUNTER"?18:teamPlaystyle==="LONG_BALL"?16:14;
+        const advance=clamp((ballX*attack)*advanceBase,-8,advanceCap);
         tx=homeX+advance;
         tz=homeZ+clamp((ballZ-homeZ)*0.24,-8,8);
         if(fluidFormation){
           if(role==="FW"){
             const lane=(p.userData.index%2===0?-1:1);
-            tx+=attack*(3.5+Math.max(0,ballX*attack)*.08);
-            tz+=lane*2.6+clamp((ballZ-p.position.z)*.18,-5,5);
+            const fwPush=teamPlaystyle==="QUICK_COUNTER"?5.2:teamPlaystyle==="LONG_BALL"?6.0:3.5;
+            tx+=attack*(fwPush+Math.max(0,ballX*attack)*.08);
+            tz+=lane*(teamPlaystyle==="LONG_BALL"?3.4:2.6)+clamp((ballZ-p.position.z)*.18,-5,5);
           }else if(role==="MF"){
-            tx+=attack*2.0;
+            const mfPush=teamPlaystyle==="POSSESSION"?1.4:teamPlaystyle==="QUICK_COUNTER"?3.1:2.2;
+            tx+=attack*mfPush;
             tz+=clamp((ballZ-p.position.z)*.32,-6,6);
           }
         }
@@ -856,7 +861,7 @@ function teamAI(dt){
         acted=true;
       }
     }
-    owner.userData.aiNextDecisionAt=now+(acted?900:420);
+    owner.userData.aiNextDecisionAt=now+(acted?(teamPlaystyle==="QUICK_COUNTER"?760:teamPlaystyle==="LONG_BALL"?1040:900):420);
   }
 }
 
