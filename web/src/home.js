@@ -130,6 +130,38 @@ const GACHA_BANNERS=[
  {id:"packs",title:"PACKS",sub:"固定内容の選手をまとめて獲得",kind:"packs",cost:0,deal:"PACK",featured:"BUNDLE"}
 ];
 let activeBanner="special";
+const SPECIAL_BOX_KEY="football_special_box_v1";
+function shuffleCards(list){
+ const a=[...list];
+ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}
+ return a;
+}
+function specialBoxSeed(){
+ const heads=headlinersFor("special");
+ const headIds=new Set(heads.map(p=>String(p.id)));
+ const pool=CARD_POOL.filter(p=>!headIds.has(String(p.id)));
+ return heads.concat(shuffleCards(pool).slice(0,147)).map(p=>String(p.id));
+}
+function specialBoxIds(){
+ let raw=[];
+ try{raw=JSON.parse(localStorage.getItem(SPECIAL_BOX_KEY)||"[]")}catch{raw=[]}
+ const valid=[...new Set(Array.isArray(raw)?raw.map(String):[])].filter(id=>CARD_POOL.some(p=>String(p.id)===id));
+ if(valid.length)return valid;
+ const seeded=specialBoxSeed();
+ localStorage.setItem(SPECIAL_BOX_KEY,JSON.stringify(seeded));
+ return seeded;
+}
+function specialBoxCards(){
+ return specialBoxIds().map(id=>CARD_POOL.find(p=>String(p.id)===String(id))).filter(Boolean);
+}
+function consumeSpecialBox(ids){
+ localStorage.setItem(SPECIAL_BOX_KEY,JSON.stringify([...new Set(ids.map(String))]));
+}
+function activeSpecialHeadliners(pool=specialBoxCards()){
+ const ids=new Set(headlinersFor("special").map(p=>String(p.id)));
+ return pool.filter(p=>ids.has(String(p.id)));
+}
+
 function bannerPool(id){
  const typeMap={
   special:["STANDARD","FEATURED","HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"],
@@ -139,6 +171,10 @@ function bannerPool(id){
   selection:["HIGHLIGHT","SHOWTIME","EPIC","LEGEND","BIG_TIME"],
   packs:["STANDARD","FEATURED","HIGHLIGHT"]
  };
+ if(id==="special"){
+   const box=specialBoxCards();
+   return box.length?box:CARD_POOL.filter(p=>String(p.cardType||p.rarity).toUpperCase()==="STANDARD");
+ }
  const types=typeMap[id]||typeMap.special;
  const pool=CARD_POOL.filter(p=>types.includes(String(p.cardType||p.rarity).toUpperCase()));
  return pool.length?pool:CARD_POOL.filter(p=>p.cardType==="STANDARD");
@@ -181,8 +217,9 @@ function renderGacha(kind="special"){
  activeBanner=kind;
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
  const mixed=kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection";
- const heads=headlinersFor(kind);
- const meta=gachaMeta(),progress=meta.pulls%10,untilGuarantee=progress===0?10:10-progress;
+ const heads=kind==="special"?activeSpecialHeadliners(pool):headlinersFor(kind);
+ const remaining=pool.length;
+ const untilGuarantee=kind==="special"?(heads.length?10:0):0;
  const typeOrder=["BIG_TIME","EPIC","LEGEND","SHOWTIME","HIGHLIGHT","FEATURED","STANDARD"];
  const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
  const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
@@ -190,9 +227,9 @@ function renderGacha(kind="special"){
  const headlinerMarkup=heads.length?'<section class="headlinerSection"><div class="headlinerHeader"><div><span>HEADLINERS</span><b>3 FEATURED PLAYERS</b></div><small>10×: HEADLINER GUARANTEED</small></div><div class="headlinerStrip">'+heads.map((p,i)=>'<button class="headlinerCard rarity-'+String(p.cardType||p.rarity).toLowerCase()+'" data-player-id="'+esc(p.id)+'" type="button"><div class="headlinerGlow"></div><div class="headlinerPortrait">'+portraitSvg(p,true)+'</div><span class="headlinerNo">0'+(i+1)+'</span><div class="headlinerData"><b>'+esc(p.name)+'</b><small>'+esc(rarityLabel(p.cardType||p.rarity))+' • OVR '+p.overall+'</small></div></button>').join("")+'</div></section>':"";
  const previewPool=pool.filter(p=>!heads.some(h=>h.id===p.id)).slice(0,6);
  const previewCards='<div class="gachaPlayerPreview"><div class="gachaPreviewTitle">PLAYER LIST PREVIEW <span>'+pool.length+' PLAYERS</span></div><div class="gachaPreviewGrid">'+previewPool.map(p=>'<button class="gachaPlayerMini" data-player-id="'+esc(p.id)+'" type="button"><div class="gachaMiniPortrait">'+portraitSvg(p,true)+'</div><div class="gachaMiniInfo"><b>'+esc(p.name)+'</b><span>'+esc(p.position)+' • '+esc(cardTypeMark(p))+'</span><strong>'+p.overall+'</strong></div></button>').join("")+'</div></div>';
- const notice=kind==="special"?'<div class="rateNotice"><b>10× HEADLINER GUARANTEE</b><span>このリストでは10回目の獲得時に3人のHeadlinerから1人を確定獲得。10×は通常900 COINS。</span></div>':"";
+ const notice=kind==="special"?'<div class="rateNotice"><b>10× HEADLINER GUARANTEE</b><span>'+remaining+' players remaining • '+heads.length+' headliners remaining • 10× costs 900 COINS.</span></div>':"";
  const selectNote=(kind==="nominating"||kind==="selection")?'<div class="rateNotice selectNotice"><b>SELECT A PLAYER</b><span>Player Listの選手をタップして詳細を確認し、そのまま指定獲得できます。</span></div>':"";
- const guarantee=kind==="special"?'<div class="guaranteeMeter"><span>NEXT HEADLINER</span><b>'+untilGuarantee+' / 10</b><i><em style="width:'+((10-untilGuarantee)/10*100)+'%"></em></i></div>':"";
+ const guarantee=kind==="special"?'<div class="guaranteeMeter"><span>SPECIAL LIST</span><b>'+remaining+' REMAINING</b><i><em style="width:'+((150-Math.min(150,remaining))/150*100)+'%"></em></i></div>':"";
  const drawButtons=(kind==="nominating"||kind==="selection"||kind==="standard")?'':'<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'"><b>SIGN ×1</b><small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'"><b>SIGN ×10</b><small>'+ (b.cost?b.cost*9+" COINS":"10 CONTRACTS") +'</small></button></div>';
  const directCost=p=>Math.max(600,Math.round((Number(p.overall)||70)*75));
  const directMarkup=kind==="standard"?'<section class="directSignSection"><div class="directSignHeader"><b>STANDARD SIGNING</b><span>GP</span></div><div class="directSignGrid">'+pool.slice(0,8).map(p=>'<button class="directSignCard" data-direct-sign="'+esc(p.id)+'" type="button"><span>'+esc(p.position)+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+' • '+money(directCost(p))+' GP</small><strong>SIGN</strong></button>').join("")+'</div></section>':"";
@@ -292,23 +329,40 @@ function revealGacha(){
 }
 
 function draw(n,unitCost=100,free=false){
+ const kind=free?"special":activeBanner;
  const cost=free?0:(n===10?unitCost*9:unitCost);
  if(!free&&state.coins<cost){showMessage("コインが足りません");return}
  if(n<1||n>10){showMessage("契約数が不正です");return}
- if(free){const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);if(used===today){showMessage("本日の無料ガチャは使用済みです");return}localStorage.setItem(GACHA_FREE_KEY,today)}
- state.coins-=cost;const meta=gachaMeta(),results=[];
- for(let i=0;i<n;i++){
-   let p=pickPlayer();const next=meta.pulls+i+1;
-   if(activeBanner==="special"&&next%10===0){
-     const heads=headlinersFor("special");
-     if(heads.length)p=heads[(meta.pulls+i)%heads.length];
+ if(free){
+   const today=new Date().toISOString().slice(0,10),used=localStorage.getItem(GACHA_FREE_KEY);
+   if(used===today){showMessage("本日の無料契約は使用済みです");return}
+   localStorage.setItem(GACHA_FREE_KEY,today);
+ }
+ const pool=kind==="special"?specialBoxCards():bannerPool(kind);
+ if(pool.length<n){showMessage("Player Listの残り人数が不足しています");return}
+ state.coins-=cost;
+ const results=[];
+ let available=[...pool];
+ if(kind==="special"&&n===10){
+   const heads=activeSpecialHeadliners(available);
+   if(heads.length){
+     const h=heads[Math.floor(Math.random()*heads.length)];
+     results.push(h);
+     available=available.filter(p=>String(p.id)!==String(h.id));
    }
+ }
+ while(results.length<n&&available.length){
+   const p=available[Math.floor(Math.random()*available.length)];
    results.push(p);
+   available=available.filter(x=>String(x.id)!==String(p.id));
+ }
+ if(kind==="special")consumeSpecialBox(available.map(p=>p.id));
+ const meta=gachaMeta(),best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);
+ setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});
+ for(const p of results){
    if(p&&!state.owned.includes(p.id))state.owned.push(p.id);else if(p)state.gp+=80;
  }
- const best=results.reduce((a,b)=>rarityRank(b.cardType||b.rarity)>rarityRank(a.cardType||a.rarity)?b:a,results[0]);
- setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});
- state.gp+=n*120;save();wallet();showSigning(results);
+ state.gp+=n*120;save();wallet();activeBanner=kind;showSigning(results);
 }
 function signSelectedPlayer(id,cost=0){
  const p=CARD_POOL.find(x=>String(x.id)===String(id));if(!p)return;
