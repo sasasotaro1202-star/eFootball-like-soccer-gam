@@ -30,7 +30,7 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
     js.includes("clearActionCharge(type,e,\"action-pointercancel\")")&&
     js.includes('pointercancel",leftCancel')&&section.includes("leftCancel(e)")&&
     section.includes("rightCancel(e)")&&section.includes("state.leftPointerId");
-})()],["asset cache bust",html.includes("style.css?v=20261004-contract-deck-01")&&html.includes("home.js?v=20261004-contract-deck-01")&&html.includes("game-hardreset.js?v=20261004-gameplay-gate-01")],
+})()],["asset cache bust",html.includes("style.css?v=20261004-ref-contract-02")&&html.includes("home.js?v=20261004-ref-contract-02")&&html.includes("game-hardreset.js?v=20261004-gameplay-gate-01")],
 ["mobile input recovery",js.includes('function resetActiveInput(reason="cancel")')&&js.includes('document.addEventListener("visibilitychange"')&&js.includes('orientationchange')&&js.includes("state.rightGesture=null")],
 ["gameplay action gate",js.includes("function canGameplayAct()")&&js.includes('state.matchState === "live"')&&js.includes("if(!canGameplayAct())return;")&&js.includes('state.matchActive=true')&&js.includes('resetActiveInput("kickoff")')],
 ["presentation polish",js.includes('new THREE.CanvasTexture(c)')&&js.includes('netMat=new THREE.MeshBasicMaterial')&&js.includes('function updateBroadcastCamera(dt)')&&js.includes('scene.fog = new THREE.FogExp2')&&js.includes('renderer.shadowMap.enabled = true')&&html.includes('id="gestureGuide"')&&html.includes('id="matchPause"')&&html.includes('id="pauseBtn"')&&css.includes("#gestureGuide")],
@@ -50,7 +50,7 @@ const gatedActions=[
   "quickStopFaceGoal","activateShield","tackleControlled","slidingTackleControlled",
   "passOrShoot","switchPlayer","callTeamPressure","beginActionCharge","leftDown","rightDown"
 ];
-checks.push(["premium contract deck",home.includes("data-nav=\"gacha\"")&&home.includes("function renderGacha")&&home.includes("contractHeroCard")&&home.includes("contractPurchase")&&css.includes(".contractHero")&&css.includes(".contractMiniGrid")&&css.includes(".contractCounter")]);
+checks.push(["premium contract deck",home.includes("data-nav=\"gacha\"")&&home.includes("function renderGacha")&&home.includes("renderSpecialContract")&&home.includes("refContractCard")&&home.includes("refPurchase")&&css.includes(".referenceContract")&&css.includes(".refContractCard")&&css.includes(".refPurchase")]);
 const actionGateCheck=gatedActions.every(name=>{
   const start=js.indexOf("function "+name);
   if(start<0)return false;
