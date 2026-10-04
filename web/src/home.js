@@ -221,6 +221,35 @@ function pickPlayer(){
  }
  return pool[Math.floor(Math.random()*pool.length)];
 }
+function renderSpecialContract(){
+ const kind="special",b=GACHA_BANNERS[0],pool=bannerPool(kind),heads=activeSpecialHeadliners(pool).slice(0,3),remaining=pool.length;
+ const featured=(heads.length?heads:pool.slice(0,3));
+ const featuredMarkup=featured.map((p,i)=>{
+   const type=String(p.cardType||p.rarity||"STANDARD").toLowerCase();
+   const skill=skillList(p)[0]||"One-touch Pass";
+   return '<button class="refContractCard rarity-'+type+' '+(i===1?"featured":"")+'" data-player-id="'+esc(p.id)+'" type="button">'
+    +'<div class="refCardLight"></div>'
+    +'<div class="refCardTop"><span>'+esc(rarityLabel(p.cardType||p.rarity))+'</span><b>'+p.overall+'</b></div>'
+    +'<div class="refSkill">PLAYER SKILL <strong>'+esc(skill)+'</strong></div>'
+    +'<div class="refPortrait">'+portraitSvg(p,true)+'</div>'
+    +'<div class="refCardNumber">'+String(i+1).padStart(2,"0")+'</div>'
+    +'<div class="refCardBottom"><span>'+esc(p.position)+' • '+esc(p.nation||"WORLD")+'</span><strong>'+esc(p.name)+'</strong><small>'+starText(p.star||5)+'</small></div>'
+    +'</button>';
+ }).join("");
+ const preview=pool.filter(p=>!featured.some(h=>h.id===p.id)).slice(0,8).map(p=>'<button class="refMiniCard" data-player-id="'+esc(p.id)+'" type="button"><div class="refMiniPortrait">'+portraitSvg(p,false)+'</div><span>'+esc(rarityLabel(p.cardType||p.rarity))+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+' • '+esc(p.position)+'</small></button>').join("");
+ $("#panelTitle").textContent="CONTRACT";
+ $("#panelSubtitle").textContent="SPECIAL PLAYER LIST";
+ screen("panel");
+ $("#panelBody").innerHTML='<div class="referenceContract">'
+  +'<header class="refHeader"><div><span class="refEyebrow">EPIC & SHOW TIME</span><h2>OVER-THE-TOP<br>PLAYER LIST</h2><p>選ばれたスターを獲得。10×はヘッドライダー1名を保証。</p></div><div class="refHeaderRight"><div class="refRemain"><small>残り</small><b>6日 18時間</b></div><div class="refBox"><small>BOX DRAW</small><b>'+remaining+' / 150</b><span>×</span></div></div></header>'
+  +'<section class="refHero"><div class="refHeroGlow"></div><div class="refHeroMeta"><span>LIMITED CAMPAIGN</span><b>FOOTBALL NOSTALGIA</b><small>Original clean-room player-card artwork</small></div><div class="refCards">'+featuredMarkup+'</div><div class="refAll"><button class="refAllButton" data-rates="1">全て見る</button><span>HEADLINERS '+heads.length+' / 3</span></div></section>'
+  +'<section class="refInfo"><div class="refInfoCopy"><b>HEADLINER GUARANTEE</b><span>10× SIGNで対象ヘッドライダーが1人以上登場</span></div><div class="refProgress"><span></span></div></section>'
+  +'<section class="refBottom"><button class="refReset" data-box="1">↻</button><button class="refCaution" data-rates="1">商品に関する注意事項</button><div class="refPurchase"><button class="refBuy refBuyOne" data-draw="1" data-cost="100"><span>●1回</span><b>100</b></button><button class="refBuy refBuyTen" data-draw="10" data-cost="100"><span>●10回</span><b>900</b></button></div></section>'
+  +'<section class="refList"><div class="refListHead"><div><span>PLAYER LIST</span><b>MORE PLAYERS</b></div><small>'+remaining+' AVAILABLE</small></div><div class="refMiniGrid">'+preview+'</div></section>'
+  +'<div class="refLegal">表示されている総合値はカードの設定値です。実際のゲーム内能力は育成・ポジション・プレイスタイルで変化します。</div>'
+  +'</div>';
+}
+
 function renderGacha(kind="special"){
  activeBanner=kind;
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
