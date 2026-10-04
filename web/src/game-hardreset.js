@@ -85,6 +85,7 @@ let lastFrame = performance.now();
 
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
 function lerp(a, b, t) { return a + (b - a) * t; }
+function angleDamp(current,target,t){const d=Math.atan2(Math.sin(target-current),Math.cos(target-current));return current+d*clamp(t,0,1)}
 function dist(a, b) { return Math.hypot(a.position.x - b.position.x, a.position.z - b.position.z); }
 function mat(color, roughness = 0.8) {
   return new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -547,7 +548,8 @@ function moveControlled(dt) {
   const dash=defending?state.dashHeld:(state.rightHeld||state.dashHeld);
   const shield=owner===p&&state.shieldUntil>now;
   if(defending&&state.matchupHeld)state.matchUp=true;
-  const targetSpeed=p.userData.speed*intensity*(dash?1.36:shield?0.58:1);
+  const jockey=defending&&state.matchUp&&!dash;
+  const targetSpeed=p.userData.speed*intensity*(dash?1.36:jockey?0.58:shield?0.58:1);
   const response=clamp(p.userData.acceleration*dt,0,1);
   p.userData.currentSpeed+=((targetSpeed-p.userData.currentSpeed)*response);
   const speed=p.userData.currentSpeed;
@@ -558,7 +560,8 @@ function moveControlled(dt) {
   u.sprint=dash;
 
   if(defending&&state.matchUp&&owner){
-    p.rotation.y=Math.atan2(owner.position.x-p.position.x,owner.position.z-p.position.z);
+    const faceAngle=Math.atan2(owner.position.x-p.position.x,owner.position.z-p.position.z);
+    p.rotation.y=angleDamp(p.rotation.y,faceAngle,dt*(jockey?14:20));
     const gap=dist(p,owner);
     if(gap<1.7&&now>state.lastDefensiveContactAt){
       const defend=Number(u.defending)||70;
@@ -582,7 +585,8 @@ function moveControlled(dt) {
       }
     }
   }else{
-    p.rotation.y=Math.atan2(nx,nz);
+    const moveAngle=Math.atan2(nx,nz);
+    p.rotation.y=angleDamp(p.rotation.y,moveAngle,dt*(dash?18:10));
   }
 
   if(shield){
@@ -591,7 +595,7 @@ function moveControlled(dt) {
   }
 
   const staminaFactor=clamp(100/(u.staminaRating||70),0.72,1.35);
-  u.stamina=clamp(u.stamina-(dash?5.0:shield?1.6:1.0)*staminaFactor*dt,0,100);
+  u.stamina=clamp(u.stamina-(dash?5.0:jockey?0.72:shield?1.6:1.0)*staminaFactor*dt,0,100);
 
   if(owner===p){
     const dribbling=clamp(Number(u.dribbling)||70,45,99);
