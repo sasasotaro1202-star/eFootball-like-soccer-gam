@@ -588,6 +588,7 @@ function autoSelectDefender(){
 function teamAI(dt){
   const ballX=ball.position.x, ballZ=ball.position.z, owner=ball.userData.owner;
   const now=performance.now();
+  const fluidFormation=localStorage.getItem("football_fluid_formation")!=="0";
 
   // AI pressure: defenders can contest the carrier without teleporting the ball.
   if(owner){
@@ -644,14 +645,28 @@ function teamAI(dt){
         const advance=clamp((ballX*attack)*0.16,-8,14);
         tx=homeX+advance;
         tz=homeZ+clamp((ballZ-homeZ)*0.24,-8,8);
+        if(fluidFormation){
+          if(role==="FW"){
+            const lane=(p.userData.index%2===0?-1:1);
+            tx+=attack*(3.5+Math.max(0,ballX*attack)*.08);
+            tz+=lane*2.6+clamp((ballZ-p.position.z)*.18,-5,5);
+          }else if(role==="MF"){
+            tx+=attack*2.0;
+            tz+=clamp((ballZ-p.position.z)*.32,-6,6);
+          }
+        }
         if(isOwner){
-          tx=p.position.x+attack*4;
-          tz=p.position.z+clamp((ballZ-p.position.z)*0.18,-4,4);
+          tx=p.position.x+attack*(fluidFormation?3.2:4);
+          tz=p.position.z+clamp((ballZ-p.position.z)*(fluidFormation?.22:.18),-4,4);
         }
       }else{
         const danger=clamp(16-Math.abs(ballX-p.position.x),0,16);
         tx=homeX+clamp((ballX*attack)*0.10,-9,9);
         tz=homeZ+clamp((ballZ-homeZ)*0.25,-9,9);
+        if(fluidFormation&&role==="DF"){
+          tx=homeX+clamp((ballX*attack)*.07,-5.5,5.5);
+          tz=homeZ+clamp((ballZ-homeZ)*.18,-5,5);
+        }
         if(danger>7&&(role==='DF'||role==='MF')){
           tx=lerp(tx,ballX,0.16);
           tz=lerp(tz,ballZ,0.14);
@@ -1080,9 +1095,17 @@ function updateHUD() {
   stateEl.textContent = state.matchState==="halftime" ? "HALF TIME" : state.finished ? "FULL TIME" : (state.paused ? "PAUSED" : "LIVE");
   const modeEl=document.querySelector("#controlMode");
   const ownerTeam=ball.userData.owner?.userData?.team;
+  const defense=ownerTeam===AWAY;
   if(modeEl){
-    modeEl.textContent=ownerTeam===AWAY?"DEFENSE":"ATTACK";
-    modeEl.style.color=ownerTeam===AWAY?"#ff8796":"#72e2ad";
+    modeEl.textContent=defense?"DEFENSE":"ATTACK";
+    modeEl.style.color=defense?"#ff8796":"#72e2ad";
+  }
+  const guide=document.querySelector(".gestureGuideItems");
+  if(guide&&guide.dataset.mode!==(defense?"defense":"attack")){
+    guide.dataset.mode=defense?"defense":"attack";
+    guide.innerHTML=defense
+      ? '<span>RIGHT HOLD<i>MATCH-UP</i></span><span>RIGHT SWIPE<i>TEAM PRESS</i></span><span>LEFT ×2<i>TACKLE</i></span>'
+      : '<span>RIGHT TAP<i>PASS</i></span><span>DOUBLE TAP<i>SHOOT</i></span><span>↑ / ↓<i>THROUGH / PASS</i></span>';
   }
   const halfEl=document.querySelector("#halfLabel");
   if(halfEl)halfEl.textContent=state.half===2?"2ND HALF":"1ST HALF";
