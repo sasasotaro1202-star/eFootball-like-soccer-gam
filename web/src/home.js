@@ -1,19 +1,6 @@
 import { PLAYER_POOL } from "./player-pool.generated.js";
 import { GENERATED_CARD_REFERENCE } from "./generated-card-reference.js";
 const $=s=>document.querySelector(s), screens={home:$("#homeScreen"),panel:$("#panelScreen"),match:$("#matchScreen")};
-// Robust UI binding: event delegation keeps navigation working even after panel DOM is rebuilt.
-document.addEventListener("click",(e)=>{
-  const b=e.target.closest("button");
-  if(!b)return;
-  const nav=b.dataset?.nav;
-  if(nav){e.preventDefault();e.stopPropagation();if(nav==="home")home();else if(["gacha","squad","collection","training","missions","extras"].includes(nav))panel(nav);return;}
-  if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();e.stopPropagation();start();return;}
-  if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return;}
-  if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return;}
-  if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return;}
-});
-
-
 // Original card system: 1–5★ with 5★ as the strongest base rank.
 // Limited strength: NORMAL < HIGHLIGHT < SHOWTIME = EPIC = LEGEND < BIG TIME.
 const CARD_TYPES=[{id:"STANDARD",label:"NORMAL",mult:1,stars:1},{id:"FEATURED",label:"FEATURED",mult:1.025,stars:3},{id:"HIGHLIGHT",label:"HIGHLIGHT",mult:1.035,stars:4},{id:"SHOWTIME",label:"SHOWTIME",mult:1.06,stars:5},{id:"EPIC",label:"EPIC",mult:1.06,stars:5},{id:"LEGEND",label:"LEGEND",mult:1.06,stars:5},{id:"BIG_TIME",label:"BIG TIME",mult:1.10,stars:5}];
@@ -387,16 +374,7 @@ function signStandardPlayer(id){
 }
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){window.__matchRewardClaimed=false;screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){window.dispatchEvent(new Event("football:match-exit"));screen("home")}
-$("#playNow").onclick=start;$("#matchExit").onclick=home;$("#panelBack").onclick=home;
-document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==="home"?home():panel(b.dataset.nav));document.addEventListener("click",e=>{
- const el=e.target.closest(".playerCardTap,.gachaPlayerMini,.headlinerCard");
- if(!el)return;
- if((activeBanner==="nominating"||activeBanner==="selection")&&el.classList.contains("playerCardTap")){
-   signSelectedPlayer(el.dataset.playerId);
-   return;
- }
- showPlayerDetail(el.dataset.playerId);
-});wallet();
+wallet();
 (function mountGeneratedCardReference(){
   const host=document.querySelector(".eventPlayers");
   if(!host)return;
@@ -405,22 +383,49 @@ document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>b.dataset.nav==
   host.className="eventPlayers homeHeadlinerStage";
   host.innerHTML='<div class="homeHeadlinerBackdrop"></div>'+heads.map((p,i)=>'<button class="homeHeadliner" data-player-id="'+esc(p.id)+'" type="button" aria-label="'+esc(p.name)+'"><div class="homeHeadlinerPortrait">'+portraitSvg(p,true)+'</div><span class="homeHeadlinerRarity">'+esc(rarityLabel(p.cardType||p.rarity))+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+'</small></button>').join("");
 })();
+// Single click router: one physical tap must produce exactly one game/app action.
 document.addEventListener("click",e=>{
  const b=e.target.closest("button"); if(!b)return;
- if(b.dataset?.nav){e.preventDefault();e.stopPropagation();b.dataset.nav==="home"?home():panel(b.dataset.nav);return}
- if(b.dataset?.banner){e.preventDefault();e.stopPropagation();renderGacha(b.dataset.banner);return}
- if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
- if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return}
- if(b.dataset?.directSign){e.preventDefault();e.stopPropagation();signStandardPlayer(b.dataset.directSign);return}
- if(b.dataset?.contractSign&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();signSelectedPlayer(b.dataset.contractSign,activeBanner==="nominating"?1800:2600);return}
- if(b.dataset?.playerId&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();showPlayerDetail(b.dataset.playerId);return}
- if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("PLAYER LIST：3 HEADLINERS + STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME");return}
- if(b.dataset?.box){e.preventDefault();e.stopPropagation();showMessage("BOX DRAW: 準備中");return}
- if(b.dataset?.fluidToggle){e.preventDefault();e.stopPropagation();const on=localStorage.getItem("football_fluid_formation")!=="0";localStorage.setItem("football_fluid_formation",on?"0":"1");panel("squad");return}
- if(b.id==="squadPlay"){e.preventDefault();e.stopPropagation();const ids=(b.dataset.squadIds||"").split(",").filter(Boolean);if(ids.length===11)localStorage.setItem("football_match_squad",JSON.stringify(ids));localStorage.setItem("football_fluid_formation",localStorage.getItem("football_fluid_formation")||"1");start();return}
- if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();e.stopPropagation();start();return}
- if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return}
+ const nav=b.dataset?.nav;
+ if(nav){
+   e.preventDefault();e.stopImmediatePropagation();
+   nav==="home"?home():panel(nav);
+   return;
+ }
+ if(b.dataset?.banner){e.preventDefault();e.stopImmediatePropagation();renderGacha(b.dataset.banner);return}
+ if(b.dataset?.draw){e.preventDefault();e.stopImmediatePropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
+ if(b.dataset?.free){e.preventDefault();e.stopImmediatePropagation();draw(1,0,true);return}
+ if(b.dataset?.directSign){e.preventDefault();e.stopImmediatePropagation();signStandardPlayer(b.dataset.directSign);return}
+ if(b.dataset?.contractSign&&(activeBanner==="nominating"||activeBanner==="selection")){
+   e.preventDefault();e.stopImmediatePropagation();signSelectedPlayer(b.dataset.contractSign,activeBanner==="nominating"?1800:2600);return;
+ }
+ if(b.dataset?.rates){e.preventDefault();e.stopImmediatePropagation();showMessage("PLAYER LIST: 3 HEADLINERS + STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME");return}
+ if(b.dataset?.box){e.preventDefault();e.stopImmediatePropagation();showMessage("BOX DRAW: coming soon");return}
+ if(b.dataset?.fluidToggle){
+   e.preventDefault();e.stopImmediatePropagation();
+   const on=localStorage.getItem("football_fluid_formation")!=="0";
+   localStorage.setItem("football_fluid_formation",on?"0":"1");panel("squad");return;
+ }
+ if(b.id==="squadPlay"){
+   e.preventDefault();e.stopImmediatePropagation();
+   const ids=(b.dataset.squadIds||"").split(",").filter(Boolean);
+   if(ids.length===11)localStorage.setItem("football_match_squad",JSON.stringify(ids));
+   localStorage.setItem("football_fluid_formation",localStorage.getItem("football_fluid_formation")||"1");
+   start();return;
+ }
+ if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();e.stopImmediatePropagation();start();return}
+ if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopImmediatePropagation();home();return}
+ const card=b.closest(".playerCardTap,.gachaPlayerMini,.headlinerCard");
+ if(card){
+   e.preventDefault();e.stopImmediatePropagation();
+   if((activeBanner==="nominating"||activeBanner==="selection")&&card.classList.contains("playerCardTap")){
+     signSelectedPlayer(card.dataset.playerId);
+   }else{
+     showPlayerDetail(card.dataset.playerId);
+   }
+ }
 });
+window.__footballPanel=panel;
 window.__footballPanel=panel;
 
 // Unified match UX flow: MATCH PREVIEW -> KICKOFF -> PLAY -> GOAL -> FULL TIME -> REWARDS
