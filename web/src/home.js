@@ -193,11 +193,15 @@ function renderGacha(kind="special"){
  const notice=kind==="special"?'<div class="rateNotice"><b>10× HEADLINER GUARANTEE</b><span>このリストでは10回目の獲得時に3人のHeadlinerから1人を確定獲得。10×は通常900 COINS。</span></div>':"";
  const selectNote=(kind==="nominating"||kind==="selection")?'<div class="rateNotice selectNotice"><b>SELECT A PLAYER</b><span>Player Listの選手をタップして詳細を確認し、そのまま指定獲得できます。</span></div>':"";
  const guarantee=kind==="special"?'<div class="guaranteeMeter"><span>NEXT HEADLINER</span><b>'+untilGuarantee+' / 10</b><i><em style="width:'+((10-untilGuarantee)/10*100)+'%"></em></i></div>':"";
- const drawButtons=(kind==="nominating"||kind==="selection")?'':'<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'"><b>SIGN ×1</b><small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'"><b>SIGN ×10</b><small>'+ (b.cost?b.cost*9+" COINS":"10 CONTRACTS") +'</small></button></div>';
+ const drawButtons=(kind==="nominating"||kind==="selection"||kind==="standard")?'':'<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'"><b>SIGN ×1</b><small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'"><b>SIGN ×10</b><small>'+ (b.cost?b.cost*9+" COINS":"10 CONTRACTS") +'</small></button></div>';
+ const directCost=p=>Math.max(600,Math.round((Number(p.overall)||70)*75));
+ const directMarkup=kind==="standard"?'<section class="directSignSection"><div class="directSignHeader"><b>STANDARD SIGNING</b><span>GP</span></div><div class="directSignGrid">'+pool.slice(0,8).map(p=>'<button class="directSignCard" data-direct-sign="'+esc(p.id)+'" type="button"><span>'+esc(p.position)+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+' • '+money(directCost(p))+' GP</small><strong>SIGN</strong></button>').join("")+'</div></section>':"";
+ const selectCost=kind==="nominating"?1800:kind==="selection"?2600:0;
+ const selectMarkup=(kind==="nominating"||kind==="selection")?'<section class="directSignSection selectContract"><div class="directSignHeader"><b>'+String(kind).toUpperCase()+' CONTRACT</b><span>'+money(selectCost)+' GP</span></div><div class="directSignGrid">'+pool.slice(0,8).map(p=>'<button class="directSignCard" data-contract-sign="'+esc(p.id)+'" type="button"><div class="directPortraitMini">'+portraitSvg(p,false)+'</div><b>'+esc(p.name)+'</b><small>'+esc(rarityLabel(p.cardType||p.rarity))+' • OVR '+p.overall+'</small><strong>SELECT</strong></button>').join("")+'</div></section>':"";
  const sub='<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-rates="1">LIST DETAILS</button><button class="subGacha" data-box="1">OTHER LISTS</button></div>';
  $("#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
  '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>'+pool.length+' PLAYERS</span></div></div><div class="gachaOrb">✦</div></div>'+
- headlinerMarkup+notice+selectNote+guarantee+composition+drawButtons+sub+
+ headlinerMarkup+notice+selectNote+guarantee+composition+drawButtons+directMarkup+selectMarkup+sub+
  previewCards+'<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,16).map(card).join("")+'</div>';
 }
 const GACHA_PITY_KEY="football_gacha_pity";
@@ -294,11 +298,19 @@ function draw(n,unitCost=100,free=false){
  setGachaMeta({pulls:meta.pulls+n,lastRarity:best?.cardType||best?.rarity||""});
  state.gp+=n*120;save();wallet();showSigning(results);
 }
-function signSelectedPlayer(id){
+function signSelectedPlayer(id,cost=0){
  const p=CARD_POOL.find(x=>String(x.id)===String(id));if(!p)return;
+ cost=Math.max(0,Math.floor(Number(cost)||0));
+ if(cost>0&&state.gp<cost){showMessage("GPが足りません");return}
+ if(cost>0)state.gp-=cost;
  if(!state.owned.includes(p.id))state.owned.push(p.id);else state.gp+=120;
  save();wallet();showMessage(p.name+" SIGNED",900);
  panel(activeBanner);
+}
+function signStandardPlayer(id){
+ const p=CARD_POOL.find(x=>String(x.id)===String(id));if(!p)return;
+ const cost=Math.max(600,Math.round((Number(p.overall)||70)*75));
+ signSelectedPlayer(p.id,cost);
 }
 function showMessage(t){let el=$("#panelBody");if(el){const old=el.querySelector(".drawMessage");if(old)old.remove();const x=document.createElement("div");x.className="drawMessage";x.textContent=t;el.prepend(x);setTimeout(()=>x.remove(),1600)}}
 function start(){window.__matchRewardClaimed=false;screen("match");window.dispatchEvent(new Event("football:match-start"));dispatchEvent(new Event("resize"))}function home(){window.dispatchEvent(new Event("football:match-exit"));screen("home")}
@@ -326,7 +338,9 @@ document.addEventListener("click",e=>{
  if(b.dataset?.banner){e.preventDefault();e.stopPropagation();renderGacha(b.dataset.banner);return}
  if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return}
  if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return}
- if(b.dataset?.playerId&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();signSelectedPlayer(b.dataset.playerId);return}
+ if(b.dataset?.directSign){e.preventDefault();e.stopPropagation();signStandardPlayer(b.dataset.directSign);return}
+ if(b.dataset?.contractSign&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();signSelectedPlayer(b.dataset.contractSign,activeBanner==="nominating"?1800:2600);return}
+ if(b.dataset?.playerId&&(activeBanner==="nominating"||activeBanner==="selection")){e.preventDefault();e.stopPropagation();showPlayerDetail(b.dataset.playerId);return}
  if(b.dataset?.rates){e.preventDefault();e.stopPropagation();showMessage("PLAYER LIST：3 HEADLINERS + STANDARD / FEATURED / HIGHLIGHT / SHOWTIME / EPIC / LEGEND / BIG TIME");return}
  if(b.dataset?.box){e.preventDefault();e.stopPropagation();showMessage("BOX DRAW: 準備中");return}
  if(b.dataset?.fluidToggle){e.preventDefault();e.stopPropagation();const on=localStorage.getItem("football_fluid_formation")!=="0";localStorage.setItem("football_fluid_formation",on?"0":"1");panel("squad");return}
