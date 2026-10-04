@@ -56,7 +56,8 @@ const state = {
   pressUntil: 0,
   lastTouchAt: 0,
   lastDefensiveContactAt: 0,
-  autoSwitchAt: 0
+  autoSwitchAt: 0,
+  defenseRightTapAt: 0
 };
 
 let renderer;
@@ -179,6 +180,7 @@ function makePlayer(team,index,role){
  g.userData={team,index,role,number:d?.number||index+1,bodyScale:rootScale,heightScale:stature,animationPhase:(id*.73)%6.28,player:d,name:d?.name||("PLAYER "+(index+1)),overall:d?.overall||70,position:d?.position||role,
    speed:role==="GK"?3.8+gameplay.pace*.025:4.2+gameplay.pace*.025,acceleration:7.5+gameplay.acceleration*.075,pace:gameplay.pace,shooting:gameplay.shooting,passing:gameplay.passing,dribbling:gameplay.dribbling,defending:gameplay.defending,physical:gameplay.physical,staminaRating:gameplay.stamina,gkReflexes:gameplay.gkReflexes,currentSpeed:0,sharpTouchUntil:0,sharpTouchStart:0,sharpTouchVX:0,sharpTouchVZ:0,stamina:100,homeX:0,homeZ:0,aiSeed:(id*1.17)%10,aiNextDecisionAt:0,selectedRing:ring,selectorArrow,moving:false,sprint:false,action:"idle",actionUntil:0,
    rig:{hips,torso,leftArm,rightArm,leftFore,rightFore,leftThigh,rightThigh,leftCalf,rightCalf,leftFoot,rightFoot}};
+ improvePlayerIdentity(g);
  return g;
 }
 const FORMATION = [
@@ -1104,7 +1106,7 @@ function updateHUD() {
   if(guide&&guide.dataset.mode!==(defense?"defense":"attack")){
     guide.dataset.mode=defense?"defense":"attack";
     guide.innerHTML=defense
-      ? '<span>RIGHT HOLD<i>MATCH-UP</i></span><span>RIGHT SWIPE<i>TEAM PRESS</i></span><span>LEFT ×2<i>TACKLE</i></span>'
+      ? '<span>RIGHT HOLD<i>MATCH-UP</i></span><span>RIGHT SWIPE<i>TEAM PRESS</i></span><span>RIGHT ×2<i>SWITCH</i></span><span>LEFT ×2<i>TACKLE</i></span>'
       : '<span>RIGHT TAP<i>PASS</i></span><span>DOUBLE TAP<i>SHOOT</i></span><span>↑ / ↓<i>THROUGH / PASS</i></span>';
   }
   const halfEl=document.querySelector("#halfLabel");
@@ -1304,7 +1306,17 @@ function rightUp(e) {
   state.sprint=false;
 
   if(defending){
-    if(g.moved&&mag>70)callTeamPressure();
+    if(!g.moved&&mag<20&&duration<220){
+      if(now-(state.defenseRightTapAt||0)<300){
+        switchPlayer();
+        state.defenseRightTapAt=0;
+        state.pressUntil=0;
+      }else{
+        state.defenseRightTapAt=now;
+        state.pressUntil=now+900;
+        showMessage("PRESS",400);
+      }
+    }else if(g.moved&&mag>70)callTeamPressure();
     else if(g.moved)showMessage("MATCH-UP",300);
     else{
       state.pressUntil=now+900;
@@ -1378,8 +1390,18 @@ function keyboardMove() {
 }
 
 function switchPlayer(){
-  const current=home[state.selected],candidates=home.filter(p=>p!==current&&p.userData.role!=="GK");
-  if(!candidates.length)return;candidates.sort((a,b)=>dist(a,ball)-dist(b,ball));selectPlayer(candidates[0].userData.index);showMessage("SWITCH",350);
+  const current=home[state.selected],owner=ball.userData.owner;
+  const target=owner?.userData?.team===AWAY?owner:ball;
+  const candidates=home.filter(p=>p!==current&&p.userData.role!=="GK");
+  if(!candidates.length)return;
+  const facingX=owner?.userData?.team===AWAY?Math.sign(owner.position.x-current.position.x)||1:1;
+  candidates.sort((a,b)=>{
+    const score=p=>dist(p,target)-Math.max(0,(p.position.x-current.position.x)*facingX)*.06+(p.userData.role==="DF"?-.12:0);
+    return score(a)-score(b);
+  });
+  const next=candidates[0];
+  if(next)selectPlayer(next.userData.index);
+  showMessage(next?"SWITCH • "+next.userData.number:"SWITCH",420);
 }
 
 function initInput() {
