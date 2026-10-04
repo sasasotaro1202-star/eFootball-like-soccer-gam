@@ -1033,3 +1033,129 @@ button{appearance:none;-webkit-appearance:none}
  .contractHeroCopy h2{font-size:24px}
  .contractHeroCard{flex-basis:31%}
 }
+
+/* REFERENCE-STYLE SPECIAL CONTRACT */
+.panelScreen:has(.referenceContract){background:#020507;padding:0}
+.panelScreen:has(.referenceContract) #panelBody{height:calc(100% - 72px);padding:0;overflow:auto}
+.referenceContract{min-height:100%;background:
+ radial-gradient(circle at 73% 17%,#3dd99d1a,transparent 22%),
+ radial-gradient(circle at 48% 55%,#216fca14,transparent 32%),
+ linear-gradient(140deg,#030608,#081312 48%,#06100d);color:#fff;position:relative;overflow:hidden}
+.refHeader{min-height:106px;padding:15px 20px 10px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;position:relative;z-index:4}
+.refEyebrow{display:block;color:#9cffcf;font-size:8px;font-weight:1000;letter-spacing:.22em}
+.refHeader h2{margin:5px 0 4px;font-size:clamp(28px,4vw,50px);line-height:.86;letter-spacing:-.055em;text-transform:uppercase;text-shadow:0 8px 30px #0009}
+.refHeader p{margin:0;color:#9caeaa;font-size:8px;line-height:1.45}
+.refHeaderRight{display:flex;align-items:flex-start;gap:8px}
+.refRemain,.refBox{position:relative;padding:8px 10px;border:1px solid #ffffff18;background:#020607bd;backdrop-filter:blur(12px);border-radius:11px;min-width:112px}
+.refRemain small,.refBox small{display:block;color:#738780;font-size:5px;letter-spacing:.15em}
+.refRemain b{display:block;margin-top:3px;font-size:11px;letter-spacing:.08em}
+.refBox b{display:block;margin-top:2px;font-size:15px;letter-spacing:.04em}
+.refBox span{position:absolute;right:-5px;top:-6px;width:17px;height:17px;border-radius:50%;display:grid;place-items:center;background:#e7f2ee;color:#0b1511;font-size:11px;font-weight:900}
+.refHero{position:relative;min-height:355px;margin:0 12px;border:1px solid #ffffff12;border-radius:18px;overflow:hidden;background:
+ linear-gradient(135deg,#0b1a19,#071117 43%,#081b16);
+ box-shadow:0 24px 70px #0009}
+.refHero:before{content:"";position:absolute;inset:0;background:
+ repeating-linear-gradient(118deg,transparent 0 48px,#9bf3ca09 49px 56px,transparent 57px 108px),
+ radial-gradient(circle at 75% 38%,#5fe7bc1c,transparent 23%);
+pointer-events:none}
+.refHeroGlow{position:absolute;inset:-40%;background:radial-gradient(circle at 63% 55%,#71efbd2a,transparent 39%);filter:blur(30px);pointer-events:none}
+.refHeroMeta{position:absolute;left:18px;top:16px;z-index:3;display:flex;flex-direction:column;gap:2px}
+.refHeroMeta span{font-size:6px;color:#84a09a;letter-spacing:.18em}
+.refHeroMeta b{font-size:12px;letter-spacing:.07em}
+.refHeroMeta small{font-size:5px;color:#60736d}
+.refCards{position:absolute;inset:36px 18px 14px;display:flex;align-items:flex-end;justify-content:center;gap:clamp(4px,1.3vw,17px);perspective:1200px}
+.refContractCard{position:relative;flex:0 0 min(24vw,195px);height:min(48vh,304px);min-height:245px;border:1px solid #ffffff25;border-radius:16px;padding:0;overflow:hidden;color:#fff;text-align:left;background:linear-gradient(155deg,#185044,#09110f 65%);box-shadow:0 24px 46px #000b;transform:rotate(-4deg) translateY(12px);cursor:pointer;isolation:isolate}
+.refContractCard:nth-child(2){transform:rotate(0deg) translateY(-2px) scale(1.06);z-index:4}
+.refContractCard:nth-child(3){transform:rotate(4deg) translateY(15px);z-index:2}
+.refContractCard:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 36%,#020405 86%);z-index:1;pointer-events:none}
+.refContractCard.rarity-epic{background:linear-gradient(155deg,#5a397a,#171023 56%,#06070b)}
+.refContractCard.rarity-legend{background:linear-gradient(155deg,#70531f,#211607 56%,#050605)}
+.refContractCard.rarity-big_time{background:linear-gradient(155deg,#4d752f,#101b0d 56%,#040605)}
+.refContractCard:hover{transform:translateY(-8px) rotate(0deg) scale(1.04);z-index:7}
+.refContractCard:active{transform:scale(.99)}
+.refCardLight{position:absolute;inset:-50%;background:radial-gradient(circle at 50% 42%,#a5ffdc66,transparent 44%);filter:blur(18px)}
+.refContractCard.rarity-epic .refCardLight{background:radial-gradient(circle at 50% 42%,#c675ff70,transparent 43%)}
+.refContractCard.rarity-legend .refCardLight{background:radial-gradient(circle at 50% 42%,#ffda6b70,transparent 43%)}
+.refContractCard.rarity-big_time .refCardLight{background:radial-gradient(circle at 50% 42%,#b7ff6c66,transparent 43%)}
+.refCardTop{position:absolute;left:11px;right:11px;top:9px;z-index:5;display:flex;justify-content:space-between;align-items:flex-start}
+.refCardTop span{font-size:5px;letter-spacing:.18em;font-weight:1000}
+.refCardTop b{font-size:29px;line-height:.8;text-shadow:0 4px 14px #000}
+.refSkill{position:absolute;left:10px;top:54px;z-index:5;padding:4px 6px;border:1px solid #ffffff28;border-radius:6px;background:#0006;font-size:4px;letter-spacing:.13em}
+.refSkill strong{display:block;margin-top:2px;font-size:6px;letter-spacing:.02em;color:#fff}
+.refPortrait{position:absolute;left:2%;right:2%;top:30px;height:69%;z-index:0;display:flex;align-items:center;justify-content:center}
+.refPortrait svg{width:100%;height:100%;filter:drop-shadow(0 18px 25px #000b) saturate(.96)}
+.refCardNumber{position:absolute;right:10px;top:78px;z-index:4;color:#fff3;font-size:20px;font-weight:1000}
+.refCardBottom{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;display:flex;flex-direction:column;gap:3px}
+.refCardBottom span{font-size:5px;color:#b3c4bf;letter-spacing:.1em}
+.refCardBottom strong{font-size:clamp(13px,2vw,24px);line-height:.92;letter-spacing:-.04em;text-shadow:0 5px 16px #000}
+.refCardBottom small{font-size:6px;color:#eff8f4;letter-spacing:.1em}
+.refAll{position:absolute;left:18px;right:18px;bottom:8px;z-index:7;display:flex;justify-content:space-between;align-items:center}
+.refAllButton{border:1px solid #ffffff1b;border-radius:8px;padding:7px 11px;background:#020606bd;color:#bcefd8;font-size:6px;font-weight:1000;letter-spacing:.13em}
+.refAll span{color:#78918a;font-size:5px;letter-spacing:.13em}
+.refInfo{display:flex;align-items:center;gap:12px;padding:11px 14px 9px;background:#040809;border-bottom:1px solid #ffffff0b}
+.refInfoCopy{display:flex;flex-direction:column;gap:2px;min-width:185px}
+.refInfoCopy b{font-size:7px;letter-spacing:.15em;color:#a6f6d0}
+.refInfoCopy span{font-size:5px;color:#6f817b}
+.refProgress{height:3px;flex:1;border-radius:9px;background:#ffffff0c;overflow:hidden}
+.refProgress span{display:block;width:32%;height:100%;background:linear-gradient(90deg,#d1f5e4,#4bd19e)}
+.refBottom{position:sticky;bottom:0;z-index:12;display:flex;align-items:center;gap:7px;padding:8px 12px;background:rgba(2,6,8,.95);border-top:1px solid #ffffff12;box-shadow:0 -12px 35px #0009;backdrop-filter:blur(14px)}
+.refReset{width:28px;height:28px;border:1px solid #ffffff18;border-radius:9px;background:#0a1115;color:#9db1aa;font-size:14px}
+.refCaution{height:28px;border:1px solid #ffffff18;border-radius:9px;background:#0a1115;color:#8ea39c;padding:0 8px;font-size:5px;font-weight:800}
+.refPurchase{margin-left:auto;display:grid;grid-template-columns:1fr 1.08fr;gap:6px;width:min(42vw,300px)}
+.refBuy{min-height:45px;border-radius:10px;border:1px solid #ffffff18;padding:6px 9px;display:flex;align-items:center;justify-content:space-between;gap:7px;font-weight:1000}
+.refBuy span{font-size:7px}
+.refBuy b{font-size:15px}
+.refBuyOne{background:#0d171b;color:#fff}
+.refBuyOne b{color:#c9d6d1}
+.refBuyTen{background:linear-gradient(135deg,#f5f6e7,#c7e88d);color:#152010;box-shadow:0 8px 23px #0008}
+.refBuyTen b{font-size:18px}
+.refList{padding:0 14px 24px;background:#030708}
+.refListHead{display:flex;justify-content:space-between;align-items:end;margin-top:10px;padding-top:10px;border-top:1px solid #ffffff0d}
+.refListHead div{display:flex;flex-direction:column;gap:2px}
+.refListHead span{font-size:6px;color:#7f978f;letter-spacing:.18em}
+.refListHead b{font-size:12px}
+.refListHead small{font-size:5px;color:#687771;letter-spacing:.12em}
+.refMiniGrid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:8px}
+.refMiniCard{position:relative;min-height:92px;overflow:hidden;border:1px solid #ffffff0f;border-radius:9px;background:linear-gradient(150deg,#172f2f,#070c0d);padding:6px;text-align:left;color:#fff}
+.refMiniCard:nth-child(3n){background:linear-gradient(150deg,#372f55,#0b0910)}
+.refMiniCard:nth-child(4n){background:linear-gradient(150deg,#44351d,#0a0805)}
+.refMiniPortrait{position:absolute;right:-8px;top:0;width:63%;height:80%;opacity:.84}
+.refMiniPortrait svg{width:100%;height:100%}
+.refMiniCard>span{position:relative;z-index:2;color:#89a09a;font-size:4px;letter-spacing:.14em}
+.refMiniCard>b{position:absolute;left:6px;right:3px;bottom:20px;z-index:3;font-size:6px;line-height:1.05}
+.refMiniCard>small{position:absolute;left:6px;bottom:7px;z-index:3;color:#738780;font-size:4px}
+.refLegal{padding:10px 14px 20px;color:#4e625c;font-size:4px;line-height:1.5}
+@media(max-width:760px){
+ .refHeader{padding:11px 12px 8px;min-height:82px}
+ .refEyebrow{font-size:6px}
+ .refHeader h2{font-size:26px}
+ .refHeader p{font-size:6px;max-width:260px}
+ .refHeaderRight{gap:5px}
+ .refRemain,.refBox{min-width:82px;padding:6px 7px}
+ .refRemain b{font-size:8px}.refBox b{font-size:11px}
+ .refHero{min-height:285px;margin:0 7px;border-radius:13px}
+ .refHeroMeta{left:10px;top:10px}.refHeroMeta b{font-size:8px}.refHeroMeta small{font-size:4px}
+ .refCards{inset:29px 8px 8px;gap:3px}
+ .refContractCard{flex-basis:31%;height:220px;min-height:0;border-radius:11px}
+ .refContractCard:nth-child(2){transform:scale(1.045);z-index:4}
+ .refCardTop{left:7px;right:7px;top:7px}.refCardTop b{font-size:21px}.refCardTop span{font-size:4px}
+ .refSkill{left:6px;top:39px;font-size:3px;padding:3px 4px}.refSkill strong{font-size:4px}
+ .refPortrait{top:25px;height:67%}
+ .refCardNumber{right:7px;top:58px;font-size:14px}
+ .refCardBottom{left:7px;right:7px;bottom:7px}
+ .refCardBottom strong{font-size:10px}.refCardBottom span,.refCardBottom small{font-size:4px}
+ .refAll{left:10px;right:10px;bottom:5px}.refAllButton{padding:5px 7px;font-size:4px}
+ .refInfo{padding:8px 9px;gap:7px}.refInfoCopy{min-width:130px}.refInfoCopy b{font-size:5px}.refInfoCopy span{font-size:4px}
+ .refBottom{padding:6px 7px;gap:4px}
+ .refReset{width:24px;height:24px}.refCaution{padding:0 5px;font-size:4px}
+ .refPurchase{width:min(48vw,260px);gap:4px}.refBuy{min-height:39px;padding:5px 7px}.refBuy span{font-size:5px}.refBuy b{font-size:12px}.refBuyTen b{font-size:14px}
+ .refList{padding:0 8px 18px}
+ .refMiniGrid{grid-template-columns:repeat(4,1fr);gap:4px}.refMiniCard{min-height:76px}.refMiniCard>b{font-size:5px;bottom:17px}.refMiniCard>small{font-size:3.5px;bottom:5px}
+}
+@media(max-height:560px){
+ .refHeader{min-height:72px;padding-top:7px}.refHeader p{display:none}
+ .refHero{min-height:245px}
+ .refContractCard{height:190px}
+ .refInfo{padding:6px 9px}
+ .refList{display:none}
+}
