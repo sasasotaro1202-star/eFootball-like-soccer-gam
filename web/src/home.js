@@ -7,7 +7,7 @@ document.addEventListener("click",(e)=>{
   if(!b)return;
   const nav=b.dataset?.nav;
   if(nav){e.preventDefault();e.stopPropagation();if(nav==="home")home();else if(["gacha","squad","collection","training","missions","extras"].includes(nav))panel(nav);return;}
-  if(b.id==="quickPlay"||b.id==="playNow"||b.id==="squadPlay"){e.preventDefault();e.stopPropagation();start();return;}
+  if(b.id==="quickPlay"||b.id==="playNow"){e.preventDefault();e.stopPropagation();start();return;}
   if(b.id==="panelBack"||b.id==="matchExit"){e.preventDefault();e.stopPropagation();home();return;}
   if(b.dataset?.draw){e.preventDefault();e.stopPropagation();draw(Number(b.dataset.draw),Number(b.dataset.cost)||100);return;}
   if(b.dataset?.free){e.preventDefault();e.stopPropagation();draw(1,0,true);return;}
