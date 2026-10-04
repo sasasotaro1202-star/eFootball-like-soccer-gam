@@ -1437,6 +1437,7 @@ function updatePowerGauge(){
 function beginActionCharge(type,e){
   e.preventDefault(); e.stopPropagation();
   const button=e.currentTarget;
+  button.dataset.pressed="1";
   if(button.setPointerCapture)button.setPointerCapture(e.pointerId);
   const p=home[state.selected];
   if(type!=="dash"&&type!=="matchup"&&type!=="press"&&type!=="switch"&&type!=="tackle"&&!p)return;
@@ -1458,6 +1459,8 @@ function beginActionCharge(type,e){
 }
 function finishActionCharge(type,e){
   e.preventDefault(); e.stopPropagation();
+  const button=e.currentTarget;
+  if(button)delete button.dataset.pressed;
   if(type==="matchup"){state.matchupHeld=false;state.matchUp=false;return}
   if(type==="dash"){state.dashHeld=false;state.sprint=false;return}
   const press=state.actionPress;
