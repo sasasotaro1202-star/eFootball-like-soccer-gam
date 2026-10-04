@@ -70,7 +70,9 @@ const state = {
   rightTapTimer: null,
   manualSwitchLockUntil: 0,
   receivingUntil: 0,
-  receivingVelocity: {x:0,z:0}
+  receivingVelocity: {x:0,z:0},
+  pauseReturnState: "live",
+  goalResumeTimer: null
 };
 
 let renderer;
@@ -1221,8 +1223,20 @@ function physics(dt) {
         updateScore();
         showGoalFX(scoringTeam, scorer);
         showMessage("GOAL", 1300);
+        state.pauseReturnState=state.matchState;
+        state.paused=true;
+        state.matchState="goal";
         window.dispatchEvent(new Event("football:goal"));
         resetPositions(ball.position.x > 0 ? AWAY : HOME);
+        clearTimeout(state.goalResumeTimer);
+        state.goalResumeTimer=setTimeout(()=>{
+          if(state.matchActive&&!state.finished){
+            state.paused=false;
+            state.matchState="live";
+            showMessage("PLAY",650);
+            updateHUD();
+          }
+        },1700);
       }
     } else {
       ball.position.x = clamp(ball.position.x, -54, 54);
@@ -1288,6 +1302,17 @@ function updateHUD() {
   updateRadar();
 }
 
+function togglePause(force){
+  if(!state.matchActive||state.finished)return;
+  if(!force && (state.matchState==="prematch"||state.matchState==="halftime"||state.matchState==="goal"))return;
+  state.paused=force===undefined?!state.paused:!!force;
+  state.matchState=state.paused?"manual-pause":"live";
+  const overlay=$("#matchPause");
+  if(overlay)overlay.classList.toggle("hidden",!state.paused);
+  showMessage(state.paused?"PAUSED":"RESUME",650);
+  updateHUD();
+}
+window.addEventListener("football:resume",()=>togglePause(false));
 function updateMatchClock() {
   if(!state.matchActive||state.finished||state.paused)return;
 
@@ -1915,8 +1940,10 @@ window.addEventListener("football:match-start",()=>{
 });
 window.addEventListener("football:kickoff",()=>{
   if(!state.matchActive||state.finished)return;
+  clearTimeout(state.goalResumeTimer);
   state.paused=false;
   state.matchState="live";
+  const overlay=$("#matchPause");if(overlay)overlay.classList.add("hidden");
   showMessage("KICK OFF",900);
   updateHUD();
 });
