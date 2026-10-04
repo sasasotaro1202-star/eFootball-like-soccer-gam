@@ -849,3 +849,10 @@ button{appearance:none;-webkit-appearance:none}
 #matchPause{z-index:110}
 #matchPause.hidden{pointer-events:none}
 @media(max-width:560px){.pauseBtn{width:32px;height:32px;font-size:11px}}
+
+/* Game Plan team playstyle selector */
+.tacticChoices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;flex:2}
+.tacticChoices .tacticBtn{min-width:0;padding:8px 8px;font-size:7px}
+.tacticChoices .tacticBtn span{font-size:5.5px;white-space:nowrap}
+.tacticBar{align-items:stretch}
+@media(max-width:760px){.tacticBar{flex-direction:column}.tacticChoices{width:100%}.tacticBar>.tacticBtn{width:100%}.tacticBar>div:last-child{text-align:left}}
