@@ -148,6 +148,7 @@ function makePlayer(team,index,role){
  const g=new THREE.Group();
  const shirtColor=team===HOME?0x2e72e5:0xd83c55,shortsColor=team===HOME?0x173c79:0x771827;
  const sockColor=0xf1f3f5,bootColor=0x11151a;
+ const shirtMat=kitMat(team,.58),armMat=shirtMat,foreMat=mat(skin,.82),upperArmTotal=.43,forearmTotal=.34;
  const d=team===HOME?homePool[index%homePool.length]:PLAYER_POOL[(11+index)%PLAYER_POOL.length];
  const id=Number(d?.id)||index,skin=[0xb97858,0xc98b6b,0xd49a78,0xe0ad88,0x8f5b43,0x704735][id%6],hair=[0x14100d,0x2a1b12,0x3a2518,0x6a4328][id%4];
  const gameplay=gameplayAttributes(d,role,id);
@@ -177,7 +178,6 @@ function makePlayer(team,index,role){
  const eyeMat=new THREE.MeshBasicMaterial({color:0x181818});
  for(const sx of [-.075,.075])part(new THREE.SphereGeometry(.018,8,6),eyeMat,hips,sx,1.105,.237);
 
- const shirtMat=kitMat(team,.58),armMat=shirtMat,foreMat=mat(skin,.82),upperArmTotal=.43,forearmTotal=.34;
  const leftArm=limb(hips,-.36*shoulder,.66,armMat,.25,.09),rightArm=limb(hips,.36*shoulder,.66,armMat,.25,.09);
  const leftFore=limb(leftArm,0,-upperArmTotal,foreMat,.18,.075),rightFore=limb(rightArm,0,-upperArmTotal,foreMat,.18,.075);
  part(new THREE.SphereGeometry(.073,8,6),foreMat,leftFore,0,-forearmTotal,0);
