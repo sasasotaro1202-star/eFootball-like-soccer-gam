@@ -290,3 +290,10 @@ body{overscroll-behavior:none}
 @keyframes gachaSpot{from{transform:scale(.85);opacity:.25}to{transform:scale(1.15);opacity:.9}}
 @keyframes gachaDrift{to{transform:rotate(12deg) scale(1.08)}}
 @keyframes gachaScan{0%{transform:translateY(-20%)}100%{transform:translateY(20%)}}
+
+
+.tacticBar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:12px 0;padding:12px 14px;border:1px solid #ffffff12;border-radius:14px;background:#061119}
+.tacticBtn{border:1px solid #ffffff18;border-radius:10px;background:#ffffff06;color:#bfcfc9;padding:9px 11px;font-size:8px;font-weight:1000;letter-spacing:.08em;text-align:left}
+.tacticBtn span{display:block;margin-top:3px;font-size:7px;color:#849b94}
+.tacticBtn.active{border-color:#72e2ad55;background:#72e2ad12;color:#dffcef}
+.tacticBar>div{flex:1;text-align:right}.tacticBar>div b{display:block;font-size:8px;letter-spacing:.12em}.tacticBar>div small{display:block;margin-top:3px;color:#718680;font-size:7px}
