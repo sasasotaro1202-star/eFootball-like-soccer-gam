@@ -22,7 +22,15 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
   return skinDecl>0&&shirtDecl>skinDecl&&foreUse>shirtDecl&&torsoUse>shirtDecl;
 })()],
 ["player body proportions",js.includes('function makePlayer')&&js.includes('CapsuleGeometry(rad,len,5,8)')&&js.includes('-(len*.5+rad)')&&js.includes('sockColor=0xf1f3f5')&&js.includes('leftCalf=limb(leftThigh,0,-thighTotal,mat(sockColor')&&js.includes('g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale)')&&js.includes('p.position.y=0.01;')],
-["mobile pause control",js.includes('pauseBtn?.addEventListener("click"')&&js.includes("togglePause()")&&css.includes("#topTools .pauseBtn{pointer-events:auto}")],["pointer cancel safety",js.includes("function leftCancel(e)")&&js.includes("function rightCancel(e)")&&js.includes("clearActionCharge(type,e,\"action-pointercancel\")")&&js.includes('pointercancel",leftCancel')&&js.includes('pointercancel",(e)=>{if(e.pointerId===state.leftPointerId)leftCancel(e);else rightCancel(e);')],["asset cache bust",html.includes("style.css?v=20261004-premium-05")&&html.includes("game-hardreset.js?v=20261004-gameplay-gate-01")],
+["mobile pause control",js.includes('pauseBtn?.addEventListener("click"')&&js.includes("togglePause()")&&css.includes("#topTools .pauseBtn{pointer-events:auto}")],["pointer cancel safety",(()=>{
+  const mountStart=js.indexOf('mount.addEventListener("pointercancel"');
+  const mountEnd=js.indexOf('bindActionButton("switchBtn"',mountStart);
+  const section=mountStart>=0?js.slice(mountStart,mountEnd<0?js.length:mountEnd):"";
+  return js.includes("function leftCancel(e)")&&js.includes("function rightCancel(e)")&&
+    js.includes("clearActionCharge(type,e,\"action-pointercancel\")")&&
+    js.includes('pointercancel",leftCancel')&&section.includes("leftCancel(e)")&&
+    section.includes("rightCancel(e)")&&section.includes("state.leftPointerId");
+})()],["asset cache bust",html.includes("style.css?v=20261004-premium-05")&&html.includes("game-hardreset.js?v=20261004-gameplay-gate-01")],
 ["mobile input recovery",js.includes('function resetActiveInput(reason="cancel")')&&js.includes('document.addEventListener("visibilitychange"')&&js.includes('orientationchange')&&js.includes("state.rightGesture=null")],
 ["gameplay action gate",js.includes("function canGameplayAct()")&&js.includes('state.matchState === "live"')&&js.includes("if(!canGameplayAct())return;")&&js.includes('state.matchActive=true')&&js.includes('resetActiveInput("kickoff")')],
 ["presentation polish",js.includes('new THREE.CanvasTexture(c)')&&js.includes('netMat=new THREE.MeshBasicMaterial')&&js.includes('function updateBroadcastCamera(dt)')&&js.includes('scene.fog = new THREE.FogExp2')&&js.includes('renderer.shadowMap.enabled = true')&&html.includes('id="gestureGuide"')&&html.includes('id="matchPause"')&&html.includes('id="pauseBtn"')&&css.includes("#gestureGuide")],
