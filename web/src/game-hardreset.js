@@ -20,10 +20,22 @@ const MATCH_DURATION = 90 * 60;
 const HALF_TIME_AT = 45 * 60;
 const HOME = 0;
 const AWAY = 1;
-const savedOwnedIds = JSON.parse(localStorage.getItem("football_owned") || "[]");
+function readStoredJson(key,fallback){
+  try{
+    const raw=localStorage.getItem(key);
+    if(!raw)return fallback;
+    const value=JSON.parse(raw);
+    return value??fallback;
+  }catch{return fallback}
+}
+function readStoredArray(key){
+  const value=readStoredJson(key,[]);
+  return Array.isArray(value)?value:[];
+}
+const savedOwnedIds = readStoredArray("football_owned");
 const ownedSet = new Set(savedOwnedIds);
 function readMatchSquad(){
-  const ids=JSON.parse(localStorage.getItem("football_match_squad")||"[]");
+  const ids=readStoredArray("football_match_squad");
   const selected=ids.map(rawId=>{
     const id=String(rawId);
     const [baseId,variant]=id.split("-");
