@@ -1,4 +1,4 @@
-name: Godot CI
+name: Web CI
 
 on:
   push:
@@ -6,15 +6,25 @@ on:
   pull_request:
 
 jobs:
-  project-check:
+  web-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate project files
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate web runtime syntax
+        run: npm run web:check
+
+      - name: Run deterministic web gameplay smoke
+        run: npm run web:smoke
+
+      - name: Validate canonical entrypoint
         run: |
-          test -f project.godot
-          test -f Main.tscn
-          test -f main.gd
-          grep -q 'run/main_scene="res://Main.tscn"' project.godot
-          grep -q 'extends Node2D' main.gd
-          echo "Project smoke checks passed."
+          test -f web/index.html
+          grep -q 'src/home.js' web/index.html
+          grep -q 'src/game-hardreset.js' web/index.html
+          ! grep -R '|| true' .github/workflows
