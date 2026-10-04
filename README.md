@@ -33,7 +33,7 @@ GitHub is the source of truth. Changes should be small, testable, reviewable, an
 
 ## Current mobile build
 
-The current game is a clean-room Three.js 3D match engine designed for iPhone landscape play. The visible mobile control is intentionally limited to the left movement stick; right-side touch gestures remain invisible for pass/shoot input.
+The current game is a clean-room Three.js 3D match engine designed for iPhone landscape play. Mobile gameplay uses the left movement stick plus a right-side action panel for pass, through, shoot, tackle, match-up, press, switch, and dash; touch/flick input remains available as an alternate gesture layer.
 
 ### iPhone native app
 
@@ -46,7 +46,7 @@ npx cap sync ios
 npx cap open ios
 ```
 
-GitHub Pages remains the visual test target. Base44 is not used. The iPhone native project is generated and validated by GitHub Actions on macOS.
+GitHub Pages remains the visual test target. Base44 is not used. The iPhone native project is generated and validated by GitHub Actions on macOS. The canonical web CI validates both the browser runtime syntax and deterministic gameplay smoke checks.
 
 ### Design rule
 
