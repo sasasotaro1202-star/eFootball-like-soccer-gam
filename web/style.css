@@ -839,3 +839,13 @@ button{appearance:none;-webkit-appearance:none}
  #actionPad.defending .matchup,#actionPad.defending .press{right:58px}
  #powerGauge{bottom:171px;width:148px}
 }
+
+/* Mobile match controls / pause layer */
+#topTools{z-index:72;display:flex;align-items:center;gap:7px}
+.pauseBtn{width:34px;height:34px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.17);border-radius:8px;background:rgba(4,10,14,.82);color:#edf5f3;font-size:12px;font-weight:900;backdrop-filter:blur(9px);box-shadow:0 10px 24px rgba(0,0,0,.28);touch-action:manipulation}
+.pauseBtn:active{transform:scale(.94);filter:brightness(1.18)}
+.pausePanel h2{letter-spacing:.04em}
+.pausePanel .secondary{margin-top:8px;min-width:132px;padding:10px 16px;border:1px solid rgba(255,255,255,.14);border-radius:7px;background:rgba(255,255,255,.06);color:#d8e3e1;font-weight:800;font-size:8px;letter-spacing:.1em}
+#matchPause{z-index:110}
+#matchPause.hidden{pointer-events:none}
+@media(max-width:560px){.pauseBtn{width:32px;height:32px;font-size:11px}}
