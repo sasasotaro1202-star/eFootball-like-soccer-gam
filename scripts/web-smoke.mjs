@@ -9,6 +9,15 @@ const checks=[["home screen",html.includes('id="homeScreen"')],["match screen",h
 ["defensive pressure simulation",js.includes('lastDefensiveContactAt')&&js.includes('"PRESSURE WIN"')&&js.includes('contactCooldown')],
 ["AI kick skill scaling",js.includes('function kick(player')&&js.includes('skillFactor=0.84+clamp(skill,45,99)')],["AI tactical marking",js.includes('Goal-side marking')&&js.includes('markWeight')&&js.includes('space=home.filter')],
 ["player identity variation",js.includes('function improvePlayerIdentity')&&js.includes('improvePlayerIdentity(g);')&&js.includes('p.userData.identity')],
+["player material declaration order",(()=>{
+  const start=js.indexOf("function makePlayer(");
+  const end=js.indexOf("\nconst FORMATION",start);
+  if(start<0||end<0)return false;
+  const body=js.slice(start,end);
+  const decl=body.indexOf("const shirtMat=kitMat(team,.58)");
+  const use=body.indexOf("const torso=part(",decl);
+  return decl>0&&use>decl;
+})()],
 ["player body proportions",js.includes('function makePlayer')&&js.includes('CapsuleGeometry(rad,len,5,8)')&&js.includes('-(len*.5+rad)')&&js.includes('sockColor=0xf1f3f5')&&js.includes('leftCalf=limb(leftThigh,0,-thighTotal,mat(sockColor')&&js.includes('g.scale.set(frame*rootScale,stature*rootScale,frame*rootScale)')&&js.includes('p.position.y=0.01;')],
 ["mobile pause control",js.includes('pauseBtn?.addEventListener("click"')&&js.includes("togglePause()")&&css.includes("#topTools .pauseBtn{pointer-events:auto}")],["pointer cancel safety",js.includes("function leftCancel(e)")&&js.includes("function rightCancel(e)")&&js.includes("clearActionCharge(type,e,\"action-pointercancel\")")&&js.includes('pointercancel",leftCancel')&&js.includes('pointercancel",(e)=>{if(e.pointerId===state.leftPointerId)leftCancel(e);else rightCancel(e);')],["asset cache bust",html.includes("style.css?v=20261004-premium-05")&&html.includes("game-hardreset.js?v=20261004-match-controls-06")],
 ["mobile input recovery",js.includes('function resetActiveInput(reason="cancel")')&&js.includes('document.addEventListener("visibilitychange"')&&js.includes('orientationchange')&&js.includes("state.rightGesture=null")],
