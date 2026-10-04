@@ -608,3 +608,20 @@ button{font:inherit}
  .homeHeadliner:nth-child(2) b{font-size:7px}
  .homeHeadliner small{left:6px;bottom:6px}
 }
+
+/* Direct contract signing */
+.directSignSection{margin:10px 0;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:linear-gradient(180deg,#0d1a21,#071015)}
+.directSignHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.directSignHeader b{font-size:9px;letter-spacing:.14em}.directSignHeader span{font-size:7px;color:#d6bd73;letter-spacing:.12em}
+.directSignGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.directSignCard{position:relative;min-height:108px;overflow:hidden;padding:9px;border:1px solid rgba(255,255,255,.08);border-radius:7px;background:linear-gradient(150deg,#14272f,#081117);color:#eaf2f0;text-align:left;touch-action:manipulation}
+.directSignCard:active{transform:scale(.985)}
+.directSignCard>span{font-size:6px;color:#88a1a7;letter-spacing:.13em}
+.directSignCard>b{display:block;margin-top:10px;font-size:8px;line-height:1.15;padding-right:24px}
+.directSignCard>small{display:block;margin-top:4px;color:#8ea2a7;font-size:6px;line-height:1.35}
+.directSignCard>strong{position:absolute;right:7px;bottom:7px;padding:5px 6px;border-radius:5px;background:#dcefeb;color:#071015;font-size:6px;letter-spacing:.08em}
+.directPortraitMini{position:absolute;right:-9px;top:-10px;width:74px;height:84px;opacity:.66;overflow:hidden;pointer-events:none}
+.directPortraitMini svg{width:100%;height:100%}
+.selectContract .directSignCard{padding-left:76px;min-height:95px}
+.selectContract .directPortraitMini{left:0;right:auto;top:0;width:78px;height:96px;opacity:.9}
+@media(max-width:760px){.directSignGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.directSignCard{min-height:112px}}
