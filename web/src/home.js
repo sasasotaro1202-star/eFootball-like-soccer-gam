@@ -224,30 +224,41 @@ function pickPlayer(){
 function renderGacha(kind="special"){
  activeBanner=kind;
  const b=GACHA_BANNERS.find(x=>x.id===kind)||GACHA_BANNERS[0],pool=bannerPool(kind);
- const mixed=kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection";
  const heads=kind==="special"?activeSpecialHeadliners(pool):headlinersFor(kind);
  const remaining=pool.length;
- const untilGuarantee=kind==="special"?(heads.length?10:0):0;
- const typeOrder=["BIG_TIME","EPIC","LEGEND","SHOWTIME","HIGHLIGHT","FEATURED","STANDARD"];
- const counts=typeOrder.map(t=>[t,pool.filter(p=>String(p.cardType||p.rarity).toUpperCase()===t).length]).filter(x=>x[1]>0);
- const tabs=GACHA_BANNERS.map(x=>'<button class="gachaTab '+(x.id===kind?"active":"")+'" data-banner="'+x.id+'">'+x.title+'</button>').join("");
- const composition=mixed?'<div class="listComposition"><b>PLAYER LIST CONTENTS</b>'+counts.map(x=>'<span>'+x[0]+' <strong>'+x[1]+'</strong></span>').join("")+'</div>':"";
- const headlinerMarkup=heads.length?'<section class="headlinerSection"><div class="headlinerHeader"><div><span>HEADLINERS</span><b>3 FEATURED PLAYERS</b></div><small>10×: HEADLINER GUARANTEED</small></div><div class="headlinerStrip">'+heads.map((p,i)=>'<button class="headlinerCard rarity-'+String(p.cardType||p.rarity).toLowerCase()+'" data-player-id="'+esc(p.id)+'" type="button"><div class="headlinerGlow"></div><div class="headlinerPortrait">'+portraitSvg(p,true)+'</div><span class="headlinerNo">0'+(i+1)+'</span><div class="headlinerData"><b>'+esc(p.name)+'</b><small>'+esc(rarityLabel(p.cardType||p.rarity))+' • OVR '+p.overall+'</small></div></button>').join("")+'</div></section>':"";
- const previewPool=pool.filter(p=>!heads.some(h=>h.id===p.id)).slice(0,6);
- const previewCards='<div class="gachaPlayerPreview"><div class="gachaPreviewTitle">PLAYER LIST PREVIEW <span>'+pool.length+' PLAYERS</span></div><div class="gachaPreviewGrid">'+previewPool.map(p=>'<button class="gachaPlayerMini" data-player-id="'+esc(p.id)+'" type="button"><div class="gachaMiniPortrait">'+portraitSvg(p,true)+'</div><div class="gachaMiniInfo"><b>'+esc(p.name)+'</b><span>'+esc(p.position)+' • '+esc(cardTypeMark(p))+'</span><strong>'+p.overall+'</strong></div></button>').join("")+'</div></div>';
- const notice=kind==="special"?'<div class="rateNotice"><b>10× HEADLINER GUARANTEE</b><span>'+remaining+' players remaining • '+heads.length+' headliners remaining • 10× costs 900 COINS.</span></div>':"";
- const selectNote=(kind==="nominating"||kind==="selection")?'<div class="rateNotice selectNotice"><b>SELECT A PLAYER</b><span>Player Listの選手をタップして詳細を確認し、そのまま指定獲得できます。</span></div>':"";
- const guarantee=kind==="special"?'<div class="guaranteeMeter"><span>SPECIAL LIST</span><b>'+remaining+' REMAINING</b><i><em style="width:'+((150-Math.min(150,remaining))/150*100)+'%"></em></i></div>':"";
- const drawButtons=(kind==="nominating"||kind==="selection"||kind==="standard")?'':'<div class="drawRow"><button class="drawBtn" data-draw="1" data-cost="'+b.cost+'"><b>SIGN ×1</b><small>'+ (b.cost?b.cost+" COINS":"CONTRACT") +'</small></button><button class="drawBtn gold" data-draw="10" data-cost="'+b.cost+'"><b>SIGN ×10</b><small>'+ (b.cost?b.cost*9+" COINS":"10 CONTRACTS") +'</small></button></div>';
+ const theme={special:["EPIC / SHOW TIME","WORLD LEGENDS","ICONIC MATCHWINNERS","EMERALD"],chance:["FOOTBALL NOSTALGIA","TIMELESS ICONS","LEGENDS OF THE GAME","BLUE"],standard:["PLAYER LIST","STANDARD SIGNING","BUILD YOUR SQUAD","SILVER"],nominating:["NOMINATING CONTRACT","CHOOSE YOUR XI","PLAYMAKERS & LEADERS","CRIMSON"],selection:["SELECTION CONTRACT","THE PLAYMAKERS","PREMIUM MIDFIELD","VIOLET"],packs:["PACK STORE","STARTER BUNDLES","READY-MADE TEAMS","GOLD"]}[kind]||["CONTRACT","SPECIAL PLAYER LIST","BUILD YOUR XI","EMERALD"];
+ const tabs=GACHA_BANNERS.map(x=>"<button class=\"gachaTab "+(x.id===kind?"active":"")+"\" data-banner=\""+x.id+"\">"+x.title+"</button>").join("");
+ const headlinerCard=(p,i)=>{
+   const type=String(p.cardType||p.rarity||"STANDARD").toLowerCase();
+   return "<button class=\"contractHeroCard rarity-"+type+" "+(i===0?"featured":"")+"\" data-player-id=\""+esc(p.id)+"\" type=\"button\"><div class=\"contractCardGlow\"></div><div class=\"contractCardTop\"><span>"+esc(rarityLabel(p.cardType||p.rarity))+"</span><b>"+p.overall+"</b></div><div class=\"contractCardPortrait\">"+portraitSvg(p,true)+"</div><div class=\"contractCardNo\">0"+(i+1)+"</div><div class=\"contractCardInfo\"><strong>"+esc(p.name)+"</strong><span>"+esc(p.position)+" • "+esc(p.nation||"WORLD")+"</span><small>"+starText(p.star||5)+"</small></div></button>";
+ };
+ const miniCard=(p)=>{
+   const type=String(p.cardType||p.rarity||"STANDARD").toLowerCase();
+   return "<button class=\"contractMiniCard rarity-"+type+"\" data-player-id=\""+esc(p.id)+"\" type=\"button\"><div class=\"miniCardPortrait\">"+portraitSvg(p,false)+"</div><div class=\"miniCardRating\"><b>"+p.overall+"</b><span>"+esc(p.position)+"</span></div><div class=\"miniCardInfo\"><strong>"+esc(p.name)+"</strong><small>"+esc(rarityLabel(p.cardType||p.rarity))+"</small></div></button>";
+ };
+ const previewPool=pool.filter(p=>!heads.some(h=>h.id===p.id)).slice(0,8);
+ const heroHeads=(heads.length?heads:pool.slice(0,3)).slice(0,3);
+ const composition=(kind==="special"||kind==="chance"||kind==="nominating"||kind==="selection")
+   ? "<div class=\"contractComposition\"><span>PLAYER LIST</span><b>"+remaining+" PLAYERS</b><i>★ HEADLINERS "+heads.length+"</i><i>10× BONUS ACTIVE</i></div>" : "";
+ const notice=kind==="special"
+   ? "<div class=\"contractNotice\"><b>10× HEADLINER GUARANTEE</b><span>"+remaining+" players remain • 10× costs 900 COINS • Headliners are protected until signed.</span></div>" : "";
+ const drawButtons=(kind==="nominating"||kind==="selection"||kind==="standard")?"":"<div class=\"contractPurchase\"><button class=\"contractBuy secondaryBuy\" data-draw=\"1\" data-cost=\""+b.cost+""><span>SIGN ×1</span><small>"+(b.cost?b.cost+" COINS":"CONTRACT")+"</small></button><button class=\"contractBuy primaryBuy\" data-draw=\"10\" data-cost=\""+b.cost+""><span>SIGN ×10</span><small>"+(b.cost?b.cost*9+" COINS":"10 CONTRACTS")+"</small></button></div>";
  const directCost=p=>Math.max(600,Math.round((Number(p.overall)||70)*75));
- const directMarkup=kind==="standard"?'<section class="directSignSection"><div class="directSignHeader"><b>STANDARD SIGNING</b><span>GP</span></div><div class="directSignGrid">'+pool.slice(0,8).map(p=>'<button class="directSignCard" data-direct-sign="'+esc(p.id)+'" type="button"><span>'+esc(p.position)+'</span><b>'+esc(p.name)+'</b><small>OVR '+p.overall+' • '+money(directCost(p))+' GP</small><strong>SIGN</strong></button>').join("")+'</div></section>':"";
+ const directMarkup=kind==="standard"?"<section class=\"contractListSection\"><div class=\"contractListHead\"><b>STANDARD SIGNING</b><span>PAY WITH GP</span></div><div class=\"contractDirectGrid\">"+pool.slice(0,8).map(p=>"<button class=\"contractDirectCard\" data-direct-sign=\""+esc(p.id)+"\" type=\"button\"><div class=\"directMiniPortrait\">"+portraitSvg(p,false)+"</div><span>"+esc(p.position)+"</span><b>"+esc(p.name)+"</b><small>OVR "+p.overall+" • "+money(directCost(p))+" GP</small><strong>SIGN</strong></button>").join("")+"</div></section>":"";
  const selectCost=kind==="nominating"?1800:kind==="selection"?2600:0;
- const selectMarkup=(kind==="nominating"||kind==="selection")?'<section class="directSignSection selectContract"><div class="directSignHeader"><b>'+String(kind).toUpperCase()+' CONTRACT</b><span>'+money(selectCost)+' GP</span></div><div class="directSignGrid">'+pool.slice(0,8).map(p=>'<button class="directSignCard" data-contract-sign="'+esc(p.id)+'" type="button"><div class="directPortraitMini">'+portraitSvg(p,false)+'</div><b>'+esc(p.name)+'</b><small>'+esc(rarityLabel(p.cardType||p.rarity))+' • OVR '+p.overall+'</small><strong>SELECT</strong></button>').join("")+'</div></section>':"";
- const sub='<div class="gachaSubRow"><button class="subGacha" data-free="1">DAILY FREE</button><button class="subGacha" data-rates="1">LIST DETAILS</button><button class="subGacha" data-box="1">OTHER LISTS</button></div>';
- $("#panelBody").innerHTML='<div class="gachaTabs">'+tabs+'</div>'+
- '<div class="gachaHero premiumGacha"><div><span class="eyebrow">CONTRACT</span><h2>'+esc(b.title)+'</h2><p>'+esc(b.sub)+'</p><div class="gachaBadges"><span>'+b.deal+'</span><span>'+b.featured+'</span><span>'+pool.length+' PLAYERS</span></div></div><div class="gachaOrb">✦</div></div>'+
- headlinerMarkup+notice+selectNote+guarantee+composition+drawButtons+directMarkup+selectMarkup+sub+
- previewCards+'<div class="sectionTitle">PLAYER LIST <span>'+pool.length+' PLAYERS</span></div><div class="playerGrid">'+pool.slice(0,16).map(card).join("")+'</div>';
+ const selectMarkup=(kind==="nominating"||kind==="selection")?"<section class=\"contractListSection selectList\"><div class=\"contractListHead\"><b>"+String(kind).toUpperCase()+" CONTRACT</b><span>"+money(selectCost)+" GP</span></div><div class=\"contractDirectGrid\">"+pool.slice(0,8).map(p=>"<button class=\"contractDirectCard\" data-contract-sign=\""+esc(p.id)+"\" type=\"button\"><div class=\"directMiniPortrait\">"+portraitSvg(p,false)+"</div><span>"+esc(rarityLabel(p.cardType||p.rarity))+"</span><b>"+esc(p.name)+"</b><small>OVR "+p.overall+" • READY TO SELECT</small><strong>SELECT</strong></button>").join("")+"</div></section>":"");
+ const otherLinks="<div class=\"contractQuickLinks\"><button class=\"subGacha\" data-free=\"1\">DAILY FREE</button><button class=\"subGacha\" data-rates=\"1\">LIST DETAILS</button><button class=\"subGacha\" data-box=\"1\">OTHER LISTS</button></div>";
+ const heroCopy="<div class=\"contractHeroCopy\"><span class=\"contractKicker\">"+theme[0]+"</span><h2>"+esc(theme[1])+"</h2><p>"+esc(theme[2])+"</p><div class=\"contractTimer\"><span>LIMITED LIST</span><b>06D 18H</b><small>ENDS AFTER THE CAMPAIGN WINDOW</small></div></div>";
+ const listCounter="<div class=\"contractCounter\"><span>PLAYER LIST</span><b>"+remaining+" / 150</b><small>"+(kind==="special"?"10× HEADLINER GUARANTEE":"SPECIAL LIST")+"</small></div>";
+ const heroCards="<div class=\"contractHeroCards\">"+heroHeads.map(headlinerCard).join("")+"</div>";
+ const preview="<section class=\"contractPreview\"><div class=\"contractSectionHead\"><div><span>PLAYER LIST PREVIEW</span><b>Featured + playable roster</b></div><small>"+pool.length+" PLAYERS</small></div><div class=\"contractMiniGrid\">"+previewPool.map(miniCard).join("")+"</div></section>";
+ const titleNote=kind==="special"?"Original clean-room player-card artwork • historical star database":"Original clean-room campaign artwork";
+ $("#panelBody").innerHTML="<div class=\"contractDeck theme-"+theme[3].toLowerCase()+"\">"+
+   "<div class=\"contractTabs\">"+tabs+"</div>"+
+   "<section class=\"contractHero\"><div class=\"contractBackdrop\"></div><div class=\"contractDiagonal\"></div>"+listCounter+heroCopy+heroCards+"<div class=\"contractHeroFoot\"><span>"+esc(titleNote)+"</span><b>"+esc(b.featured||"SPECIAL LIST")+"</b></div></section>"+
+   composition+notice+drawButtons+directMarkup+selectMarkup+otherLinks+preview+
+   "<section class=\"contractArchive\"><div class=\"contractSectionHead\"><div><span>ARCHIVE CARDS</span><b>Collect, develop, play</b></div><small>16 SHOWN</small></div><div class=\"playerGrid contractArchiveGrid\">"+pool.slice(0,16).map(card).join("")+"</div></section>"+
+   "</div>";
 }
 const GACHA_PITY_KEY="football_gacha_pity";
 const GACHA_FREE_KEY="football_gacha_free";
