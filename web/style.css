@@ -297,3 +297,248 @@ body{overscroll-behavior:none}
 .tacticBtn span{display:block;margin-top:3px;font-size:7px;color:#849b94}
 .tacticBtn.active{border-color:#72e2ad55;background:#72e2ad12;color:#dffcef}
 .tacticBar>div{flex:1;text-align:right}.tacticBar>div b{display:block;font-size:8px;letter-spacing:.12em}.tacticBar>div small{display:block;margin-top:3px;color:#718680;font-size:7px}
+
+/* ===== PREMIUM MOBILE SPORTS UI v2 ===== */
+:root{
+  --bg0:#05090d;--bg1:#08131a;--panel:#0a151c;--panel2:#0e1c24;
+  --text:#f4f7f8;--muted:#93a5ad;--line:rgba(255,255,255,.12);
+  --ice:#d9f3f1;--cyan:#78d8dc;--green:#73dcae;--gold:#e7bf67;--red:#e46c7d;
+}
+button{font:inherit}
+.screen.active{animation:screenIn .24s ease-out}
+@keyframes screenIn{from{opacity:.35}to{opacity:1}}
+.homeBg{
+  background:
+    radial-gradient(110% 90% at 78% 12%,rgba(78,165,160,.18),transparent 48%),
+    radial-gradient(70% 80% at 10% 85%,rgba(31,64,86,.28),transparent 58%),
+    linear-gradient(135deg,#03080d,#08131a 48%,#071018);
+}
+.homeBg:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 0 58%,rgba(255,255,255,.035) 58.2%,transparent 58.7% 72%,rgba(255,255,255,.025) 72.2%,transparent 72.8%);opacity:.75}
+.homeBg:after{
+  inset:52% 0 0;
+  background:
+    linear-gradient(180deg,transparent,rgba(3,7,10,.96)),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.035) 0 1px,transparent 1px 120px);
+  opacity:.3;transform:perspective(820px) rotateX(58deg);transform-origin:bottom;
+}
+.homeHeader{left:max(22px,env(safe-area-inset-left));right:max(22px,env(safe-area-inset-right));padding-top:3px}
+.brand{font-size:clamp(22px,4.8vw,34px);letter-spacing:.12em}
+.season{font-size:7px;letter-spacing:.24em;color:#718b92}
+.topCurrency{display:flex;align-items:center;gap:6px}
+.topCurrency>div{
+  min-width:82px;padding:8px 11px!important;border:1px solid var(--line);
+  border-radius:9px;background:linear-gradient(180deg,rgba(18,31,39,.94),rgba(7,13,18,.94));
+  box-shadow:0 8px 22px rgba(0,0,0,.28);
+}
+.topCurrency>div small{font-size:7px!important;letter-spacing:.16em;color:#71878e}
+.topCurrency>div b{font-size:12px!important}
+.profileDot{
+  width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.18);
+  background:linear-gradient(160deg,#1d2b33,#0a1116);color:#dff4ef;
+}
+.topTabs{
+  top:max(74px,calc(env(safe-area-inset-top) + 64px));left:5vw;right:5vw;
+  display:flex;gap:4px;padding:4px;border:1px solid rgba(255,255,255,.09);
+  background:rgba(4,10,14,.72);border-radius:10px;backdrop-filter:blur(14px);
+}
+.topTab{flex:1;border:0;background:transparent;color:#74878e;padding:9px 10px;font-size:8px;font-weight:900;letter-spacing:.16em;border-radius:7px}
+.topTab.active{background:#e3f2ef;color:#071016;box-shadow:0 4px 18px rgba(0,0,0,.22)}
+.homeContent{inset:max(122px,calc(env(safe-area-inset-top) + 118px)) 5vw 78px;max-width:1240px;margin:auto}
+.eventSlide{
+  min-height:300px;border-radius:10px;border:1px solid rgba(255,255,255,.13);
+  background:
+    radial-gradient(circle at 73% 25%,rgba(110,211,201,.2),transparent 28%),
+    linear-gradient(120deg,#0e2430,#091117 55%,#102329);
+  box-shadow:0 26px 70px rgba(0,0,0,.48);
+}
+.eventSlide:after{background:linear-gradient(90deg,rgba(2,7,10,.12),rgba(2,7,10,.35) 48%,rgba(2,7,10,.05))}
+.eventCopy{padding:28px}
+.eventCopy>span{color:#82d9cf;font-size:7px;letter-spacing:.3em}
+.eventCopy h1{font-size:clamp(38px,6.5vw,70px);letter-spacing:-.04em}
+.eventCopy p{font-size:11px;max-width:420px;color:#a8b8be}
+.primary{
+  border-radius:7px;padding:12px 20px;
+  background:linear-gradient(180deg,#edf7f4,#c3ddd7);
+  color:#071016;box-shadow:0 8px 24px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.7)
+}
+.homeActions{grid-template-columns:repeat(5,1fr);gap:6px;margin-top:10px}
+.actionCard{
+  min-height:78px;border-radius:8px;border:1px solid rgba(255,255,255,.10);
+  background:linear-gradient(180deg,#10202a,#091219)!important;
+  padding:12px;box-shadow:0 10px 24px rgba(0,0,0,.28);
+  transition:transform .12s ease,filter .12s ease,border-color .12s ease
+}
+.actionCard:hover{filter:brightness(1.06);border-color:rgba(255,255,255,.2);transform:translateY(-1px)}
+.actionCard.match{background:linear-gradient(180deg,#15483d,#0a1c17)!important}
+.actionCard.contract{background:linear-gradient(180deg,#5b461f,#1a1208)!important}
+.actionIcon{font-size:14px;margin-bottom:12px;color:#b4e9df}
+.actionCard b{font-size:9px;letter-spacing:.08em}
+.actionCard small{font-size:6px;color:#799097;letter-spacing:.14em}
+.homeLower{margin-top:15px}
+.homeSectionHead{font-size:8px}
+.homeMiniRow{gap:6px}
+.miniFeature{border-radius:8px;border-color:rgba(255,255,255,.09);background:linear-gradient(180deg,#0e1b22,#081117);min-height:66px}
+.bottomNav{
+  padding:7px max(16px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-bottom));
+  background:rgba(3,8,12,.96);border-top:1px solid rgba(255,255,255,.11)
+}
+.navBtn{min-height:46px;border-radius:7px}.navBtn.active{background:rgba(221,244,238,.08);color:#e1f2ee}
+.panelScreen{background:linear-gradient(135deg,#050b10,#0b161d);padding-left:max(20px,env(safe-area-inset-left));padding-right:max(20px,env(safe-area-inset-right))}
+.panelHeader{height:74px;border-bottom:1px solid rgba(255,255,255,.08)}
+.panelHeader button{width:36px;height:36px;border-radius:8px;background:#ffffff08}
+#panelTitle{font-size:16px;letter-spacing:.18em}
+#panelBody{padding-top:18px}
+.detailBlock,.gachaHero,.trainingHero{
+  border-radius:9px!important;border-color:rgba(255,255,255,.10)!important;
+  background:linear-gradient(180deg,#0d1a21,#081117)!important;
+  box-shadow:0 12px 26px rgba(0,0,0,.25)!important;
+}
+.gachaTabs{display:flex;gap:5px;overflow:auto;padding-bottom:3px}
+.gachaTab{
+  flex:0 0 auto;border:1px solid rgba(255,255,255,.09);border-radius:7px;
+  background:#081117;color:#82959b;padding:9px 12px;font-size:7px;font-weight:900;letter-spacing:.12em
+}
+.gachaTab.active{background:#dcefeb;color:#071015;border-color:#dcefeb}
+.gachaHero{padding:18px!important;min-height:170px}
+.gachaHero h2{font-size:26px!important;letter-spacing:-.03em}
+.gachaHero p{font-size:10px!important;color:#8fa1a8}
+.gachaOrb{width:74px!important;height:74px!important;border-radius:8px!important;background:linear-gradient(145deg,#c7aa62,#4b3715)!important;color:#fff;box-shadow:0 14px 28px rgba(0,0,0,.36)!important;transform:skew(-6deg)}
+.listComposition{display:grid!important;grid-template-columns:repeat(4,1fr);gap:5px;padding:10px;border:1px solid rgba(255,255,255,.08);border-radius:8px;background:#071016!important}
+.listComposition>b{grid-column:1/-1;font-size:7px;letter-spacing:.18em;color:#82989f}
+.listComposition span{padding:7px;border-radius:6px;background:#ffffff05;border:1px solid rgba(255,255,255,.07);text-align:center;font-size:6px;color:#7f949a}
+.listComposition strong{display:block;margin-top:3px;font-size:10px;color:#e8f1ef}
+.rateNotice{padding:10px;border-left:2px solid #d7b766;background:linear-gradient(90deg,rgba(205,175,91,.10),transparent);font-size:8px;color:#9db0b5;line-height:1.5}
+.drawRow{gap:7px!important}
+.drawBtn{
+  border:1px solid rgba(255,255,255,.12)!important;border-radius:7px!important;
+  background:linear-gradient(180deg,#173242,#0b161d)!important;color:#f0f6f4!important;
+  box-shadow:0 8px 20px rgba(0,0,0,.28)!important
+}
+.drawBtn.gold{
+  background:linear-gradient(180deg,#675122,#241905)!important;border-color:rgba(230,194,102,.6)!important
+}
+.subGacha{border-radius:6px!important;background:#0b151b!important}
+.gachaPlayerPreview{border-radius:8px!important;background:#071016!important}
+.gachaMiniPortrait{height:150px!important}
+.gachaPlayerMini{border-radius:7px!important;background:#0b151b!important}
+.playerGrid{gap:7px!important}
+.playerCardItem{border-radius:9px!important;box-shadow:0 10px 24px rgba(0,0,0,.28)!important}
+.playerCardItem .cardPortrait{border-radius:7px!important}
+.sectionTitle{letter-spacing:.17em}
+.formation{border-radius:9px!important;background:linear-gradient(180deg,#0e1c23,#081117)!important;border-color:rgba(255,255,255,.09)!important}
+.tacticBar{border-radius:8px!important}
+.playerList .listRow{border-radius:7px!important;background:#0b151b!important;border-color:rgba(255,255,255,.07)!important}
+
+/* Match presentation */
+#matchbar{
+  width:min(560px,58vw);height:56px;border-radius:8px;
+  background:rgba(4,10,14,.88);border-color:rgba(255,255,255,.13);
+  box-shadow:0 16px 38px rgba(0,0,0,.4)
+}
+.teamBadge{border-radius:6px}
+.teamName{font-size:7px;letter-spacing:.18em}
+#score{font-size:17px!important}
+#controls{height:240px}
+#stick{
+  width:clamp(138px,17vw,164px);height:clamp(138px,17vw,164px);
+  left:max(20px,env(safe-area-inset-left));bottom:max(17px,env(safe-area-inset-bottom));
+  border:1px solid rgba(255,255,255,.22);
+  background:radial-gradient(circle,#173038 0,#0c191f 58%,rgba(4,8,11,.75) 72%);
+  box-shadow:inset 0 0 0 10px rgba(255,255,255,.025),0 14px 34px rgba(0,0,0,.38);
+}
+.stickRing{inset:12%;border-color:rgba(255,255,255,.13)}
+#knob{
+  width:39%;height:39%;left:30.5%;top:30.5%;
+  background:linear-gradient(145deg,#dce8e6,#65757b);box-shadow:0 8px 18px rgba(0,0,0,.45),inset 0 1px rgba(255,255,255,.72)
+}
+#actionPad{
+  display:block!important;position:absolute;right:max(20px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));
+  width:min(264px,29vw);height:205px;pointer-events:none;touch-action:none
+}
+.actionPadGlow{position:absolute;inset:15px -8px -8px 20px;border-radius:50%;background:radial-gradient(circle,rgba(77,154,166,.12),transparent 62%);filter:blur(10px)}
+.matchAction{
+  width:60px;height:60px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+  background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.10),transparent 38%),linear-gradient(145deg,#162932,#091218)!important;
+  color:#eaf2f1;box-shadow:0 12px 24px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.10);
+  font-size:8px;font-weight:1000;letter-spacing:.07em;pointer-events:auto;touch-action:none;
+  -webkit-user-select:none;user-select:none
+}
+.matchAction small{display:block;margin-top:2px;font-size:5px;letter-spacing:.1em;color:#789096}
+.matchAction.shoot,.matchAction.tackle{
+  width:78px;height:78px;background:radial-gradient(circle at 32% 25%,rgba(255,255,255,.10),transparent 35%),linear-gradient(145deg,#6b2636,#170a0e)!important;border-color:rgba(238,112,135,.65)
+}
+.matchAction.pass{background:linear-gradient(145deg,#214668,#0b1b29)!important;border-color:rgba(112,176,231,.6)}
+.matchAction.through{background:linear-gradient(145deg,#1b5049,#081814)!important;border-color:rgba(113,224,192,.62)}
+.matchAction.matchup{background:linear-gradient(145deg,#35435a,#0d141d)!important;border-color:rgba(170,194,218,.48)}
+.matchAction.press{background:linear-gradient(145deg,#315448,#0a1712)!important;border-color:rgba(118,218,173,.52)}
+.matchAction.switch{background:linear-gradient(145deg,#22303a,#0a1116)!important}
+.matchAction.dash{background:linear-gradient(145deg,#5a4a20,#170f05)!important;border-color:rgba(233,194,98,.58)}
+#actionPad.attacking .defenseOnly,#actionPad.defending .attackOnly{display:none}
+#actionPad.attacking .shoot{right:4px;bottom:52px}
+#actionPad.attacking .pass{right:91px;bottom:8px}
+#actionPad.attacking .through{right:98px;top:7px}
+#actionPad.attacking .dash{right:0;bottom:0;width:54px;height:54px}
+#actionPad.defending .tackle{right:4px;bottom:44px}
+#actionPad.defending .matchup{right:100px;top:8px}
+#actionPad.defending .press{right:102px;bottom:5px}
+#actionPad.defending .switch{right:0;top:6px}
+#actionPad.defending .dash{right:0;bottom:0;width:54px;height:54px}
+#powerGauge{
+  position:fixed;z-index:35;left:50%;bottom:22px;transform:translate(-50%,20px);opacity:0;
+  width:min(250px,34vw);height:6px;border-radius:999px;background:rgba(4,9,12,.82);
+  border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 22px rgba(0,0,0,.32);pointer-events:none
+}
+#powerGauge span{display:block;height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#77d8bd,#f0d46f,#ef6f82)}
+#powerGauge b{position:absolute;left:0;right:0;top:-18px;text-align:center;font-size:6px;letter-spacing:.2em;color:#dce9e7}
+#powerGauge.show{opacity:1;transform:translate(-50%,0);transition:opacity .1s,transform .1s}
+#gestureGuide{right:50%;transform:translateX(50%);bottom:14px;width:270px;border-radius:7px;padding:7px 10px;background:rgba(4,10,14,.66);opacity:.7}
+.gestureGuideItems{grid-template-columns:repeat(3,1fr)}
+.gestureGuideItems span{font-size:5.5px}
+.gestureGuideItems i{font-size:7px}
+#gestureHint{display:none}
+.matchFlow{top:8px}.flowStep{border-radius:5px;background:rgba(3,8,11,.72);font-size:7px}
+.matchOverlay{background:rgba(1,6,9,.72);backdrop-filter:blur(7px)}
+.matchPanel{border-radius:8px;background:linear-gradient(180deg,#0e1b22,#071116);border-color:rgba(255,255,255,.14);box-shadow:0 28px 80px rgba(0,0,0,.55)}
+.matchPanel span{color:#85a5ab}.matchPanel h2{letter-spacing:-.03em}
+.goalFx{background:radial-gradient(circle at center,rgba(234,255,250,.8),rgba(119,226,187,.12) 18%,transparent 52%)}
+.gachaStage{background:radial-gradient(circle at 50% 35%,#17343b,#050a0e 55%,#020507)}
+.gachaStage:before{background:conic-gradient(from 0deg,transparent 0 16%,rgba(120,216,220,.18) 19%,transparent 24% 58%,rgba(229,191,103,.16) 62%,transparent 70%);animation:gachaSweep 8s linear infinite}
+.gachaStage .stageOrb{border-radius:9px!important;background:linear-gradient(145deg,#d8bf79,#4a3713)!important;box-shadow:0 0 38px rgba(216,190,121,.3),0 0 100px rgba(78,162,166,.2)!important}
+.gachaStage .stageLabel{font-size:8px}.gachaStage .stageName{font-size:clamp(24px,5.5vw,52px)}
+@media(max-width:900px){
+  .homeActions{grid-template-columns:repeat(3,1fr)}
+  #matchbar{width:min(470px,72vw)}
+  #actionPad{width:230px}
+  #gestureGuide{display:none}
+}
+@media(max-width:560px){
+  .homeHeader{left:12px;right:12px}
+  .topCurrency>div{min-width:58px!important;padding:7px 8px!important}
+  .topCurrency>div b{font-size:10px!important}
+  .homeContent{inset:max(108px,calc(env(safe-area-inset-top) + 104px)) 12px 74px}
+  .eventSlide{min-height:220px}
+  .eventCopy{padding:19px;max-width:68%}
+  .eventCopy h1{font-size:33px}
+  .eventCopy p{font-size:8px}
+  .eventPlayers{width:48%;opacity:.9}
+  .homeActions{grid-template-columns:repeat(2,1fr)}
+  .actionCard{min-height:72px}
+  .bottomNav{padding-left:8px;padding-right:8px}
+  .panelScreen{padding-left:12px;padding-right:12px}
+  #matchbar{left:50%;width:74vw;transform:translateX(-50%)}
+  #controls{height:214px}
+  #stick{width:122px;height:122px;left:12px;bottom:11px}
+  #actionPad{width:190px;height:170px;right:10px;bottom:9px}
+  .matchAction{width:50px;height:50px}
+  .matchAction.shoot,.matchAction.tackle{width:66px;height:66px}
+  #actionPad.attacking .shoot{right:0;bottom:39px}
+  #actionPad.attacking .pass{right:58px;bottom:0}
+  #actionPad.attacking .through{right:64px;top:0}
+  #actionPad.attacking .dash{right:0;bottom:0;width:46px;height:46px}
+  #actionPad.defending .tackle{right:0;bottom:35px}
+  #actionPad.defending .matchup{right:65px;top:0}
+  #actionPad.defending .press{right:65px;bottom:0}
+  #actionPad.defending .switch{right:0;top:0}
+  #actionPad.defending .dash{right:0;bottom:0;width:46px;height:46px}
+  #powerGauge{width:170px;bottom:10px}
+}
