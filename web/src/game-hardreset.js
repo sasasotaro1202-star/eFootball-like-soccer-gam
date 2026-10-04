@@ -759,8 +759,29 @@ function teamAI(dt){
           tz=homeZ+clamp((ballZ-homeZ)*.18,-5,5);
         }
         if(danger>7&&(role==='DF'||role==='MF')){
-          tx=lerp(tx,ballX,0.16);
-          tz=lerp(tz,ballZ,0.14);
+          tx=lerp(tx,ballX,0.12);
+          tz=lerp(tz,ballZ,0.10);
+        }
+        // Goal-side marking: defenders protect space in front of the ball carrier
+        // instead of collapsing directly onto the ball.
+        if((role==="DF"||role==="MF")&&owner&&owner.userData.team!==p.userData.team){
+          let threat=null,threatScore=Infinity;
+          const opponents=p.userData.team===HOME?away:home;
+          for(const o of opponents){
+            if(o.userData.role==="GK")continue;
+            const od=dist(p,o);
+            if(od>22)continue;
+            const lane=Math.abs(o.position.z-p.position.z);
+            const score=od+lane*.12-(o===owner?3.5:0);
+            if(score<threatScore){threat=o;threatScore=score}
+          }
+          if(threat){
+            const markX=threat.position.x-attack*3.6;
+            const markZ=threat.position.z*0.78+homeZ*0.22;
+            const markWeight=threat===owner?0.42:(role==="DF"?0.28:0.18);
+            tx=lerp(tx,markX,markWeight);
+            tz=lerp(tz,markZ,markWeight);
+          }
         }
       }
 
@@ -804,21 +825,30 @@ function teamAI(dt){
     const pressure=nearestHome?dist(nearestHome,owner):99;
     const candidates=away
       .filter(p=>p!==owner&&p.userData.role!=='GK')
-      .sort((a,b)=>{
-        const av=(owner.position.x-a.position.x)*0.75-Math.abs(owner.position.z-a.position.z)*0.12;
-        const bv=(owner.position.x-b.position.x)*0.75-Math.abs(owner.position.z-b.position.z)*0.12;
-        return bv-av;
-      });
-    const target=candidates[0];
+      .map(p=>{
+        const lead=(owner.position.x-p.position.x)*0.75-Math.abs(owner.position.z-p.position.z)*0.12;
+        const space=home.filter(d=>d.userData.role!=="GK").reduce((best,d)=>Math.min(best,dist(d,p)),99);
+        const forwardLane=Math.max(0,(p.position.x-owner.position.x));
+        return {p,score:lead+space*.18+forwardLane*.16};
+      })
+      .sort((a,b)=>b.score-a.score);
+    const target=candidates[0]?.p;
 
     let acted=false;
-    if(goalDistance<18&&Math.abs(owner.position.z)<11&&pressure>3.0&&Math.random()<0.42){
-      kick(owner,-53,clamp(owner.position.z*0.45,-8,8),14.5,"shoot");
-      acted=true;
+    const shotPressurePenalty=clamp((3.4-pressure)*.11,0,0.32);
+    if(goalDistance<20&&Math.abs(owner.position.z)<11){
+      const shotChance=clamp(.30+(pressure>3.0?.20:0)-shotPressurePenalty,0.10,0.62);
+      if(Math.random()<shotChance){
+        kick(owner,-53,clamp(owner.position.z*0.45,-8,8),14.5,"shoot");
+        acted=true;
+      }
     }
-    if(!acted&&target&&Math.random()<0.48){
-      kick(owner,target.position.x,target.position.z,9.2,"pass");
-      acted=true;
+    if(!acted&&target){
+      const passChance=clamp(.56+(pressure<2.5?.18:0)-Math.max(0,2.5-pressure)*.02,0.32,0.82);
+      if(Math.random()<passChance){
+        kick(owner,target.position.x,target.position.z,9.2,"pass");
+        acted=true;
+      }
     }
     owner.userData.aiNextDecisionAt=now+(acted?900:420);
   }
