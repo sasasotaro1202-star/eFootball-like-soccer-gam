@@ -24,7 +24,13 @@ const savedOwnedIds = JSON.parse(localStorage.getItem("football_owned") || "[]")
 const ownedSet = new Set(savedOwnedIds);
 function readMatchSquad(){
   const ids=JSON.parse(localStorage.getItem("football_match_squad")||"[]");
-  const selected=ids.map(id=>PLAYER_POOL.find(p=>String(p.id)===String(id))).filter(Boolean);
+  const selected=ids.map(rawId=>{
+    const id=String(rawId);
+    const [baseId,variant]=id.split("-");
+    const base=PLAYER_POOL.find(p=>String(p.id)===id||String(p.id)===baseId);
+    if(!base)return null;
+    return variant?{...base,cardType:variant.toUpperCase()}:base;
+  }).filter(Boolean);
   if(selected.length===11)return selected;
   return [...PLAYER_POOL.filter(p=>ownedSet.has(p.id)),...PLAYER_POOL.filter(p=>!ownedSet.has(p.id))];
 }
@@ -102,10 +108,12 @@ function showMessage(text, ms = 900) {
 function gameplayAttributes(player,role,index){
  const overall=clamp(Number(player?.overall)||70,58,99);
  const sourcePos=String(player?.position||role).toUpperCase();
+ const cardType=String(player?.cardType||"STANDARD").toUpperCase();
+ const cardBoost={STANDARD:0,FEATURED:1.5,HIGHLIGHT:2.5,SHOWTIME:3.5,EPIC:4.5,LEGEND:5.0,BIG_TIME:6.5}[cardType]||0;
  const seed=((((Number(player?.id)||index+1)*37)%23)-11);
  const posBoost=sourcePos==="FW"?{pace:4,acceleration:4,shooting:5,passing:-2,dribbling:5,defending:-18,physical:-2}:sourcePos==="MF"?{pace:0,acceleration:1,shooting:-3,passing:5,dribbling:3,defending:3,physical:0}:sourcePos==="DF"?{pace:-2,acceleration:-1,shooting:-15,passing:1,dribbling:-5,defending:8,physical:5}:sourcePos==="GK"?{pace:-12,acceleration:-10,shooting:-30,passing:-5,dribbling:-20,defending:5,physical:2}:{pace:0,acceleration:0,shooting:0,passing:0,dribbling:0,defending:0,physical:0};
  const clampStat=v=>Math.max(45,Math.min(99,Math.round(v)));
- return {pace:clampStat(overall+posBoost.pace+seed*.22),acceleration:clampStat(overall+posBoost.acceleration+seed*.18),shooting:clampStat(overall+posBoost.shooting+seed*.16),passing:clampStat(overall+posBoost.passing+seed*.12),dribbling:clampStat(overall+posBoost.dribbling+seed*.20),defending:clampStat(overall+posBoost.defending-seed*.10),physical:clampStat(overall+posBoost.physical+seed*.10),stamina:clampStat(overall+(role==="MF"?5:role==="DF"?3:-2)+seed*.14),gkReflexes:clampStat(overall+(role==="GK"?9:0)+seed*.08)};
+ return {pace:clampStat(overall+posBoost.pace+seed*.22+cardBoost),acceleration:clampStat(overall+posBoost.acceleration+seed*.18+cardBoost*.75),shooting:clampStat(overall+posBoost.shooting+seed*.16+cardBoost),passing:clampStat(overall+posBoost.passing+seed*.12+cardBoost*.70),dribbling:clampStat(overall+posBoost.dribbling+seed*.20+cardBoost*.85),defending:clampStat(overall+posBoost.defending-seed*.10+cardBoost*.7),physical:clampStat(overall+posBoost.physical+seed*.10+cardBoost*.65),stamina:clampStat(overall+(role==="MF"?5:role==="DF"?3:-2)+seed*.14+cardBoost*.35),gkReflexes:clampStat(overall+(role==="GK"?9:0)+seed*.08+cardBoost*.8)};
 }
 
 function makePlayer(team,index,role){
